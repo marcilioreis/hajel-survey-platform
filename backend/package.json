@@ -8,12 +8,11 @@
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint:fix": "eslint src --ext .ts --fix --no-color",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "db:push": "ts-node drizzle.config.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky"
+    "db:push": "tsx drizzle.config.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
@@ -48,7 +47,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "prettier": "^3.8.3",
-    "ts-node-dev": "^2.0.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }

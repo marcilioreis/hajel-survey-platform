@@ -7,7 +7,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   try {
     const headers = fromNodeHeaders(req.headers);
     const session = await auth.api.getSession({ headers });
-    
+
     if (!session) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -15,6 +15,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     // req.session = session.session;
     req.session = session; // Armazena a sessão completa para uso futuro, se necessário
 
+    // eslint-disable-next-line no-console
     console.log('req.user :>> ', req.user);
     next();
   } catch (error) {

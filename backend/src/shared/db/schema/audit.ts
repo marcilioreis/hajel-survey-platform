@@ -1,5 +1,14 @@
 // src/shared/db/schema/audit.ts
-import { pgTable, serial, varchar, text, integer, jsonb, timestamp, inet } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  varchar,
+  text,
+  integer,
+  jsonb,
+  timestamp,
+  inet,
+} from 'drizzle-orm/pg-core';
 import { user } from './auth.js';
 
 export const auditLogs = pgTable('audit_logs', {

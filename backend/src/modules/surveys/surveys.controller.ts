@@ -13,7 +13,7 @@ export const createSurvey = async (req: Request, res: Response) => {
     const survey = await surveyService.create(req.body, userId);
     res.status(201).json(survey);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create survey' });
+    res.status(500).json({ error: `Failed to create survey: ${error}` });
   }
 };
 

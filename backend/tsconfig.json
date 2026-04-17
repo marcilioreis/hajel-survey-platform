@@ -19,9 +19,5 @@
   ],
   "exclude": [
     "node_modules"
-  ],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  }
+  ]
 }
