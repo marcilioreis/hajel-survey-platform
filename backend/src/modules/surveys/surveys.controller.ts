@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as surveyService from './surveys.service.js';
+import { hasPermission } from '../../shared/middleware/rbac.js';
 
 // Helper para obter o id de forma segura
 const getNumericId = (param: string | string[]): number => {
@@ -13,30 +14,141 @@ export const createSurvey = async (req: Request, res: Response) => {
     const survey = await surveyService.create(req.body, userId);
     res.status(201).json(survey);
   } catch (error) {
-    res.status(500).json({ error: `Failed to create survey: ${error}` });
+    console.error('Create survey error:', error);
+    res.status(500).json({ error: 'Failed to create survey' });
   }
 };
 
-export const listSurveys = async (req: Request, res: Response) => {
+// Qualquer usuario autenticado pode listar as pesquisas.
+export const listSurveysByUserId = async (req: Request, res: Response) => {
   const surveys = await surveyService.findAll(req.user!.id);
   res.json(surveys);
 };
+export const listSurveys = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
 
-export const getSurvey = async (req: Request, res: Response) => {
+    // 1. Verifica se o usuário pode ver todas as pesquisas
+    const canViewAny = await hasPermission(userId, 'survey:view_any');
+    if (canViewAny) {
+      const allSurveys = await surveyService.findAllSurveys();
+      return res.json(allSurveys);
+    }
+
+    // 2. Verifica se pode ver as próprias pesquisas
+    const canViewOwn = await hasPermission(userId, 'survey:view');
+    if (canViewOwn) {
+      const ownSurveys = await surveyService.findAll(userId);
+      return res.json(ownSurveys);
+    }
+
+    // 3. Se não tem nenhuma permissão, retorna apenas pesquisas públicas (se aplicável)
+    const publicSurveys = await surveyService.findPublicSurveys();
+    return res.json(publicSurveys);
+  } catch (error) {
+    console.error('List surveys error:', error);
+    res.status(500).json({ error: 'Failed to list surveys' });
+  }
+};
+
+// Qualquer usuário autenticado pode visualizar uma pesquisa específica.
+export const getSurveyById = async (req: Request, res: Response) => {
   const id = getNumericId(req.params.id);
   const survey = await surveyService.findById(id, req.user!.id);
   if (!survey) return res.status(404).json({ error: 'Survey not found' });
   res.json(survey);
 };
+export const getSurvey = async (req: Request, res: Response) => {
+  try {
+    const surveyId = getNumericId(req.params.id);
+    const userId = req.user!.id;
 
-export const updateSurvey = async (req: Request, res: Response) => {
+    // Verifica permissão de visualizar qualquer pesquisa
+    const canViewAny = await hasPermission(userId, 'survey:view_any');
+    if (canViewAny) {
+      const survey = await surveyService.findById(surveyId);
+      if (!survey) return res.status(404).json({ error: 'Survey not found' });
+      return res.json(survey);
+    }
+
+    // Verifica permissão de visualizar próprias pesquisas
+    const canViewOwn = await hasPermission(userId, 'survey:view');
+    if (canViewOwn) {
+      const survey = await surveyService.findById(surveyId, userId);
+      if (!survey) return res.status(404).json({ error: 'Survey not found' });
+      return res.json(survey);
+    }
+
+    // Se não tem permissões especiais, verifica se a pesquisa é pública
+    const survey = await surveyService.findByIdWithAccess(surveyId);
+    if (!survey) {
+      return res.status(404).json({ error: 'Survey not found or access denied' });
+    }
+    return res.json(survey);
+  } catch (error) {
+    console.error('Get survey error:', error);
+    res.status(500).json({ error: 'Failed to get survey' });
+  }
+};
+
+// Qualquer usuário autenticado pode atualizar ou excluir uma pesquisa.
+export const updateSurveyById = async (req: Request, res: Response) => {
   const id = getNumericId(req.params.id);
   const survey = await surveyService.update(id, req.body, req.user!.id);
   res.json(survey);
 };
+export const updateSurvey = async (req: Request, res: Response) => {
+  try {
+    const surveyId = getNumericId(req.params.id);
+    const userId = req.user!.id;
 
-export const deleteSurvey = async (req: Request, res: Response) => {
+    // Verifica se pode editar qualquer pesquisa
+    const canEditAny = await hasPermission(userId, 'survey:edit_any');
+    if (canEditAny) {
+      const survey = await surveyService.update(surveyId, req.body, userId);
+      return res.json(survey);
+    }
+
+    // Verifica se pode editar apenas as próprias
+    const canEditOwn = await hasPermission(userId, 'survey:edit');
+    if (canEditOwn) {
+      const survey = await surveyService.update(surveyId, req.body, userId);
+      return res.json(survey);
+    }
+
+    return res.status(403).json({ error: 'Forbidden' });
+  } catch (error) {
+    console.error('Update survey error:', error);
+    res.status(500).json({ error: 'Failed to update survey' });
+  }
+};
+
+// Qualquer usuário autenticado pode atualizar ou excluir uma pesquisa.
+export const deleteSurveyById = async (req: Request, res: Response) => {
   const id = getNumericId(req.params.id);
   await surveyService.remove(id, req.user!.id);
   res.status(204).send();
+};
+export const deleteSurvey = async (req: Request, res: Response) => {
+  try {
+    const surveyId = getNumericId(req.params.id);
+    const userId = req.user!.id;
+
+    const canDeleteAny = await hasPermission(userId, 'survey:delete_any');
+    if (canDeleteAny) {
+      await surveyService.remove(surveyId, userId);
+      return res.status(204).send();
+    }
+
+    const canDeleteOwn = await hasPermission(userId, 'survey:delete');
+    if (canDeleteOwn) {
+      await surveyService.remove(surveyId, userId);
+      return res.status(204).send();
+    }
+
+    return res.status(403).json({ error: 'Forbidden' });
+  } catch (error) {
+    console.error('Delete survey error:', error);
+    res.status(500).json({ error: 'Failed to delete survey' });
+  }
 };

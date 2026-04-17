@@ -29,6 +29,22 @@ export const findAll = async (userId: string) => {
     .where(eq(surveys.createdBy, userId))
     .orderBy(desc(surveys.createdAt));
 };
+/**
+ * Lista pesquisas públicas (ativas e marcadas como public).
+ */
+export const findPublicSurveys = async () => {
+  return db
+    .select()
+    .from(surveys)
+    .where(and(eq(surveys.active, true), eq(surveys.public, true)))
+    .orderBy(desc(surveys.createdAt));
+};
+/**
+ * Lista todas as pesquisas do sistema (uso exclusivo para administradores).
+ */
+export const findAllSurveys = async () => {
+  return db.select().from(surveys).orderBy(desc(surveys.createdAt));
+};
 
 export const findById = async (id: number, userId?: string) => {
   const where = userId
@@ -36,6 +52,26 @@ export const findById = async (id: number, userId?: string) => {
     : eq(surveys.id, id);
   const [survey] = await db.select().from(surveys).where(where);
   return survey;
+};
+
+/**
+ * Busca uma pesquisa pelo ID, com verificação opcional de permissão de dono.
+ */
+export const findByIdWithAccess = async (surveyId: number, userId?: string) => {
+  const [survey] = await db.select().from(surveys).where(eq(surveys.id, surveyId));
+  if (!survey) return null;
+
+  // Se a pesquisa é pública e ativa, qualquer um pode ver (mesmo sem userId)
+  if (survey.public && survey.active) {
+    return survey;
+  }
+
+  // Caso contrário, apenas o dono ou admin (verificação será feita no controller)
+  if (userId && survey.createdBy === userId) {
+    return survey;
+  }
+
+  return null; // Acesso negado
 };
 
 export const update = async (id: number, data: Partial<InsertSurvey>, userId: string) => {

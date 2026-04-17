@@ -1,5 +1,5 @@
 // src/types/express.d.ts
-import { User, Session } from '../shared/auth/auth';
+import { User, Session } from 'better-auth';
 
 declare global {
   namespace Express {

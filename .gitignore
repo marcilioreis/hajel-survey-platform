@@ -33,6 +33,9 @@ tmp/
 # ================================
 # Arquivos de teste/curl (cookies, etc.)
 # ================================
+cookies_admin.txt
+cookies_pesq.txt
+cookies_view.txt
 cookies.txt
 *.cookies
 

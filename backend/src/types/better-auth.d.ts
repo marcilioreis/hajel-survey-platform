@@ -1,8 +1,9 @@
 // src/types/better-auth.d.ts
-import { BetterAuthOptions } from 'better-auth';
+import 'better-auth';
 
 declare module 'better-auth' {
   interface User {
     role?: string | null;
+    id: string; // <-- garante que id é reconhecido
   }
 }
