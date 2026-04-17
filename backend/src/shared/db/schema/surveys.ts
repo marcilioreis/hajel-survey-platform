@@ -1,12 +1,12 @@
 import { pgTable, serial, varchar, text, integer, boolean, date, jsonb, timestamp } from 'drizzle-orm/pg-core';
-import { user } from './auth';
+import { user } from './auth.js';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 export const surveys = pgTable('surveys', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),
   description: text('description'),
-  createdBy: integer('created_by').references(() => user.id).notNull(),
+  createdBy: text('created_by').references(() => user.id).notNull(), // mudado para text por compatibilidade com user.id
   public: boolean('public').default(false),
   slug: varchar('slug', { length: 100 }).unique(),
   startDate: date('start_date'),
@@ -18,7 +18,7 @@ export const surveys = pgTable('surveys', {
 
 export const questions = pgTable('questions', {
   id: serial('id').primaryKey(),
-  surveyId: integer('survey_id').references(() => surveys.id).notNull(),
+  surveyId: integer('survey_id').references(() => surveys.id, { onDelete: 'cascade' }).notNull(),
   text: text('text').notNull(),
   type: varchar('type', { length: 30 }).notNull(),
   required: boolean('required').default(true),
@@ -29,7 +29,7 @@ export const questions = pgTable('questions', {
 
 export const locations = pgTable('locations', {
   id: serial('id').primaryKey(),
-  surveyId: integer('survey_id').references(() => surveys.id).notNull(),
+  surveyId: integer('survey_id').references(() => surveys.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
   order: integer('order'),
 });

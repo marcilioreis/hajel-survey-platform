@@ -1,9 +1,10 @@
 import { eq, and, desc } from 'drizzle-orm';
-import { db } from '../../shared/db';
-import { surveys, questions, locations } from '../../shared/db/schema/surveys';
-import type { InsertSurvey, InsertQuestion, InsertLocation } from '../../shared/db/schema/surveys';
+import { db } from '../../shared/db/index.js';
+import { surveys, questions, locations } from '../../shared/db/schema/surveys.js';
+import type { InsertSurvey, InsertQuestion, InsertLocation } from '../../shared/db/schema/surveys.js';
 
-export const create = async (data: Omit<InsertSurvey, 'createdBy' | 'createdAt'>, userId: number) => {
+// userId é string porque user.id (Better Auth) é texto/UUID
+export const create = async (data: Omit<InsertSurvey, 'createdBy' | 'createdAt'>, userId: string) => {
   const [survey] = await db.insert(surveys).values({
     ...data,
     createdBy: userId,
@@ -11,17 +12,17 @@ export const create = async (data: Omit<InsertSurvey, 'createdBy' | 'createdAt'>
   return survey;
 };
 
-export const findAll = async (userId: number) => {
+export const findAll = async (userId: string) => {
   return db.select().from(surveys).where(eq(surveys.createdBy, userId)).orderBy(desc(surveys.createdAt));
 };
 
-export const findById = async (id: number, userId?: number) => {
+export const findById = async (id: number, userId?: string) => {
   const where = userId ? and(eq(surveys.id, id), eq(surveys.createdBy, userId)) : eq(surveys.id, id);
   const [survey] = await db.select().from(surveys).where(where);
   return survey;
 };
 
-export const update = async (id: number, data: Partial<InsertSurvey>, userId: number) => {
+export const update = async (id: number, data: Partial<InsertSurvey>, userId: string) => {
   const [survey] = await db.update(surveys)
     .set(data)
     .where(and(eq(surveys.id, id), eq(surveys.createdBy, userId)))
@@ -29,7 +30,7 @@ export const update = async (id: number, data: Partial<InsertSurvey>, userId: nu
   return survey;
 };
 
-export const remove = async (id: number, userId: number) => {
+export const remove = async (id: number, userId: string) => {
   const [deleted] = await db.delete(surveys)
     .where(and(eq(surveys.id, id), eq(surveys.createdBy, userId)))
     .returning();

@@ -1,6 +1,6 @@
 // src/shared/auth/middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import { auth } from './auth';
+import { auth } from './auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
@@ -14,6 +14,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     req.user = session.user;
     // req.session = session.session;
     req.session = session; // Armazena a sessão completa para uso futuro, se necessário
+
+    console.log('req.user :>> ', req.user);
     next();
   } catch (error) {
     console.error('Authentication error:', error);

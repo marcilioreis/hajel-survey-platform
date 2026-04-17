@@ -1,11 +1,11 @@
 import { pgTable, serial, varchar, text, integer, boolean, date, jsonb, timestamp } from 'drizzle-orm/pg-core';
-import { users } from '../../shared/db/schema/auth';
+import { user } from '../../shared/db/schema/auth.js';
 
 export const surveys = pgTable('surveys', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),
   description: text('description'),
-  createdBy: integer('created_by').references(() => users.id).notNull(),
+  createdBy: integer('created_by').references(() => user.id).notNull(),
   public: boolean('public').default(false),
   slug: varchar('slug', { length: 100 }).unique(),
   startDate: date('start_date'),

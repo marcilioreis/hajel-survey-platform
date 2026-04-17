@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authenticate } from '../../shared/middleware/auth';
-import { authorize } from '../../shared/middleware/rbac';
-import * as controller from './surveys.controller';
+import { authenticate } from '../../shared/auth/middleware.js';
+import { authorize } from '../../shared/middleware/rbac.js';
+import * as controller from './surveys.controller.js';
 
 const router = Router();
 
