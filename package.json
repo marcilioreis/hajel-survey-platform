@@ -1,0 +1,22 @@
+{
+  "name": "hajel-survey-platform",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky",
+    "lint:all": "npm run --prefix backend lint && npm run --prefix frontend lint",
+    "format:all": "npm run --prefix backend format && npm run --prefix frontend format"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0"
+  }
+}
