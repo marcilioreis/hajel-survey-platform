@@ -15,7 +15,7 @@ export const createSurvey = async (req: Request, res: Response) => {
     res.status(201).json(survey);
   } catch (error) {
     console.error('Create survey error:', error);
-    res.status(500).json({ error: 'Failed to create survey' });
+    res.status(500).json({ error: 'Falha ao criar pesquisa' });
   }
 };
 
@@ -47,7 +47,7 @@ export const listSurveys = async (req: Request, res: Response) => {
     return res.json(publicSurveys);
   } catch (error) {
     console.error('List surveys error:', error);
-    res.status(500).json({ error: 'Failed to list surveys' });
+    res.status(500).json({ error: 'Falha ao listar pesquisas' });
   }
 };
 
@@ -67,7 +67,7 @@ export const getSurvey = async (req: Request, res: Response) => {
     const canViewAny = await hasPermission(userId, 'survey:view_any');
     if (canViewAny) {
       const survey = await surveyService.findById(surveyId);
-      if (!survey) return res.status(404).json({ error: 'Survey not found' });
+      if (!survey) return res.status(404).json({ error: 'Pesquisa não encontrada' });
       return res.json(survey);
     }
 
@@ -75,19 +75,19 @@ export const getSurvey = async (req: Request, res: Response) => {
     const canViewOwn = await hasPermission(userId, 'survey:view');
     if (canViewOwn) {
       const survey = await surveyService.findById(surveyId, userId);
-      if (!survey) return res.status(404).json({ error: 'Survey not found' });
+      if (!survey) return res.status(404).json({ error: 'Pesquisa não encontrada' });
       return res.json(survey);
     }
 
     // Se não tem permissões especiais, verifica se a pesquisa é pública
     const survey = await surveyService.findByIdWithAccess(surveyId);
     if (!survey) {
-      return res.status(404).json({ error: 'Survey not found or access denied' });
+      return res.status(404).json({ error: 'Pesquisa não encontrada ou acesso negado' });
     }
     return res.json(survey);
   } catch (error) {
     console.error('Get survey error:', error);
-    res.status(500).json({ error: 'Failed to get survey' });
+    res.status(500).json({ error: 'Falha ao obter pesquisa' });
   }
 };
 
@@ -116,10 +116,10 @@ export const updateSurvey = async (req: Request, res: Response) => {
       return res.json(survey);
     }
 
-    return res.status(403).json({ error: 'Forbidden' });
+    return res.status(403).json({ error: 'Acesso negado' });
   } catch (error) {
     console.error('Update survey error:', error);
-    res.status(500).json({ error: 'Failed to update survey' });
+    res.status(500).json({ error: 'Falha ao atualizar pesquisa' });
   }
 };
 
@@ -134,21 +134,23 @@ export const deleteSurvey = async (req: Request, res: Response) => {
     const surveyId = getNumericId(req.params.id);
     const userId = req.user!.id;
 
+    // Verifica se pode deletar qualquer pesquisa
     const canDeleteAny = await hasPermission(userId, 'survey:delete_any');
     if (canDeleteAny) {
       await surveyService.remove(surveyId, userId);
       return res.status(204).send();
     }
 
+    // Verifica se pode deletar apenas as próprias
     const canDeleteOwn = await hasPermission(userId, 'survey:delete');
     if (canDeleteOwn) {
       await surveyService.remove(surveyId, userId);
       return res.status(204).send();
     }
 
-    return res.status(403).json({ error: 'Forbidden' });
+    return res.status(403).json({ error: 'Acesso negado' });
   } catch (error) {
     console.error('Delete survey error:', error);
-    res.status(500).json({ error: 'Failed to delete survey' });
+    res.status(500).json({ error: 'Falha ao excluir pesquisa' });
   }
 };

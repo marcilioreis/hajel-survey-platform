@@ -3,6 +3,8 @@ import { Router } from 'express';
 import { authenticate } from '../../shared/auth/middleware.js';
 import { authorize } from '../../shared/middleware/rbac.js';
 import * as controller from './surveys.controller.js';
+import questionRoutes from './questions.routes.js';
+import locationRoutes from './locations.routes.js';
 
 const router = Router();
 
@@ -29,5 +31,9 @@ router.delete(
   authorize({ any: ['survey:delete', 'survey:delete_any'] }),
   controller.deleteSurvey
 );
+
+// Rotas aninhadas
+router.use('/:surveyId/questions', questionRoutes);
+router.use('/:surveyId/locations', locationRoutes);
 
 export default router;

@@ -12,8 +12,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       return res.status(401).json({ error: 'Unauthorized' });
     }
     req.user = session.user;
-    // req.session = session.session;
-    req.session = session; // Armazena a sessão completa para uso futuro, se necessário
+    req.session = session.session; // Armazena a sessão completa para uso futuro, se necessário
 
     // eslint-disable-next-line no-console
     console.log('req.user :>> ', req.user);

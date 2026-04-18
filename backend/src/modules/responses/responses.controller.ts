@@ -1,0 +1,149 @@
+// src/modules/responses/responses.controller.ts
+import { Request, Response } from 'express';
+import * as surveyService from '../surveys/surveys.service.js';
+import * as responseService from './responses.service.js';
+
+// Helper para extrair string de parâmetro
+const getStringParam = (param: string | string[]): string => {
+  return Array.isArray(param) ? param[0] : param;
+};
+
+// ========== PESQUISA PÚBLICA ==========
+
+export const getPublicSurvey = async (req: Request, res: Response) => {
+  try {
+    const slug = getStringParam(req.params.slug);
+    const survey = await surveyService.getPublicSurveyBySlug(slug);
+    if (!survey) {
+      return res.status(404).json({ error: 'Pesquisa não encontrada ou inativa' });
+    }
+    res.json(survey);
+  } catch (error) {
+    console.error('Get public survey error:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// ========== INICIAR SESSÃO ==========
+
+export const startSession = async (req: Request, res: Response) => {
+  try {
+    const slug = getStringParam(req.params.slug);
+    const survey = await surveyService.getPublicSurveyBySlug(slug);
+    if (!survey) {
+      return res.status(404).json({ error: 'Pesquisa não encontrada ou inativa' });
+    }
+
+    const ip = req.ip;
+    const userAgent = req.headers['user-agent'];
+    const session = await responseService.startSession(survey.id, ip, userAgent);
+
+    res.status(201).json({
+      token: session.token,
+      expiresIn: 24 * 60 * 60, // 24 horas em segundos
+    });
+  } catch (error) {
+    console.error('Start session error:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// ========== ENVIAR RESPOSTAS ==========
+
+export const submitAnswer = async (req: Request, res: Response) => {
+  try {
+    const token = getStringParam(req.params.token);
+    const { questionId, value } = req.body;
+
+    const session = await responseService.getSessionByToken(token);
+    if (!session) {
+      return res.status(404).json({ error: 'Sessão não encontrada ou expirada' });
+    }
+    if (session.status !== 'em_andamento') {
+      return res.status(400).json({ error: 'Sessão já finalizada ou abandonada' });
+    }
+
+    // Busca a pergunta validando que pertence à pesquisa da sessão (via serviço)
+    const question = await responseService.getQuestionForSession(session.id, questionId);
+    if (!question) {
+      return res.status(400).json({ error: 'Pergunta inválida para esta pesquisa' });
+    }
+
+    // Valida a resposta
+    if (!responseService.validateAnswer(question.type, value, question.options)) {
+      return res.status(400).json({ error: 'Formato de resposta inválido' });
+    }
+
+    const answer = await responseService.saveAnswer(session.id, questionId, value);
+    await responseService.touchSession(session.id);
+
+    res.json({ success: true, answer });
+  } catch (error) {
+    console.error('Submit answer error:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// ========== FINALIZAR SESSÃO ==========
+
+export const completeSession = async (req: Request, res: Response) => {
+  try {
+    const token = getStringParam(req.params.token);
+    const respondentData = req.body;
+
+    const session = await responseService.getSessionByToken(token);
+    if (!session) {
+      return res.status(404).json({ error: 'Sessão não encontrada ou expirada' });
+    }
+    if (session.status !== 'em_andamento') {
+      return res.status(400).json({ error: 'Sessão já finalizada ou abandonada' });
+    }
+
+    // Validação básica dos campos obrigatórios
+    const requiredFields = [
+      'ageRange',
+      'gender',
+      'incomeRange',
+      'education',
+      'occupation',
+      'locationId',
+    ];
+    for (const field of requiredFields) {
+      if (respondentData[field] === undefined) {
+        return res.status(400).json({ error: `Campo obrigatório ausente: ${field}` });
+      }
+    }
+
+    const respondent = await responseService.completeSession(session.id, respondentData);
+    res.json({
+      success: true,
+      message: 'Pesquisa concluída. Obrigado!',
+      respondentId: respondent.id,
+    });
+  } catch (error) {
+    console.error('Complete session error:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// ========== PROGRESSO ==========
+
+export const getProgress = async (req: Request, res: Response) => {
+  try {
+    const token = getStringParam(req.params.token);
+    const session = await responseService.getSessionByToken(token);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found or expired' });
+    }
+
+    const answers = await responseService.getAnswersBySession(session.id);
+    res.json({
+      status: session.status,
+      answers: answers.map((a) => ({ questionId: a.questionId, value: a.value })),
+      lastActivity: session.lastActivityAt,
+    });
+  } catch (error) {
+    console.error('Get progress error:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};

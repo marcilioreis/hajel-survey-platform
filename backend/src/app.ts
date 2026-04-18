@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import surveyRoutes from './modules/surveys/surveys.routes.js';
+import publicRoutes from './modules/responses/public.routes.js';
 
 import { auth } from './shared/auth/auth.js';
 import { toNodeHandler } from 'better-auth/node';
@@ -39,6 +40,7 @@ try {
 
   // Outras rotas da sua aplicação (ex: surveys)
   app.use('/api/surveys', surveyRoutes);
+  app.use('/', publicRoutes); // rotas públicas sem prefixo /api
 
   app.listen(port, () => {
     // eslint-disable-next-line no-console

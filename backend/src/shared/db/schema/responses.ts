@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { surveys, questions, locations } from './surveys.js';
 import { user } from './auth.js';
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 export const responseSessions = pgTable('response_sessions', {
   id: serial('id').primaryKey(),
@@ -18,7 +19,7 @@ export const responseSessions = pgTable('response_sessions', {
     .references(() => surveys.id, { onDelete: 'cascade' })
     .notNull(),
   token: varchar('token', { length: 64 }).unique().notNull(),
-  userId: text('user_id').references(() => user.id, { onDelete: 'set null' }), // alterado para text
+  userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
   ip: inet('ip'),
   userAgent: text('user_agent'),
   startedAt: timestamp('started_at').defaultNow(),
@@ -54,3 +55,11 @@ export const answers = pgTable('answers', {
   value: jsonb('value').notNull(),
   answeredAt: timestamp('answered_at').defaultNow(),
 });
+
+// Tipos inferidos para inserção e seleção
+export type ResponseSession = InferSelectModel<typeof responseSessions>;
+export type InsertResponseSession = InferInsertModel<typeof responseSessions>;
+export type Respondent = InferSelectModel<typeof respondents>;
+export type InsertRespondent = InferInsertModel<typeof respondents>;
+export type Answer = InferSelectModel<typeof answers>;
+export type InsertAnswer = InferInsertModel<typeof answers>;
