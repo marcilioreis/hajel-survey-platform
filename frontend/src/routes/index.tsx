@@ -1,32 +1,40 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Layout from "../components/layout/Layout";
+import ProtectedRoute from "../features/auth/ProtectedRoute";
+import Login from "../features/auth/Login";
+import Register from "../features/auth/Register";
 
-// Placeholders temporários (serão substituídos nas fases seguintes)
+// Placeholders temporários
 const Dashboard = () => <div>Dashboard (protegido)</div>;
-const Login = () => <div>Login Page</div>;
-const Register = () => <div>Register Page</div>;
+const Reports = () => <div>Relatórios (protegido)</div>;
+const Profile = () => <div>Perfil (protegido)</div>;
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />, // O Layout envolve as rotas filhas
+    element: <ProtectedRoute />, // Protege todo o grupo
     children: [
       {
-        index: true,
-        element: <Navigate to="/dashboard" replace />, // Redireciona raiz para dashboard
-      },
-      {
-        path: "dashboard",
-        element: <Dashboard />,
-      },
-      {
-        path: "reports",
-        element: <div>Relatórios (protegido)</div>,
-      },
-      {
-        path: "profile",
-        element: <div>Perfil (protegido)</div>,
+        element: <Layout />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/dashboard" replace />,
+          },
+          {
+            path: "dashboard",
+            element: <Dashboard />,
+          },
+          {
+            path: "reports",
+            element: <Reports />,
+          },
+          {
+            path: "profile",
+            element: <Profile />,
+          },
+        ],
       },
     ],
   },
