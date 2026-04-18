@@ -18,5 +18,11 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
+    "better-auth": "^1.6.5",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.14.1"
   }
 }

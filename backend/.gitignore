@@ -1,2 +1,4 @@
 # Diretório do Drizzle Kit (migrações e metadados gerados)
 drizzle/
+resultados.csv
+exports/

@@ -5,6 +5,8 @@ import { authorize } from '../../shared/middleware/rbac.js';
 import * as controller from './surveys.controller.js';
 import questionRoutes from './questions.routes.js';
 import locationRoutes from './locations.routes.js';
+import * as resultsController from './results.controller.js';
+import * as reportsController from './reports.controller.js';
 
 const router = Router();
 
@@ -35,5 +37,13 @@ router.delete(
 // Rotas aninhadas
 router.use('/:surveyId/questions', questionRoutes);
 router.use('/:surveyId/locations', locationRoutes);
+
+// Resultados agregados
+router.get('/:surveyId/results', authenticate, resultsController.getSurveyResults);
+
+// Exportações
+router.post('/:surveyId/exports', authenticate, reportsController.requestExport);
+router.get('/exports/:exportId/status', authenticate, reportsController.getExportStatus);
+router.get('/exports/:exportId/download', authenticate, reportsController.downloadExport);
 
 export default router;

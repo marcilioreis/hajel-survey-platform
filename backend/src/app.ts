@@ -41,11 +41,6 @@ try {
   // Outras rotas da sua aplicação (ex: surveys)
   app.use('/api/surveys', surveyRoutes);
   app.use('/', publicRoutes); // rotas públicas sem prefixo /api
-
-  app.listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`🚀 Servidor rodando em http://localhost:${port}`);
-  });
 } catch (error) {
   console.error('Erro ao iniciar servidor:', error);
 }
