@@ -15,8 +15,7 @@
   },
   "include": [
     "src/**/*",
-    "drizzle.config.ts",
-    "test-export-data.ts"
+    "drizzle.config.ts"
   ],
   "exclude": [
     "node_modules"
