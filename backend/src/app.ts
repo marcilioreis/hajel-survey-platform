@@ -11,9 +11,53 @@ import { auth } from './shared/auth/auth.js';
 import { toNodeHandler } from 'better-auth/node';
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 try {
+  // Configura o replacer global para respostas JSON
+  app.set('json replacer', (key: string, value: any) => {
+    if (key.toLowerCase().includes('date') && typeof value === 'string') {
+      const date = new Date(value);
+      console.log('key and date:>> ', key, date);
+      // Converte qualquer instância de Date para string ISO
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    } else if (value instanceof Date) {
+      return value.toISOString();
+    }
+    return value;
+  });
+
+  // Configura o replacer para res.json() especificamente
+  app.response.json = function (data: any) {
+    const replacer = this.app.get('json replacer');
+    const jsonString = JSON.stringify(data, replacer);
+    this.set('Content-Type', 'application/json');
+    return this.send(jsonString);
+  };
+
+  // Middleware para converter Date em ISO string em todo o corpo da resposta
+  app.use((req, res, next) => {
+    const originalJson = res.json;
+    res.json = function (data: any) {
+      const replacer = this.app.get('json replacer');
+      const jsonString = JSON.stringify(data, replacer);
+      this.set('Content-Type', 'application/json');
+      return this.send(jsonString);
+    };
+    next();
+  });
+
+  // Exemplo de uso do replacer global
+  app.get('/test', (req, res) => {
+    res.json({
+      message: 'Teste de data',
+      now: new Date(),
+      startDate: new Date('2024-01-01T00:00:00Z'),
+      endDate: new Date('2024-12-31T23:59:59Z'),
+    });
+  });
+
   // Middlewares globais
   app.use(helmet());
   app.use(compression());

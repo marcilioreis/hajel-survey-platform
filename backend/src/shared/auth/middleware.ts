@@ -14,8 +14,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     req.user = session.user;
     req.session = session.session; // Armazena a sessão completa para uso futuro, se necessário
 
-    // eslint-disable-next-line no-console
-    console.log('req.user :>> ', req.user);
+    // // eslint-disable-next-line no-console
+    // console.log('req.user :>> ', req.user);
     next();
   } catch (error) {
     console.error('Authentication error:', error);

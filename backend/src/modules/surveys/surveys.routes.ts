@@ -14,7 +14,8 @@ const router = Router();
 router.post('/', authenticate, authorize('survey:create'), controller.createSurvey);
 
 // Listar pesquisas do usuário: requer survey:view ou survey:view_any
-router.get('/', authenticate, controller.listSurveys); // a lógica de permissão está dentro do controller
+// router.get('/', authenticate, controller.listSurveys); // a lógica de permissão está dentro do controller
+router.get('/', authenticate, controller.listSurveysEnriched); // a lógica de permissão está dentro do controller
 
 // Visualizar uma pesquisa específica: pode ser própria (survey:view) ou qualquer (survey:view_any)
 router.get('/:id', authenticate, controller.getSurvey); // a lógica de permissão está dentro do controller

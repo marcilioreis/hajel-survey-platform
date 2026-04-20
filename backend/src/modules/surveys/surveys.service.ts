@@ -1,6 +1,7 @@
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '../../shared/db/index.js';
 import { surveys, questions, locations } from '../../shared/db/schema/surveys.js';
+import type { SurveyEnriched } from '../../shared/db/schema/views.types.js';
 import type {
   InsertSurvey,
   InsertQuestion,
@@ -11,14 +12,28 @@ import type {
 
 // userId é string porque user.id (Better Auth) é texto/UUID
 export const create = async (
-  data: Omit<InsertSurvey, 'createdBy' | 'createdAt'>,
+  data: Omit<InsertSurvey, 'createdBy' | 'createdAt' | 'startDate'>,
   userId: string
 ) => {
+  // Define startDate como agora + 2 horas
+  const startDate = new Date(Date.now() + 2 * 60 * 60 * 1000);
+
+  // Valida endDate
+  if (!data.endDate) {
+    throw new Error('endDate is required');
+  }
+  const endDate = new Date(data.endDate);
+  if (endDate <= startDate) {
+    throw new Error('endDate must be after startDate');
+  }
+
   const [survey] = await db
     .insert(surveys)
     .values({
       ...data,
       createdBy: userId,
+      startDate,
+      endDate: endDate,
     })
     .returning();
   return survey;
@@ -48,6 +63,34 @@ export const findAllSurveys = async () => {
   return db.select().from(surveys).orderBy(desc(surveys.createdAt));
 };
 
+export const findAllEnriched = async (userId: string) => {
+  const rows = await db.execute(sql`
+    SELECT * FROM surveys_enriched
+    WHERE created_by = ${userId}       
+    ORDER BY created_at DESC
+  `);
+  return rows as unknown as SurveyEnriched[];
+};
+
+// Se quiser filtrar por usuário (pesquisas próprias + públicas)
+export const findPublicSurveysEnriched = async (userId: string): Promise<SurveyEnriched[]> => {
+  // Pesquisador: vê suas próprias + pesquisas públicas ativas
+  const rows = await db.execute(sql`
+    SELECT * FROM surveys_enriched
+    WHERE created_by = ${userId}
+       OR (public = true AND status = 'ativa')
+    ORDER BY created_at DESC
+  `);
+  return rows as unknown as SurveyEnriched[];
+};
+
+export const findAllSurveysEnriched = async (): Promise<SurveyEnriched[]> => {
+  const rows = await db.execute(sql`
+    SELECT * FROM surveys_enriched ORDER BY created_at DESC
+  `);
+  return rows as unknown as SurveyEnriched[];
+};
+
 export const findById = async (id: number, userId?: string) => {
   const where = userId
     ? and(eq(surveys.id, id), eq(surveys.createdBy, userId))
@@ -56,24 +99,35 @@ export const findById = async (id: number, userId?: string) => {
   return survey;
 };
 
+// Retorna dados enriquecidos da view
+export const findByIdEnriched = async (surveyId: number): Promise<SurveyEnriched | null> => {
+  const rows = await db.execute(sql`
+    SELECT * FROM surveys_enriched WHERE id = ${surveyId}
+  `);
+  const results = rows as unknown as SurveyEnriched[];
+  return results.length > 0 ? results[0] : null;
+};
+
 /**
  * Busca uma pesquisa pelo ID, com verificação opcional de permissão de dono.
  */
-export const findByIdWithAccess = async (surveyId: number, userId?: string) => {
-  const [survey] = await db.select().from(surveys).where(eq(surveys.id, surveyId));
+export const findByIdWithAccess = async (
+  surveyId: number,
+  userId?: string
+): Promise<SurveyEnriched | null> => {
+  const rows = await db.execute(sql`
+    SELECT * FROM surveys_enriched WHERE id = ${surveyId}
+  `);
+  const results = rows as unknown as SurveyEnriched[];
+  const survey = results[0];
   if (!survey) return null;
 
-  // Se a pesquisa é pública e ativa, qualquer um pode ver (mesmo sem userId)
-  if (survey.public && survey.active) {
-    return survey;
-  }
+  // Verifica acesso
+  const isOwner = userId && survey.createdBy === userId;
+  const isPublicActive = survey.public && survey.status === 'ativa';
+  if (!isOwner && !isPublicActive) return null;
 
-  // Caso contrário, apenas o dono ou admin (verificação será feita no controller)
-  if (userId && survey.createdBy === userId) {
-    return survey;
-  }
-
-  return null; // Acesso negado
+  return survey;
 };
 
 export const update = async (id: number, data: Partial<InsertSurvey>, userId: string) => {
@@ -109,7 +163,7 @@ export const addQuestion = async (
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Survey not found');
+  if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
 
   const [question] = await db
@@ -144,7 +198,7 @@ export const updateQuestion = async (
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Survey not found');
+  if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
 
   const [question] = await db
@@ -163,7 +217,7 @@ export const deleteQuestion = async (surveyId: number, questionId: number, userI
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Survey not found');
+  if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
 
   const [deleted] = await db
@@ -212,7 +266,7 @@ export const updateLocation = async (
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Survey not found');
+  if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
 
   const [location] = await db
@@ -228,7 +282,7 @@ export const deleteLocation = async (surveyId: number, locationId: number, userI
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Survey not found');
+  if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
 
   const [deleted] = await db

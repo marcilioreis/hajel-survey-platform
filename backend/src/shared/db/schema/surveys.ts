@@ -5,7 +5,6 @@ import {
   text,
   integer,
   boolean,
-  date,
   jsonb,
   timestamp,
 } from 'drizzle-orm/pg-core';
@@ -21,8 +20,8 @@ export const surveys = pgTable('surveys', {
     .notNull(), // mudado para text por compatibilidade com user.id
   public: boolean('public').default(false),
   slug: varchar('slug', { length: 100 }).unique(),
-  startDate: date('start_date'),
-  endDate: date('end_date'),
+  startDate: timestamp('start_date').defaultNow(), // mantém default NOW()
+  endDate: timestamp('end_date').notNull(), // agora obrigatório
   active: boolean('active').default(false),
   customStyle: jsonb('custom_style'),
   createdAt: timestamp('created_at').defaultNow(),
