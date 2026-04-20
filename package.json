@@ -10,7 +10,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
     "lint:all": "npm run --prefix backend lint && npm run --prefix frontend lint",
-    "format:all": "npm run --prefix backend format && npm run --prefix frontend format"
+    "format:all": "npm run --prefix backend format && npm run --prefix frontend format",
+    "dev:docker": "docker-compose --env-file .env up",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
   },
   "keywords": [],
   "author": "",

@@ -33,6 +33,7 @@ tmp/
 # ================================
 # Arquivos de teste/curl (cookies, etc.)
 # ================================
+cookie_marcilio.txt
 cookies_admin.txt
 cookies_pesq.txt
 cookies_view.txt

@@ -3,9 +3,9 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: survey
-      POSTGRES_PASSWORD: surveypass
-      POSTGRES_DB: survey_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
@@ -24,8 +24,13 @@ services:
       - postgres
       - redis
     environment:
-      DATABASE_URL: postgresql://survey:surveypass@postgres:5432/survey_db
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      REDIS_URL: ${REDIS_URL}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      PUBLIC_SURVEY_TOKEN_SECRET: ${PUBLIC_SURVEY_TOKEN_SECRET}
     volumes:
       - ./backend:/app
     command: npm run dev
