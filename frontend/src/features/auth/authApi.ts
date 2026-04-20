@@ -45,7 +45,7 @@ const extractUser = (response: unknown): User | null => {
       email: user.email,
       name: user.name,
       emailVerified: user.emailVerified,
-      createdAt: user.createdAt?.toString(),
+      createdAt: user.createdAt?.toString(), //new Date(user.createdAt).toLocaleDateString();
       updatedAt: user.updatedAt?.toString(),
       image: user.image,
     };

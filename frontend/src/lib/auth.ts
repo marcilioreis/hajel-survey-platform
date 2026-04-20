@@ -42,8 +42,8 @@ interface NormalizedSession {
     email: string;
     name: string;
     emailVerified: boolean;
-    createdAt?: string | Date;
-    updatedAt?: string | Date;
+    createdAt?: string;
+    updatedAt?: string;
     image?: string | null;
   };
   session?: {

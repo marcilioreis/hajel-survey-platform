@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useRegisterMutation } from "./authApi";
 import { useAppDispatch } from "../../app/hooks";
 import { setCredentials } from "./authSlice";
@@ -24,10 +25,11 @@ export default function Register() {
     try {
       const result = await register({ email, password, name }).unwrap();
       dispatch(setCredentials({ user: result.user }));
-      navigate("/dashboard");
+      navigate("/surveys");
     } catch (err) {
       const error = err as { data?: string; message?: string };
       setErrorMsg(error.data || error.message || "Falha no cadastro.");
+      toast.error(error.data || error.message || "Falha no cadastro.");
     }
   };
 
