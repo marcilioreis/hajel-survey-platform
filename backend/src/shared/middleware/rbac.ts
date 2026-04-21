@@ -87,7 +87,7 @@ export function authorize(required: string | string[] | { any?: string[]; all?: 
     // Agora user.id é reconhecido devido à extensão em better-auth.d.ts
     const allowed = await hasPermissions(user.id, requiredCodes, mode);
     if (!allowed) {
-      return res.status(403).json({ error: 'Forbidden' });
+      return res.status(403).json({ error: 'Permission denied' });
     }
 
     next();

@@ -23,6 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/server": "^5.5.0",
+    "@as-integrations/express5": "^1.1.2",
     "@better-auth/drizzle-adapter": "^1.6.5",
     "@graphql-tools/schema": "^10.0.32",
     "better-auth": "^1.6.5",

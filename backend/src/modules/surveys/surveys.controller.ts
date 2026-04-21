@@ -21,11 +21,6 @@ export const createSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// Qualquer usuario autenticado pode listar as pesquisas.
-export const listSurveysByUserId = async (req: Request, res: Response) => {
-  const surveys = await surveyService.findAll(req.user!.id);
-  res.json(surveys);
-};
 export const listSurveys = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -79,21 +74,13 @@ export const listSurveysEnriched = async (req: Request, res: Response) => {
   }
 };
 
-// Qualquer usuário autenticado pode visualizar uma pesquisa específica.
-export const getSurveyById = async (req: Request, res: Response) => {
-  const id = getNumericId(req.params.id);
-  const survey = await surveyService.findById(id, req.user!.id);
-  if (!survey) return res.status(404).json({ error: 'Survey not found' });
-  res.json(survey);
-};
 export const getSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);
-    const userId = req.user?.id; // pode ser undefined se a rota for pública
+    const survey = await surveyService.findByIdEnriched(surveyId);
 
-    const survey = await surveyService.findByIdWithAccess(surveyId, userId);
     if (!survey) {
-      return res.status(404).json({ error: 'Pesquisa não encontrada ou acesso negado' });
+      return res.status(404).json({ error: 'Pesquisa não encontrada' });
     }
 
     res.json(survey);
@@ -103,28 +90,33 @@ export const getSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// Qualquer usuário autenticado pode atualizar ou excluir uma pesquisa.
-export const updateSurveyById = async (req: Request, res: Response) => {
-  const id = getNumericId(req.params.id);
-  const survey = await surveyService.update(id, req.body, req.user!.id);
-  res.json(survey);
-};
 export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);
     const userId = req.user!.id;
+    const { title, description, public: isPublic, active, endDate } = req.body;
+    const updateData: any = {
+      title,
+      description,
+      public: isPublic,
+      active,
+    };
+
+    if (endDate) {
+      updateData.endDate = new Date(endDate); // converte string para Date
+    }
 
     // Verifica se pode editar qualquer pesquisa
     const canEditAny = await hasPermission(userId, 'survey:edit_any');
     if (canEditAny) {
-      const survey = await surveyService.update(surveyId, req.body, userId);
+      const survey = await surveyService.update(surveyId, updateData, userId);
       return res.json(survey);
     }
 
     // Verifica se pode editar apenas as próprias
     const canEditOwn = await hasPermission(userId, 'survey:edit');
     if (canEditOwn) {
-      const survey = await surveyService.update(surveyId, req.body, userId);
+      const survey = await surveyService.update(surveyId, updateData, userId);
       return res.json(survey);
     }
 
@@ -135,12 +127,6 @@ export const updateSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// Qualquer usuário autenticado pode atualizar ou excluir uma pesquisa.
-export const deleteSurveyById = async (req: Request, res: Response) => {
-  const id = getNumericId(req.params.id);
-  await surveyService.remove(id, req.user!.id);
-  res.status(204).send();
-};
 export const deleteSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);

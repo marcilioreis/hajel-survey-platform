@@ -8,6 +8,24 @@ import type {
   InsertLocation,
 } from '../../shared/db/schema/surveys.js';
 
+// Função auxiliar para mapear uma linha da view para o tipo SurveyEnriched
+const mapRowToSurveyEnriched = (row: Record<string, unknown>): SurveyEnriched => ({
+  id: row.id as number,
+  title: row.title as string,
+  description: row.description as string | null,
+  createdBy: row.created_by as string,
+  public: row.public as boolean,
+  slug: row.slug as string | null,
+  startDate: row.start_date ? new Date(row.start_date as string) : null,
+  endDate: new Date(row.end_date as string),
+  active: row.active as boolean,
+  customStyle: row.custom_style,
+  createdAt: new Date(row.created_at as string),
+  questions: row.questions as SurveyEnriched['questions'],
+  responsesCount: Number(row.responses_count),
+  status: row.status as SurveyEnriched['status'],
+});
+
 // ========== PESQUISAS ==========
 
 // userId é string porque user.id (Better Auth) é texto/UUID
@@ -20,11 +38,11 @@ export const create = async (
 
   // Valida endDate
   if (!data.endDate) {
-    throw new Error('endDate is required');
+    throw new Error('endDate é obrigatória');
   }
   const endDate = new Date(data.endDate);
   if (endDate <= startDate) {
-    throw new Error('endDate must be after startDate');
+    throw new Error('endDate precisa ser depois de startDate');
   }
 
   const [survey] = await db
@@ -81,14 +99,14 @@ export const findPublicSurveysEnriched = async (userId: string): Promise<SurveyE
        OR (public = true AND status = 'ativa')
     ORDER BY created_at DESC
   `);
-  return rows as unknown as SurveyEnriched[];
+  return (rows as unknown as Record<string, unknown>[]).map(mapRowToSurveyEnriched);
 };
 
 export const findAllSurveysEnriched = async (): Promise<SurveyEnriched[]> => {
   const rows = await db.execute(sql`
     SELECT * FROM surveys_enriched ORDER BY created_at DESC
   `);
-  return rows as unknown as SurveyEnriched[];
+  return (rows as unknown as Record<string, unknown>[]).map(mapRowToSurveyEnriched);
 };
 
 export const findById = async (id: number, userId?: string) => {
@@ -118,7 +136,7 @@ export const findByIdWithAccess = async (
   const rows = await db.execute(sql`
     SELECT * FROM surveys_enriched WHERE id = ${surveyId}
   `);
-  const results = rows as unknown as SurveyEnriched[];
+  const results = (rows as unknown as Record<string, unknown>[]).map(mapRowToSurveyEnriched);
   const survey = results[0];
   if (!survey) return null;
 
@@ -164,7 +182,7 @@ export const addQuestion = async (
     .from(surveys)
     .where(eq(surveys.id, surveyId));
   if (!survey) throw new Error('Pesquisa não encontrada');
-  if (survey.createdBy !== userId) throw new Error('Forbidden');
+  if (survey.createdBy !== userId) throw new Error('Acesso negado');
 
   const [question] = await db
     .insert(questions)
