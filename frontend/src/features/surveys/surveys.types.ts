@@ -4,14 +4,14 @@ export interface QuestionOption {
   order?: number;
 }
 
+// Tipo Question do frontend (usado no estado do formulário)
 export interface Question {
-  id: number;
+  id?: number; // opcional para novas perguntas
   text: string;
-  type: "unica_escolha" | "multipla_escolha" | "texto"; // ajuste conforme backend: 'unica_escolha' etc.
+  type: "text" | "unica_escolha" | "multipla_escolha"; // frontend usa 'text'
   required: boolean;
-  options: QuestionOption[]; // ← aceita ambos
+  options: QuestionOption[];
   order?: number;
-  conditional_logic?: unknown;
 }
 
 export interface BackendQuestion {
@@ -31,7 +31,7 @@ export interface BackendSurvey {
   created_by: string;
   public: boolean;
   slug: string;
-  start_date: string | null;
+  start_date: string;
   end_date: string | null;
   active: boolean;
   custom_style: unknown | null;
@@ -48,11 +48,11 @@ export interface Survey {
   created_by: string;
   public: boolean;
   slug: string;
-  start_date: string | null;
-  end_date: string | null;
+  startDate: string;
+  endDate: string | null;
   active: boolean;
   custom_style: unknown | null;
-  created_at: string;
+  createdAt: string;
   questions: Question[];
   responses_count: string | number;
   status: string;
@@ -78,4 +78,29 @@ export interface UpdateSurveyRequest {
   title?: string;
   description?: string;
   questions?: CreateQuestionRequest[];
+}
+
+// Payload para criação/atualização da pesquisa
+export interface SurveyPayload {
+  title: string;
+  description?: string | null;
+  public: boolean;
+  active: boolean;
+  slug?: string;
+  endDate: string; // ISO string
+  customStyle?: Record<string, unknown> | null;
+}
+
+// Payload para criação de pergunta (única)
+export interface CreateQuestionPayload {
+  text: string;
+  type: "unica_escolha" | "multipla_escolha" | "texto"; // backend espera 'texto'
+  required: boolean;
+  options: string[];
+  order?: number;
+}
+
+// Payload para atualização de pergunta
+export interface UpdateQuestionPayload extends Partial<CreateQuestionPayload> {
+  _dummy?: never; // apenas para evitar o aviso
 }

@@ -1,9 +1,11 @@
 import { api } from "../../lib/api";
 import type {
   Survey,
-  CreateSurveyRequest,
-  UpdateSurveyRequest,
   BackendSurvey,
+  SurveyPayload,
+  CreateQuestionPayload,
+  BackendQuestion,
+  UpdateQuestionPayload,
 } from "./surveys.types";
 
 export const surveysApi = api.injectEndpoints({
@@ -22,7 +24,7 @@ export const surveysApi = api.injectEndpoints({
       query: (id) => `/surveys/${id}`,
       providesTags: (result, error, id) => [{ type: "Survey", id }],
     }),
-    createSurvey: builder.mutation<Survey, CreateSurveyRequest>({
+    createSurvey: builder.mutation<BackendSurvey, SurveyPayload>({
       query: (body) => ({
         url: "/surveys",
         method: "POST",
@@ -30,11 +32,14 @@ export const surveysApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Survey"],
     }),
-    updateSurvey: builder.mutation<Survey, UpdateSurveyRequest>({
-      query: ({ id, ...patch }) => ({
+    updateSurvey: builder.mutation<
+      BackendSurvey,
+      { id: string | number; body: Partial<SurveyPayload> }
+    >({
+      query: ({ id, body }) => ({
         url: `/surveys/${id}`,
-        method: "PATCH",
-        body: patch,
+        method: "PUT",
+        body,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: "Survey", id }],
     }),
@@ -45,13 +50,58 @@ export const surveysApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Survey"],
     }),
+    addQuestion: builder.mutation<
+      BackendQuestion,
+      { surveyId: string | number; body: CreateQuestionPayload }
+    >({
+      query: ({ surveyId, body }) => ({
+        url: `/surveys/${surveyId}/questions`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { surveyId }) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
+    updateQuestion: builder.mutation<
+      BackendQuestion,
+      {
+        surveyId: string | number;
+        questionId: number;
+        body: UpdateQuestionPayload;
+      }
+    >({
+      query: ({ surveyId, questionId, body }) => ({
+        url: `/surveys/${surveyId}/questions/${questionId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { surveyId }) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
+    deleteQuestion: builder.mutation<
+      void,
+      { surveyId: string | number; questionId: number }
+    >({
+      query: ({ surveyId, questionId }) => ({
+        url: `/surveys/${surveyId}/questions/${questionId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { surveyId }) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
   }),
 });
 
 export const {
   useGetSurveysQuery,
   useGetSurveyByIdQuery,
+  useDeleteSurveyMutation,
   useCreateSurveyMutation,
   useUpdateSurveyMutation,
-  useDeleteSurveyMutation,
+  useAddQuestionMutation,
+  useUpdateQuestionMutation,
+  useDeleteQuestionMutation,
 } = surveysApi;

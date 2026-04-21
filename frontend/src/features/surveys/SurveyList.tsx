@@ -15,7 +15,13 @@ export default function SurveyList() {
   const { searchTerm, statusFilter, sortBy, sortOrder } = useAppSelector(
     (state) => state.surveys,
   );
-  const { data: surveysData, isLoading, error } = useGetSurveysQuery();
+  const {
+    data: surveysData,
+    isLoading,
+    error,
+  } = useGetSurveysQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
   const surveys = Array.isArray(surveysData) ? surveysData : [];
   const [showFilters, setShowFilters] = useState(false);
 
@@ -34,7 +40,7 @@ export default function SurveyList() {
       let comparison = 0;
       if (sortBy === "createdAt") {
         comparison =
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       } else if (sortBy === "title") {
         comparison = a.title.localeCompare(b.title);
       } else if (sortBy === "responsesCount") {
@@ -173,7 +179,7 @@ export default function SurveyList() {
                   ` • ${survey.responses_count} resposta(s)`}
               </p>
               <p className="text-xs text-gray-400 mt-2">
-                Criada em {new Date(survey.created_at).toLocaleDateString()}
+                Criada em: {new Date(survey.createdAt).toLocaleDateString()}
               </p>
             </div>
           ))}

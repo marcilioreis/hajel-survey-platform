@@ -5,7 +5,6 @@ import ProtectedRoute from "../features/auth/ProtectedRoute";
 import Login from "../features/auth/Login";
 import Register from "../features/auth/Register";
 import SurveyList from "../features/surveys/SurveyList";
-// import SurveyForm from "../features/surveys/SurveyForm";
 import SurveyDetail from "../features/surveys/SurveyDetail";
 import SurveyFormWrapper from "../features/surveys/SurveyFormWrapper";
 
