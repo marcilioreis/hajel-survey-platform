@@ -1,12 +1,14 @@
 // src/modules/responses/responses.service.ts
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 import { db } from '../../shared/db/index.js';
 import { questions } from '../../shared/db/schema/surveys.js';
 import { responseSessions, respondents, answers } from '../../shared/db/schema/responses.js';
 import type { InsertRespondent } from '../../shared/db/schema/responses.js';
-// Tipos importados para documentação e possíveis extensões
-// import type { InsertRespondent, InsertAnswer } from '../../shared/db/schema/responses.js';
+export interface AnswerPayload {
+  questionId: number;
+  value: unknown;
+}
 
 // ========== SESSÃO ==========
 
@@ -122,6 +124,75 @@ export const saveAnswer = async (
     })
     .returning();
   return newAnswer;
+};
+
+/**
+ * Salva múltiplas respostas em uma única transação.
+ * - Respostas já existentes são atualizadas.
+ * - Novas respostas são inseridas.
+ * - Atualiza o last_activity_at da sessão.
+ *
+ * @returns número de respostas afetadas (inseridas + atualizadas)
+ */
+export const saveAnswersBatch = async (
+  sessionId: number,
+  answersPayload: AnswerPayload[]
+): Promise<number> => {
+  if (answersPayload.length === 0) return 0;
+
+  return await db.transaction(async (tx) => {
+    // 1. Buscar IDs das perguntas para verificar quais já têm respostas
+    const questionIds = answersPayload.map((a) => a.questionId);
+    const existingAnswers = await tx
+      .select({ questionId: answers.questionId })
+      .from(answers)
+      .where(and(eq(answers.sessionId, sessionId), inArray(answers.questionId, questionIds)));
+
+    const existingQuestionIds = new Set(existingAnswers.map((e) => e.questionId));
+
+    // 2. Separar payload em updates e inserts
+    const toUpdate: AnswerPayload[] = [];
+    const toInsert: AnswerPayload[] = [];
+
+    for (const ans of answersPayload) {
+      if (existingQuestionIds.has(ans.questionId)) {
+        toUpdate.push(ans);
+      } else {
+        toInsert.push(ans);
+      }
+    }
+
+    // 3. Executar updates individuais (pode ser otimizado com CASE/WHEN, mas mantemos simples)
+    for (const ans of toUpdate) {
+      await tx
+        .update(answers)
+        .set({
+          value: ans.value as any, // valor já validado no controller
+          answeredAt: new Date(),
+        })
+        .where(and(eq(answers.sessionId, sessionId), eq(answers.questionId, ans.questionId)));
+    }
+
+    // 4. Executar inserts em lote
+    if (toInsert.length > 0) {
+      await tx.insert(answers).values(
+        toInsert.map((ans) => ({
+          sessionId,
+          questionId: ans.questionId,
+          value: ans.value as any,
+          answeredAt: new Date(),
+        }))
+      );
+    }
+
+    // 5. Atualizar last_activity_at da sessão
+    await tx
+      .update(responseSessions)
+      .set({ lastActivityAt: new Date() })
+      .where(eq(responseSessions.id, sessionId));
+
+    return toUpdate.length + toInsert.length;
+  });
 };
 
 /**
