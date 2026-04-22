@@ -245,10 +245,8 @@ export const validateAnswer = (
         Array.isArray(options) &&
         value.every((v) => typeof v === 'string' && options.includes(v))
       );
-    case 'texto_curto':
-      return typeof value === 'string' && value.trim().length > 0;
     case 'texto_longo':
-      return typeof value === 'string';
+      return typeof value === 'string' && value.trim().length > 0;
     default:
       return true;
   }

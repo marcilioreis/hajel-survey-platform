@@ -14,7 +14,7 @@ router.post('/s/:slug/start', controller.startSession);
 router.post('/s/:token/answers', controller.submitAnswer);
 
 // Enviar respostas em lote (token na URL)
-router.post('/s/:token/answers', controller.submitAnswerBatch);
+router.post('/s/:token/answers/batch', controller.submitAnswerBatchWithToken);
 
 // Finalizar sessão
 router.post('/s/:token/complete', controller.completeSession);

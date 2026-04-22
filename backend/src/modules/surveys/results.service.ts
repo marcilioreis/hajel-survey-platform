@@ -98,9 +98,6 @@ export const getSurveyResults = async (
       .where(and(eq(answers.questionId, question.id), inArray(answers.sessionId, sessionIds)))
       .groupBy(answers.value);
 
-    console.log('question :>> ', question);
-    console.log('answersData :>> ', answersData);
-
     // Processar conforme tipo
     const data: AggregatedResult['data'] = [];
 
@@ -119,7 +116,7 @@ export const getSurveyResults = async (
           percentage: totalCompleted > 0 ? (cnt / totalCompleted) * 100 : 0,
         });
       }
-    } else if (question.type === 'texto_curto' || question.type === 'texto_longo') {
+    } else if (question.type === 'texto_longo') {
       // Para perguntas abertas, podemos retornar lista de respostas (apenas se permitido)
       // Aqui retornamos apenas contagem de respostas, sem opções
       const totalAnswers = answersData.reduce((sum, row) => sum + Number(row.count), 0);

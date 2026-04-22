@@ -84,6 +84,54 @@ export const submitAnswer = async (req: Request, res: Response) => {
   }
 };
 
+export const submitAnswerBatchWithToken = async (req: Request, res: Response) => {
+  try {
+    const token = getStringParam(req.params.token);
+    const payload = req.body as responseService.AnswerPayload[];
+
+    // Validação inicial
+    if (!Array.isArray(payload) || payload.length === 0) {
+      return res.status(400).json({ error: 'Payload deve ser um array não vazio' });
+    }
+
+    // Validar token e sessão
+    const session = await responseService.getSessionByToken(token);
+    if (!session) {
+      return res.status(404).json({ error: 'Sessão não encontrada ou expirada' });
+    }
+    if (session.status !== 'em_andamento') {
+      return res.status(400).json({ error: 'Sessão já finalizada ou abandonada' });
+    }
+
+    // Validar cada resposta individualmente
+    const validationErrors: string[] = [];
+    for (const ans of payload) {
+      // Verificar se a pergunta pertence à pesquisa da sessão
+      const question = await responseService.getQuestionForSession(session.id, ans.questionId);
+      if (!question) {
+        validationErrors.push(`Pergunta inválida: ${ans.questionId}`);
+        continue;
+      }
+      // Validar formato da resposta
+      if (!responseService.validateAnswer(question.type, ans.value, question.options)) {
+        validationErrors.push(`Formato de resposta inválido para a pergunta ${ans.questionId}`);
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ error: 'Validação falhou', details: validationErrors });
+    }
+
+    // Salvar em lote
+    const affectedCount = await responseService.saveAnswersBatch(session.id, payload);
+
+    res.json({ success: true, count: affectedCount });
+  } catch (error) {
+    console.error('Submit answer batch error:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
 export const submitAnswerBatch = async (req: Request, res: Response) => {
   try {
     const token = getStringParam(req.params.token);

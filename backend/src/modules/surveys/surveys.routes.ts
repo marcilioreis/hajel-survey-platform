@@ -2,9 +2,10 @@
 import { Router } from 'express';
 import { authenticate } from '../../shared/auth/middleware.js';
 import { authorize } from '../../shared/middleware/rbac.js';
-import * as controller from './surveys.controller.js';
 import questionRoutes from './questions.routes.js';
 import locationRoutes from './locations.routes.js';
+import * as controller from './surveys.controller.js';
+import * as responsesController from '../responses/responses.controller.js';
 import * as resultsController from './results.controller.js';
 import * as reportsController from './reports.controller.js';
 
@@ -34,6 +35,9 @@ router.delete(
   authorize({ any: ['survey:delete', 'survey:delete_any'] }),
   controller.deleteSurvey
 );
+
+// Enviar respostas em lote (token na URL)
+router.post('/s/:token/answers', responsesController.submitAnswerBatch);
 
 // Rotas aninhadas
 router.use('/:surveyId/questions', questionRoutes);
