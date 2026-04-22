@@ -3,10 +3,12 @@ import { api } from "../lib/api";
 import { rtkQueryErrorLogger } from "../lib/errorMiddleware";
 import authReducer from "../features/auth/authSlice";
 import surveysReducer from "../features/surveys/surveysSlice";
+import { publicSurveyApi } from "../features/public-survey/publicSurveyApi";
 
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
+    [publicSurveyApi.reducerPath]: publicSurveyApi.reducer,
     auth: authReducer,
     surveys: surveysReducer,
   },
@@ -19,7 +21,9 @@ export const store = configureStore({
           return isPlain(value);
         },
       },
-    }).concat(api.middleware, rtkQueryErrorLogger),
+    })
+      .concat(api.middleware, rtkQueryErrorLogger)
+      .concat(publicSurveyApi.middleware),
   //
 });
 

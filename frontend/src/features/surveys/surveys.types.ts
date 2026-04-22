@@ -8,7 +8,7 @@ export interface QuestionOption {
 export interface Question {
   id?: number; // opcional para novas perguntas
   text: string;
-  type: "text" | "unica_escolha" | "multipla_escolha"; // frontend usa 'text'
+  type: "texto_longo" | "unica_escolha" | "multipla_escolha"; // frontend usa 'texto_longo'
   required: boolean;
   options: QuestionOption[];
   order?: number;
@@ -17,7 +17,7 @@ export interface Question {
 export interface BackendQuestion {
   id: number;
   text: string;
-  type: string; // 'unica_escolha', 'multipla_escolha', 'text'
+  type: string; // 'unica_escolha', 'multipla_escolha', 'texto_longo'
   required: boolean;
   order: number;
   options: string[]; // sempre strings no backend
@@ -94,7 +94,7 @@ export interface SurveyPayload {
 // Payload para criação de pergunta (única)
 export interface CreateQuestionPayload {
   text: string;
-  type: "unica_escolha" | "multipla_escolha" | "texto"; // backend espera 'texto'
+  type: "unica_escolha" | "multipla_escolha" | "texto_longo"; // backend espera 'texto'
   required: boolean;
   options: string[];
   order?: number;
@@ -103,4 +103,22 @@ export interface CreateQuestionPayload {
 // Payload para atualização de pergunta
 export interface UpdateQuestionPayload extends Partial<CreateQuestionPayload> {
   _dummy?: never; // apenas para evitar o aviso
+}
+
+// Resposta de uma única pergunta
+export interface Answer {
+  questionId: number;
+  value: string | string[]; // string para texto/única escolha, array para múltipla escolha
+}
+
+export interface AnswerPayload {
+  questionId: number;
+  value: string | string[];
+}
+
+// Payload para envio das respostas
+export interface SubmitResponsePayload {
+  surveyId: number;
+  answers: Answer[];
+  respondentIdentifier?: string; // opcional: email, código etc.
 }

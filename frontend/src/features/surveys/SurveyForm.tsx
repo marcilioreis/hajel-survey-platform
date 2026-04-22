@@ -24,7 +24,7 @@ const mapBackendTypeToFrontend = (backendType: string): Question["type"] => {
   const mapping: Record<string, Question["type"]> = {
     unica_escolha: "unica_escolha",
     multipla_escolha: "multipla_escolha",
-    texto: "text",
+    texto_longo: "texto_longo",
   };
   return mapping[backendType] || "text";
 };
@@ -33,7 +33,7 @@ const mapFrontendTypeToBackend = (
   frontendType: Question["type"],
 ): CreateQuestionPayload["type"] => {
   const mapping: Record<Question["type"], CreateQuestionPayload["type"]> = {
-    text: "texto",
+    texto_longo: "texto_longo",
     unica_escolha: "unica_escolha",
     multipla_escolha: "multipla_escolha",
   };
@@ -74,7 +74,9 @@ function QuestionEditor({
   onChange: (updated: Question) => void;
   onRemove: () => void;
 }) {
-  const [showOptions, setShowOptions] = useState(question.type !== "text");
+  const [showOptions, setShowOptions] = useState(
+    question.type !== "texto_longo",
+  );
 
   const addOption = () => {
     const newOption: QuestionOption = { text: "" };
@@ -123,14 +125,14 @@ function QuestionEditor({
             const newQuestion: Question = {
               ...question,
               type: newType,
-              options: newType === "text" ? [] : question.options,
+              options: newType === "texto_longo" ? [] : question.options,
             };
             onChange(newQuestion);
-            setShowOptions(newType !== "text");
+            setShowOptions(newType !== "texto_longo");
           }}
           className="px-3 py-2 border border-gray-300 rounded-md text-base"
         >
-          <option value="text">Texto</option>
+          <option value="texto_longo">Texto</option>
           <option value="unica_escolha">Única escolha</option>
           <option value="multipla_escolha">Múltipla escolha</option>
         </select>
@@ -216,7 +218,7 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
   const addNewQuestion = () => {
     const newQuestion: Question = {
       text: "",
-      type: "text",
+      type: "texto_longo",
       required: false,
       options: [],
     };

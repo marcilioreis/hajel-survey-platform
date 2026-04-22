@@ -6,6 +6,7 @@ import type {
   CreateQuestionPayload,
   BackendQuestion,
   UpdateQuestionPayload,
+  SubmitResponsePayload,
 } from "./surveys.types";
 
 export const surveysApi = api.injectEndpoints({
@@ -92,6 +93,19 @@ export const surveysApi = api.injectEndpoints({
         { type: "Survey", id: surveyId },
       ],
     }),
+    submitResponses: builder.mutation<
+      { success: boolean },
+      SubmitResponsePayload
+    >({
+      query: (body) => ({
+        url: `/surveys/${body.surveyId}/responses`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { surveyId }) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
   }),
 });
 
@@ -104,4 +118,5 @@ export const {
   useAddQuestionMutation,
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
+  useSubmitResponsesMutation,
 } = surveysApi;
