@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import {
   useGetPublicSurveyQuery,
   useGetProgressQuery,
@@ -8,44 +8,97 @@ import {
 } from "./publicSurveyApi";
 import type { AnswerPayload } from "./publicSurvey.types";
 
+type AnswersMap = Record<number, string | string[]>;
+
 export default function SurveySession() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
   const token = slug ? localStorage.getItem(`survey-token-${slug}`) : null;
 
+  // Redireciona se não houver token
   useEffect(() => {
     if (!token && slug) {
-      toast.error("Sessão não encontrada. Inicie novamente.");
+      toast.error(
+        "Sessão não encontrada, expirada ou inválida. Inicie novamente.",
+      );
       navigate(`/s/${slug}`);
     }
   }, [token, slug, navigate]);
 
   const { data: survey } = useGetPublicSurveyQuery(slug!, { skip: !slug });
-  const { data: progress } = useGetProgressQuery(token!, { skip: !token });
+  const { data: progress, error: progressError } = useGetProgressQuery(token!, {
+    skip: !token,
+  });
+
+  console.log("Progress :>> ", progress);
+
+  useEffect(() => {
+    if (
+      progressError &&
+      "status" in progressError &&
+      (progressError.status === 401 || progressError.status === 404)
+    ) {
+      toast.error("Erro ao carregar progresso. Inicie novamente.");
+      localStorage.removeItem(`survey-token-${slug}`);
+      navigate(`/s/${slug}`);
+    }
+  }, [progressError, slug, navigate]);
+
   const [submitAnswersBatch, { isLoading: isSubmitting }] =
     useSubmitAnswersBatchMutation();
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
-  const initializedRef = useRef(false);
+  // Estado inicial: tenta carregar do localStorage
+  const [answers, setAnswers] = useState<AnswersMap>(() => {
+    if (slug) {
+      const saved = localStorage.getItem(`survey-${slug}-answers`);
 
-  // Restaura respostas do progresso
+      console.log("Loaded from localStorage :>> ", saved);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return {};
+        }
+      }
+    }
+    return {};
+  });
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const progressAppliedRef = useRef(false);
+
+  // Sincroniza com o progresso do backend apenas se não houver dados locais
   useEffect(() => {
-    if (!initializedRef.current && progress?.answers) {
-      const mapped = progress.answers.reduce(
-        (acc, ans) => {
+    if (
+      !progressAppliedRef.current &&
+      progress?.answers &&
+      progress.answers.length > 0
+    ) {
+      const hasLocalAnswers = Object.keys(answers).length > 0;
+      if (!hasLocalAnswers) {
+        const mapped = progress.answers.reduce((acc, ans) => {
           acc[ans.questionId] = ans.value;
           return acc;
-        },
-        {} as Record<number, string | string[]>,
-      );
-      setAnswers(mapped);
-      initializedRef.current = true;
+        }, {} as AnswersMap);
+        // Agendamento para próximo ciclo elimina o aviso
+        queueMicrotask(() => setAnswers(mapped));
+      }
+      progressAppliedRef.current = true;
     }
-  }, [progress]);
+  }, [progress, answers]);
 
-  const questions = survey?.questions || [];
+  // Persiste respostas no localStorage
+  useEffect(() => {
+    if (slug && Object.keys(answers).length > 0) {
+      localStorage.setItem(`survey-${slug}-answers`, JSON.stringify(answers));
+    }
+  }, [answers, slug]);
+
+  if (!survey || !token)
+    return <div className="p-4">Carregando pesquisa...</div>;
+
+  const questions = survey.questions;
   const currentQuestion = questions[currentIndex];
   const currentAnswer = currentQuestion
     ? answers[currentQuestion.id]
@@ -83,66 +136,44 @@ export default function SurveySession() {
 
     try {
       await submitAnswersBatch({ token: token!, body: allAnswers }).unwrap();
+      // Limpa localStorage após envio bem-sucedido
+      localStorage.removeItem(`survey-${slug}-answers`);
       navigate(`/s/${slug}/demographics`);
     } catch {
       toast.error("Erro ao enviar respostas. Verifique sua conexão.");
     }
   };
 
-  if (!survey || !token) return <div className="p-4">Carregando...</div>;
-
   const isLast = currentIndex === questions.length - 1;
+  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Barra de progresso (mantida) */}
-      <div className="bg-white p-4 shadow-sm">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>
-            Pergunta {currentIndex + 1} de {questions.length}
-          </span>
-          <span>
-            {Math.round(((currentIndex + 1) / questions.length) * 100)}%
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full transition-all"
-            style={{
-              width: `${((currentIndex + 1) / questions.length) * 100}%`,
-            }}
-          />
-        </div>
-      </div>
+  const renderQuestionInput = () => {
+    if (!currentQuestion) return null;
+    const q = currentQuestion;
 
-      {/* Conteúdo da pergunta (mantido) */}
-      <div className="flex-1 p-4">
-        <h2 className="text-xl font-medium mb-4">
-          {currentQuestion.text}
-          {currentQuestion.required && (
-            <span className="text-red-500 ml-1">*</span>
-          )}
-        </h2>
-
-        {/* Renderização condicional por tipo (idêntica à anterior) */}
-        {currentQuestion.type === "texto_longo" ? (
+    switch (q.type) {
+      case "texto_longo":
+        return (
           <textarea
             value={(currentAnswer as string) || ""}
             onChange={(e) => handleAnswerChange(e.target.value)}
             placeholder="Digite sua resposta..."
             className="w-full p-3 border border-gray-300 rounded-lg text-base"
-            rows={currentQuestion.type === "texto_longo" ? 6 : 3}
+            rows={q.type === "texto_longo" ? 6 : 3}
           />
-        ) : currentQuestion.type === "unica_escolha" ? (
+        );
+
+      case "unica_escolha":
+        return (
           <div className="space-y-3">
-            {currentQuestion.options.map((opt, idx) => (
+            {q.options.map((opt, idx) => (
               <label
                 key={idx}
                 className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
               >
                 <input
                   type="radio"
-                  name={`q-${currentQuestion.id}`}
+                  name={`q-${q.id}`}
                   value={opt}
                   checked={currentAnswer === opt}
                   onChange={(e) => handleAnswerChange(e.target.value)}
@@ -152,41 +183,76 @@ export default function SurveySession() {
               </label>
             ))}
           </div>
-        ) : (
+        );
+
+      case "multipla_escolha":
+        return (
           <div className="space-y-3">
-            {currentQuestion.options.map((opt, idx) => (
-              <label
-                key={idx}
-                className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
-              >
-                <input
-                  type="checkbox"
-                  value={opt}
-                  checked={
-                    Array.isArray(currentAnswer) && currentAnswer.includes(opt)
-                  }
-                  onChange={(e) => {
-                    const arr = Array.isArray(currentAnswer)
-                      ? [...currentAnswer]
-                      : [];
-                    if (e.target.checked) {
-                      arr.push(opt);
-                    } else {
-                      const index = arr.indexOf(opt);
-                      if (index > -1) arr.splice(index, 1);
-                    }
-                    handleAnswerChange(arr);
-                  }}
-                  className="w-5 h-5 text-blue-600 rounded"
-                />
-                <span className="text-base">{opt}</span>
-              </label>
-            ))}
+            {q.options.map((opt, idx) => {
+              const isChecked =
+                Array.isArray(currentAnswer) && currentAnswer.includes(opt);
+              return (
+                <label
+                  key={idx}
+                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+                >
+                  <input
+                    type="checkbox"
+                    value={opt}
+                    checked={isChecked}
+                    onChange={(e) => {
+                      const arr = Array.isArray(currentAnswer)
+                        ? [...currentAnswer]
+                        : [];
+                      if (e.target.checked) {
+                        arr.push(opt);
+                      } else {
+                        const index = arr.indexOf(opt);
+                        if (index > -1) arr.splice(index, 1);
+                      }
+                      handleAnswerChange(arr);
+                    }}
+                    className="w-5 h-5 text-blue-600 rounded"
+                  />
+                  <span className="text-base">{opt}</span>
+                </label>
+              );
+            })}
           </div>
-        )}
+        );
+
+      default:
+        return <div>Tipo de pergunta não suportado.</div>;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="bg-white p-4 shadow-sm">
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <span>
+            Pergunta {currentIndex + 1} de {questions.length}
+          </span>
+          <span>{Math.round(progressPercent)}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-blue-600 h-2 rounded-full transition-all"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
       </div>
 
-      {/* Navegação */}
+      <div className="flex-1 p-4">
+        <h2 className="text-xl font-medium mb-4">
+          {currentQuestion.text}
+          {currentQuestion.required && (
+            <span className="text-red-500 ml-1">*</span>
+          )}
+        </h2>
+        {renderQuestionInput()}
+      </div>
+
       <div className="bg-white p-4 border-t flex justify-between">
         <button
           type="button"

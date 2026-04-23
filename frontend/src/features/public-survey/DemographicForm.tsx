@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import {
   useCompleteSessionMutation,
   useGetPublicSurveyQuery,
@@ -49,8 +49,19 @@ export default function DemographicForm() {
       localStorage.removeItem(`survey-token-${slug}`);
       toast.success("Pesquisa concluída! Obrigado por participar.");
       navigate(`/s/${slug}/thank-you`);
-    } catch {
-      toast.error("Erro ao finalizar. Tente novamente.");
+    } catch (err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "status" in err &&
+        (err.status === 401 || err.status === 404)
+      ) {
+        toast.error("Sessão expirada. Inicie novamente.");
+        localStorage.removeItem(`survey-token-${slug}`);
+        navigate(`/s/${slug}`);
+      } else {
+        toast.error("Erro ao finalizar. Tente novamente.");
+      }
     }
   };
 

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useGetSurveyByIdQuery, useDeleteSurveyMutation } from "./surveysApi";
 import { useAppDispatch } from "../../app/hooks";
 import { api } from "../../lib/api";
@@ -15,9 +15,7 @@ export default function SurveyDetail() {
     toast.custom(
       (t) => (
         <div
-          className={`${
-            t.visible ? "animate-enter" : "animate-leave"
-          } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-opacity-5`}
+          className={`max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-opacity-5`}
         >
           <div className="p-4">
             <p className="text-sm font-medium text-gray-900">
@@ -29,7 +27,7 @@ export default function SurveyDetail() {
               type="button"
               onClick={() => {
                 handleDelete();
-                toast.dismiss(t.id);
+                toast.dismiss(t);
               }}
               className="w-full border border-transparent rounded-none rounded-r-lg p-2 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none"
             >
@@ -37,7 +35,7 @@ export default function SurveyDetail() {
             </button>
             <button
               type="button"
-              onClick={() => toast.dismiss(t.id)}
+              onClick={() => toast.dismiss(t)}
               className="w-full border border-transparent rounded-none p-2 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none"
             >
               Cancelar

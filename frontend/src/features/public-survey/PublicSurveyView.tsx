@@ -3,7 +3,7 @@ import {
   useGetPublicSurveyQuery,
   useStartSessionMutation,
 } from "./publicSurveyApi";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export default function PublicSurveyView() {
   const { slug } = useParams<{ slug: string }>();
@@ -15,24 +15,43 @@ export default function PublicSurveyView() {
     if (!slug) return;
     try {
       const { token } = await startSession(slug).unwrap();
-      // Armazena token no localStorage (decisão consciente)
       localStorage.setItem(`survey-token-${slug}`, token);
-      // Navega para a página de sessão
       navigate(`/s/${slug}/session`);
     } catch {
       toast.error("Não foi possível iniciar a pesquisa. Tente novamente.");
     }
   };
 
-  if (isLoading) return <div className="p-4">Carregando pesquisa...</div>;
-  if (error || !survey) {
+  // Tratamento de loading
+  if (isLoading) {
     return (
-      <div className="p-4 text-center">
-        <h1 className="text-xl font-bold text-red-600">
-          Pesquisa não encontrada ou indisponível.
-        </h1>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
+  }
+
+  // Tratamento de erro (incluindo 404)
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            Pesquisa indisponível
+          </h1>
+          <p className="text-gray-600">
+            {"status" in error && error.status === 404
+              ? "A pesquisa solicitada não foi encontrada."
+              : "Não foi possível carregar a pesquisa. Verifique o link ou tente novamente mais tarde."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Caso survey venha undefined mesmo sem erro (por segurança)
+  if (!survey) {
+    return null; // ou mensagem de erro
   }
 
   return (
@@ -42,7 +61,7 @@ export default function PublicSurveyView() {
           {survey.title}
         </h1>
         {survey.description && (
-          <p className="text-gray-600 mb-6 p-2">{survey.description}</p>
+          <p className="text-gray-600 mb-6">{survey.description}</p>
         )}
         <button
           onClick={handleStart}

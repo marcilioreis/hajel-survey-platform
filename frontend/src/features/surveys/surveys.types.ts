@@ -37,6 +37,7 @@ export interface BackendSurvey {
   custom_style: unknown | null;
   created_at: string;
   questions: BackendQuestion[];
+  locations?: Array<{ id: number; name: string }>;
   responses_count: string | number;
   status: string;
 }
@@ -54,6 +55,7 @@ export interface Survey {
   custom_style: unknown | null;
   createdAt: string;
   questions: Question[];
+  locations?: Array<{ id: number; name: string }>;
   responses_count: string | number;
   status: string;
 }
@@ -121,4 +123,13 @@ export interface SubmitResponsePayload {
   surveyId: number;
   answers: Answer[];
   respondentIdentifier?: string; // opcional: email, código etc.
+}
+
+export interface DemographicData {
+  ageRange: string;
+  gender: string;
+  incomeRange: string;
+  education: string;
+  occupation: string;
+  locationId: string;
 }

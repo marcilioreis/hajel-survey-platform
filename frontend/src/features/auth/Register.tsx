@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useRegisterMutation } from "./authApi";
 import { useAppDispatch } from "../../app/hooks";
 import { setCredentials } from "./authSlice";
