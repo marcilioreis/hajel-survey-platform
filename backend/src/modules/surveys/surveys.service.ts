@@ -22,6 +22,7 @@ const mapRowToSurveyEnriched = (row: Record<string, unknown>): SurveyEnriched =>
   customStyle: row.custom_style,
   createdAt: new Date(row.created_at as string),
   questions: row.questions as SurveyEnriched['questions'],
+  locations: row.locations as SurveyEnriched['locations'],
   responsesCount: Number(row.responses_count),
   status: row.status as SurveyEnriched['status'],
 });

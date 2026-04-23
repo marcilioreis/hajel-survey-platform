@@ -36,8 +36,8 @@ router.delete(
   controller.deleteSurvey
 );
 
-// Enviar respostas em lote (token na URL)
-router.post('/s/:token/answers', responsesController.submitAnswerBatch);
+// Submissão de respostas (usuário autenticado)
+router.post('/:surveyId/responses', authenticate, responsesController.submitAuthenticatedResponses);
 
 // Rotas aninhadas
 router.use('/:surveyId/questions', questionRoutes);

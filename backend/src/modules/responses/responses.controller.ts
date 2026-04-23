@@ -2,10 +2,16 @@
 import { Request, Response } from 'express';
 import * as surveyService from '../surveys/surveys.service.js';
 import * as responseService from './responses.service.js';
+import { hasPermission } from '../../shared/middleware/rbac.js';
 
 // Helper para extrair string de parâmetro
 const getStringParam = (param: string | string[]): string => {
   return Array.isArray(param) ? param[0] : param;
+};
+
+const getNumericId = (param: string | string[]): number => {
+  const id = Array.isArray(param) ? param[0] : param;
+  return parseInt(id, 10);
 };
 
 // ========== PESQUISA PÚBLICA ==========
@@ -132,35 +138,74 @@ export const submitAnswerBatchWithToken = async (req: Request, res: Response) =>
   }
 };
 
-export const submitAnswerBatch = async (req: Request, res: Response) => {
+export const submitAuthenticatedResponses = async (req: Request, res: Response) => {
   try {
-    const token = getStringParam(req.params.token);
-    const payload = req.body as responseService.AnswerPayload[];
+    const surveyId = getNumericId(req.params.surveyId);
+    const userId = req.user!.id;
+    const { answers, profile } = req.body as {
+      answers: responseService.AnswerPayload[];
+      profile?: {
+        ageRange?: string;
+        gender?: string;
+        incomeRange?: string;
+        education?: string;
+        occupation?: string;
+        locationId?: number;
+      };
+    };
 
-    // Validação inicial
-    if (!Array.isArray(payload) || payload.length === 0) {
-      return res.status(400).json({ error: 'Payload deve ser um array não vazio' });
+    if (!Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({ error: 'Respostas devem ser um array não vazio' });
     }
 
-    // Validar token e sessão
-    const session = await responseService.getSessionByToken(token);
-    if (!session) {
-      return res.status(404).json({ error: 'Sessão não encontrada ou expirada' });
+    // Verificar pesquisa e acesso
+    const survey = await surveyService.findById(surveyId);
+    if (!survey) {
+      return res.status(404).json({ error: 'Pesquisa não encontrada' });
     }
+
+    const isPublicActive = survey.public && survey.active;
+    const isOwner = survey.createdBy === userId;
+    const isAdmin = await hasPermission(userId, 'survey:view_any');
+    if (!isPublicActive && !isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+
+    // Verificar período
+    const now = new Date();
+    if (survey.startDate && new Date(survey.startDate) > now) {
+      return res.status(400).json({ error: 'Pesquisa ainda não começou' });
+    }
+    if (survey.endDate && new Date(survey.endDate) < now) {
+      return res.status(400).json({ error: 'Pesquisa já encerrada' });
+    }
+
+    // Validar locationId se fornecido
+    if (profile?.locationId) {
+      const locations = await surveyService.getLocations(surveyId);
+      const locationExists = locations.some((loc) => loc.id === profile.locationId);
+      if (!locationExists) {
+        return res.status(400).json({ error: 'Localização inválida' });
+      }
+    }
+
+    // Obter/criar sessão do usuário
+    const ip = req.ip;
+    const userAgent = req.headers['user-agent'];
+    const session = await responseService.getOrCreateUserSession(surveyId, userId, ip, userAgent);
+
     if (session.status !== 'em_andamento') {
-      return res.status(400).json({ error: 'Sessão já finalizada ou abandonada' });
+      return res.status(400).json({ error: 'Sessão não está ativa' });
     }
 
-    // Validar cada resposta individualmente
+    // Validar respostas
     const validationErrors: string[] = [];
-    for (const ans of payload) {
-      // Verificar se a pergunta pertence à pesquisa da sessão
+    for (const ans of answers) {
       const question = await responseService.getQuestionForSession(session.id, ans.questionId);
       if (!question) {
-        validationErrors.push(`Pergunta inválida: ${ans.questionId}`);
+        validationErrors.push(`Id da pergunta inválido: ${ans.questionId}`);
         continue;
       }
-      // Validar formato da resposta
       if (!responseService.validateAnswer(question.type, ans.value, question.options)) {
         validationErrors.push(`Formato de resposta inválido para a pergunta ${ans.questionId}`);
       }
@@ -170,12 +215,23 @@ export const submitAnswerBatch = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Validação falhou', details: validationErrors });
     }
 
-    // Salvar em lote
-    const affectedCount = await responseService.saveAnswersBatch(session.id, payload);
+    // Salvar respostas
+    const affectedAnswers = await responseService.saveAnswersBatch(session.id, answers);
 
-    res.json({ success: true, count: affectedCount });
+    // Salvar perfil (se enviado)
+    let profileUpdated = false;
+    if (profile) {
+      await responseService.upsertRespondentProfile(session.id, profile);
+      profileUpdated = true;
+    }
+
+    res.json({
+      success: true,
+      answersSaved: affectedAnswers,
+      profileUpdated,
+    });
   } catch (error) {
-    console.error('Submit answer batch error:', error);
+    console.error('Submit authenticated responses error:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };

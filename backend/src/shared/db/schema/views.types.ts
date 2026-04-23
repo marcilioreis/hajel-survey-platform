@@ -20,6 +20,11 @@ export type SurveyEnriched = {
     options: unknown;
     conditionalLogic: unknown;
   }>;
+  locations: Array<{
+    id: number;
+    name: string;
+    order: number;
+  }>;
   responsesCount: number;
   status: 'ativa' | 'rascunho' | 'expirada' | 'inativa';
 };

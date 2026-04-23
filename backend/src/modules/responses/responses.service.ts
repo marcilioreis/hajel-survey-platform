@@ -68,6 +68,80 @@ export const touchSession = async (sessionId: number) => {
     .where(eq(responseSessions.id, sessionId));
 };
 
+// src/modules/responses/responses.service.ts
+
+/**
+ * Obtém ou cria uma sessão de resposta para um usuário autenticado.
+ * Se já existir uma sessão 'em_andamento' para esse usuário e pesquisa, retorna-a.
+ * Caso contrário, cria uma nova.
+ */
+export const getOrCreateUserSession = async (
+  surveyId: number,
+  userId: string,
+  ip?: string,
+  userAgent?: string
+) => {
+  // Buscar sessão existente
+  const [existing] = await db
+    .select()
+    .from(responseSessions)
+    .where(
+      and(
+        eq(responseSessions.surveyId, surveyId),
+        eq(responseSessions.userId, userId),
+        eq(responseSessions.status, 'em_andamento')
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    return existing;
+  }
+
+  // Criar nova sessão
+  const token = randomBytes(32).toString('hex');
+  const [newSession] = await db
+    .insert(responseSessions)
+    .values({
+      surveyId,
+      userId,
+      token,
+      ip,
+      userAgent,
+      startedAt: new Date(),
+      lastActivityAt: new Date(),
+      status: 'em_andamento',
+    })
+    .returning();
+
+  return newSession;
+};
+
+export const upsertRespondentProfile = async (
+  sessionId: number,
+  profileData: Partial<Omit<InsertRespondent, 'sessionId' | 'id'>>
+) => {
+  const [existing] = await db
+    .select({ id: respondents.id })
+    .from(respondents)
+    .where(eq(respondents.sessionId, sessionId));
+
+  if (existing) {
+    const [updated] = await db
+      .update(respondents)
+      .set(profileData)
+      .where(eq(respondents.id, existing.id))
+      .returning();
+    return updated;
+  }
+
+  const [created] = await db
+    .insert(respondents)
+    .values({ ...profileData, sessionId })
+    .returning();
+  return created;
+};
+
 // ========== PERGUNTAS ==========
 
 /**
