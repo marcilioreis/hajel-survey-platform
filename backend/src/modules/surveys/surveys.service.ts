@@ -257,8 +257,8 @@ export const addLocation = async (
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Survey not found');
-  if (survey.createdBy !== userId) throw new Error('Forbidden');
+  if (!survey) throw new Error('Pesquisa não encontrada');
+  if (survey.createdBy !== userId) throw new Error('Não autorizado');
 
   const [location] = await db
     .insert(locations)
@@ -275,6 +275,10 @@ export const getLocations = async (surveyId: number) => {
     .orderBy(locations.order);
 };
 
+export const getAllLocations = async () => {
+  return db.select().from(locations).orderBy(locations.name);
+};
+
 export const updateLocation = async (
   surveyId: number,
   locationId: number,
@@ -286,7 +290,7 @@ export const updateLocation = async (
     .from(surveys)
     .where(eq(surveys.id, surveyId));
   if (!survey) throw new Error('Pesquisa não encontrada');
-  if (survey.createdBy !== userId) throw new Error('Forbidden');
+  if (survey.createdBy !== userId) throw new Error('Não autorizado');
 
   const [location] = await db
     .update(locations)
@@ -302,7 +306,7 @@ export const deleteLocation = async (surveyId: number, locationId: number, userI
     .from(surveys)
     .where(eq(surveys.id, surveyId));
   if (!survey) throw new Error('Pesquisa não encontrada');
-  if (survey.createdBy !== userId) throw new Error('Forbidden');
+  if (survey.createdBy !== userId) throw new Error('Não autorizado');
 
   const [deleted] = await db
     .delete(locations)
