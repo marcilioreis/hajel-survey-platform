@@ -7,11 +7,13 @@ import {
   useAddQuestionMutation,
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
+  useGetLocationsQuery,
 } from "./surveysApi";
 import type {
   BackendQuestion,
   BackendSurvey,
   CreateQuestionPayload,
+  Location,
   Question,
   QuestionOption,
   SurveyPayload,
@@ -46,20 +48,14 @@ const mapFrontendTypeToBackend = (
 const normalizeQuestions = (
   backendQuestions: BackendQuestion[],
 ): Question[] => {
-  return backendQuestions.map((q) => {
-    const hasOptions =
-      q.type === "unica_escolha" || q.type === "multipla_escolha";
-    return {
-      id: q.id,
-      text: q.text,
-      type: mapBackendTypeToFrontend(q.type),
-      required: q.required,
-      options: hasOptions
-        ? q.options.map((optText) => ({ text: optText }))
-        : [],
-      order: q.order,
-    };
-  });
+  return backendQuestions.map((q) => ({
+    id: q.id,
+    text: q.text,
+    type: mapBackendTypeToFrontend(q.type),
+    required: q.required,
+    options: q.options.map((optText) => ({ text: optText })),
+    order: q.order,
+  }));
 };
 
 // ----------------------------------------------------------------------
@@ -80,10 +76,7 @@ function QuestionEditor({
 
   const addOption = () => {
     const newOption: QuestionOption = { text: "" };
-    onChange({
-      ...question,
-      options: [...question.options, newOption],
-    });
+    onChange({ ...question, options: [...question.options, newOption] });
   };
 
   const updateOption = (index: number, text: string) => {
@@ -132,7 +125,7 @@ function QuestionEditor({
           }}
           className="px-3 py-2 border border-gray-300 rounded-md text-base"
         >
-          <option value="texto_longo">Texto</option>
+          <option value="texto_longo">Texto longo</option>
           <option value="unica_escolha">Única escolha</option>
           <option value="multipla_escolha">Múltipla escolha</option>
         </select>
@@ -195,13 +188,13 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
   const isEditing = Boolean(initialSurvey);
   const surveyId = initialSurvey?.id;
 
+  const { data: allLocations = [] } = useGetLocationsQuery();
   const [createSurvey, { isLoading: isCreating }] = useCreateSurveyMutation();
   const [updateSurvey, { isLoading: isUpdating }] = useUpdateSurveyMutation();
   const [addQuestion] = useAddQuestionMutation();
   const [updateQuestion] = useUpdateQuestionMutation();
   const [deleteQuestion] = useDeleteQuestionMutation();
 
-  // Inicialização direta a partir das props (sem useEffect)
   const [title, setTitle] = useState(() => initialSurvey?.title ?? "");
   const [description, setDescription] = useState(
     () => initialSurvey?.description ?? "",
@@ -210,7 +203,9 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
     initialSurvey?.end_date ? initialSurvey.end_date.slice(0, 16) : "",
   );
   const [isPublic, setIsPublic] = useState(() => initialSurvey?.public ?? true);
-  const [isActive, setIsActive] = useState(() => initialSurvey?.active ?? true);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<number[]>(
+    () => initialSurvey?.locations?.map((l: Location) => l.id) ?? [],
+  );
   const [questions, setQuestions] = useState<Question[]>(() =>
     initialSurvey ? normalizeQuestions(initialSurvey.questions) : [],
   );
@@ -241,11 +236,9 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
   ) => {
     const currentQuestions = questions;
     const originalMap = new Map(originalQuestions.map((q) => [q.id, q]));
-
     const removedQuestions = originalQuestions.filter(
       (orig) => !currentQuestions.some((curr) => curr.id === orig.id),
     );
-
     const operations: Promise<unknown>[] = [];
 
     for (const q of currentQuestions) {
@@ -266,7 +259,6 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
           JSON.stringify(original.options) !==
             JSON.stringify(payload.options) ||
           original.order !== payload.order;
-
         if (hasChanged) {
           operations.push(
             updateQuestion({
@@ -290,7 +282,6 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!title.trim() || questions.length === 0) {
       toast.error("Preencha o título e adicione pelo menos uma pergunta.");
       return;
@@ -304,20 +295,22 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
       title: title.trim(),
       description: description.trim() || null,
       public: isPublic,
-      active: isActive,
-      endDate: endDate,
+      active: true,
+      endDate: new Date(endDate).toISOString(),
+      locationIds: selectedLocationIds,
     };
 
     try {
       let currentSurveyId: number;
-
       if (isEditing) {
         const hasBasicChanges =
           initialSurvey!.title !== title.trim() ||
           (initialSurvey!.description || "") !== description.trim() ||
           initialSurvey!.public !== isPublic ||
-          initialSurvey!.active !== isActive ||
-          (initialSurvey!.end_date?.slice(0, 16) ?? "") !== endDate;
+          (initialSurvey!.end_date?.slice(0, 16) ?? "") !== endDate ||
+          JSON.stringify(
+            initialSurvey!.locations?.map((l: Location) => l.id).sort(),
+          ) !== JSON.stringify([...selectedLocationIds].sort());
 
         if (hasBasicChanges) {
           await updateSurvey({ id: surveyId!, body: surveyPayload }).unwrap();
@@ -329,7 +322,6 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
       }
 
       await syncQuestions(currentSurveyId, initialSurvey?.questions || []);
-
       toast.success(isEditing ? "Pesquisa atualizada!" : "Pesquisa criada!");
       navigate("/surveys");
     } catch (err) {
@@ -360,7 +352,7 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Data de término:
+            Data de término
           </label>
           <input
             type="datetime-local"
@@ -370,23 +362,48 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
           />
         </div>
-        <div className="flex gap-3">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-            />
-            <span className="text-sm">Pesquisa pública</span>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+          />
+          <span className="text-sm">Pesquisa pública</span>
+        </label>
+
+        {/* Seleção de locais */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Locais de coleta
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-            />
-            <span className="text-sm">Pesquisa Ativa</span>
-          </label>
+          {allLocations.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhum local disponível.</p>
+          ) : (
+            <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1">
+              {allLocations.map((loc) => (
+                <label key={loc.id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedLocationIds.includes(loc.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedLocationIds((prev) => [...prev, loc.id]);
+                      } else {
+                        setSelectedLocationIds((prev) =>
+                          prev.filter((id) => id !== loc.id),
+                        );
+                      }
+                    }}
+                    className="rounded"
+                  />
+                  <span>{loc.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            Selecione os locais onde esta pesquisa será aplicada.
+          </p>
         </div>
       </div>
 

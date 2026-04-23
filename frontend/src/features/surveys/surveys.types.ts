@@ -37,7 +37,7 @@ export interface BackendSurvey {
   custom_style: unknown | null;
   created_at: string;
   questions: BackendQuestion[];
-  locations?: Array<{ id: number; name: string }>;
+  locations?: Location[];
   responses_count: string | number;
   status: string;
 }
@@ -55,7 +55,7 @@ export interface Survey {
   custom_style: unknown | null;
   createdAt: string;
   questions: Question[];
-  locations?: Array<{ id: number; name: string }>;
+  locations?: Location[];
   responses_count: string | number;
   status: string;
 }
@@ -91,6 +91,7 @@ export interface SurveyPayload {
   slug?: string;
   endDate: string; // ISO string
   customStyle?: Record<string, unknown> | null;
+  locationIds?: number[];
 }
 
 // Payload para criação de pergunta (única)
@@ -132,4 +133,10 @@ export interface DemographicData {
   education: string;
   occupation: string;
   locationId: string;
+}
+
+export interface Location {
+  id: number;
+  name: string;
+  address?: string | null;
 }

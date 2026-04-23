@@ -351,21 +351,23 @@ export default function SurveyExecution() {
           className="w-full p-3 border rounded-lg"
         />
 
-        <select
-          value={demographics.locationId}
-          onChange={(e) =>
-            handleDemographicsChange("locationId", e.target.value)
-          }
-          required
-          className="w-full p-3 border rounded-lg"
-        >
-          <option value="">Localização</option>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>
-              {loc.name}
-            </option>
-          ))}
-        </select>
+        {locations.length > 0 && (
+          <select
+            value={demographics.locationId}
+            onChange={(e) =>
+              handleDemographicsChange("locationId", e.target.value)
+            }
+            required
+            className="w-full p-3 border rounded-lg"
+          >
+            <option value="">Localização</option>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         <div className="flex gap-3 pt-4">
           <button

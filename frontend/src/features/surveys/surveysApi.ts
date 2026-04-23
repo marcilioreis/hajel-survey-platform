@@ -3,6 +3,7 @@ import type {
   Survey,
   BackendSurvey,
   SurveyPayload,
+  Location,
   CreateQuestionPayload,
   BackendQuestion,
   UpdateQuestionPayload,
@@ -106,11 +107,35 @@ export const surveysApi = api.injectEndpoints({
         { type: "Survey", id: surveyId },
       ],
     }),
+    // Listar todos os locais (para dropdown)
+    getLocations: builder.query<Location[], void>({
+      query: () => "/locations",
+    }),
+    // Locais de uma pesquisa específica
+    getSurveyLocations: builder.query<Location[], string>({
+      query: (id) => `/surveys/${id}/locations`,
+    }),
+    // Atualizar locais de uma pesquisa (associação)
+    updateSurveyLocations: builder.mutation<
+      void,
+      { surveyId: number; locationIds: number[] }
+    >({
+      query: ({ surveyId, locationIds }) => ({
+        url: `/surveys/${surveyId}/locations`,
+        method: "PUT",
+        body: { locationIds },
+      }),
+      invalidatesTags: (result, error, { surveyId }) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
   }),
 });
 
 export const {
   useGetSurveysQuery,
+  useGetLocationsQuery,
+  useGetSurveyLocationsQuery,
   useGetSurveyByIdQuery,
   useDeleteSurveyMutation,
   useCreateSurveyMutation,
