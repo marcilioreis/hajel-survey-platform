@@ -312,7 +312,11 @@ export const validateAnswer = (
 ): boolean => {
   switch (questionType) {
     case 'unica_escolha':
-      return Array.isArray(options) && typeof value === 'string' && options.includes(value);
+      return (
+        Array.isArray(value) &&
+        Array.isArray(options) &&
+        value.every((v) => typeof v === 'string' && options.includes(v))
+      );
     case 'multipla_escolha':
       return (
         Array.isArray(value) &&

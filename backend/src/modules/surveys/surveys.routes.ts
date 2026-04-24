@@ -45,6 +45,11 @@ router.use('/:surveyId/locations', locationRoutes);
 
 // Resultados agregados
 router.get('/:surveyId/results', authenticate, resultsController.getSurveyResults);
+router.get(
+  '/:surveyId/open-ended-responses',
+  authenticate,
+  resultsController.getOpenEndedResponses
+);
 
 // Exportações
 router.post('/:surveyId/exports', authenticate, reportsController.requestExport);

@@ -42,3 +42,40 @@ export const getSurveyResults = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const getOpenEndedResponses = async (req: Request, res: Response) => {
+  try {
+    const surveyId = getNumericId(req.params.surveyId);
+    const userId = req.user!.id;
+
+    // Verifica acesso à pesquisa (igual ao getSurveyResults)
+    const survey = await surveyService.findById(surveyId);
+    if (!survey) return res.status(404).json({ error: 'Survey not found' });
+
+    const isOwner = survey.createdBy === userId;
+    const isAdmin = await hasPermission(userId, 'survey:view_any');
+    // Permite visualização se for dono, admin, ou a pesquisa é pública e ativa
+    // (Não exigimos permissão response:view_individual)
+    if (!isOwner && !isAdmin) {
+      // Para usuários comuns, a pesquisa precisa estar pública e ativa
+      const enriched = await surveyService.findByIdWithAccess(surveyId, userId);
+      if (!enriched || enriched.status !== 'ativa') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+
+    const filters = {
+      startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
+      endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
+      locationIds: req.query.locationIds
+        ? (req.query.locationIds as string).split(',').map(Number)
+        : undefined,
+    };
+
+    const openEnded = await resultsService.getOpenEndedResponses(surveyId, filters);
+    res.json(openEnded);
+  } catch (error) {
+    console.error('Get open-ended responses error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

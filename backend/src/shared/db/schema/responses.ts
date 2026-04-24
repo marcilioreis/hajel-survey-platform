@@ -36,7 +36,7 @@ export const respondents = pgTable('respondents', {
     .notNull(),
   age: integer('age'),
   ageRange: varchar('age_range', { length: 20 }),
-  gender: varchar('gender', { length: 1 }),
+  gender: varchar('gender', { length: 50 }),
   incomeRange: varchar('income_range', { length: 30 }),
   education: varchar('education', { length: 30 }),
   occupation: varchar('occupation', { length: 50 }),
