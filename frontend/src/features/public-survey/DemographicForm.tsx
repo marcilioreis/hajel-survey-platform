@@ -38,6 +38,15 @@ export default function DemographicForm() {
 
   const locations = survey.locations || [];
 
+  const triggerVibration = () => {
+    if ("vibrate" in navigator) {
+      // Vibrate for 30ms, pause for 50ms, vibrate for 30ms
+      navigator.vibrate([30, 50, 30]);
+    } else {
+      console.log("Vibration API not supported");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (Object.values(form).some((v) => !v)) {
@@ -53,6 +62,7 @@ export default function DemographicForm() {
     try {
       await completeSession({ token, body: payload }).unwrap();
       localStorage.removeItem(`survey-token-${slug}`);
+      triggerVibration();
       toast.success("Pesquisa concluída! Obrigado por participar.");
       navigate(`/s/${slug}/thank-you`);
     } catch (err) {

@@ -26,7 +26,7 @@ export const surveysApi = api.injectEndpoints({
     }),
     getSurveyById: builder.query<BackendSurvey, string>({
       query: (id) => `/surveys/${id}`,
-      providesTags: (result, error, id) => [{ type: "Survey", id }],
+      providesTags: (_result, _error, id) => [{ type: "Survey", id }],
     }),
     createSurvey: builder.mutation<BackendSurvey, SurveyPayload>({
       query: (body) => ({
@@ -45,7 +45,7 @@ export const surveysApi = api.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Survey", id }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Survey", id }],
     }),
     deleteSurvey: builder.mutation<void, string>({
       query: (id) => ({
@@ -63,7 +63,7 @@ export const surveysApi = api.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { surveyId }) => [
+      invalidatesTags: (_result, _error, { surveyId }) => [
         { type: "Survey", id: surveyId },
       ],
     }),
@@ -80,7 +80,7 @@ export const surveysApi = api.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { surveyId }) => [
+      invalidatesTags: (_result, _error, { surveyId }) => [
         { type: "Survey", id: surveyId },
       ],
     }),
@@ -92,7 +92,7 @@ export const surveysApi = api.injectEndpoints({
         url: `/surveys/${surveyId}/questions/${questionId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, { surveyId }) => [
+      invalidatesTags: (_result, _error, { surveyId }) => [
         { type: "Survey", id: surveyId },
       ],
     }),
@@ -105,19 +105,16 @@ export const surveysApi = api.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { surveyId }) => [
+      invalidatesTags: (_result, _error, { surveyId }) => [
         { type: "Survey", id: surveyId },
       ],
     }),
-    // Listar todos os locais (para dropdown)
     getLocations: builder.query<Location[], void>({
       query: () => "/locations",
     }),
-    // Locais de uma pesquisa específica
     getSurveyLocations: builder.query<Location[], string>({
       query: (id) => `/surveys/${id}/locations`,
     }),
-    // Atualizar locais de uma pesquisa (associação)
     updateSurveyLocations: builder.mutation<
       void,
       { surveyId: number; locationIds: number[] }
@@ -127,19 +124,19 @@ export const surveysApi = api.injectEndpoints({
         method: "PUT",
         body: { locationIds },
       }),
-      invalidatesTags: (result, error, { surveyId }) => [
+      invalidatesTags: (_result, _error, { surveyId }) => [
         { type: "Survey", id: surveyId },
       ],
     }),
     getSurveyResults: builder.query<SurveyResults, string>({
       query: (surveyId) => `/surveys/${surveyId}/results`,
-      providesTags: (result, error, surveyId) => [
+      providesTags: (_result, _error, surveyId) => [
         { type: "Survey", id: surveyId },
       ],
     }),
     getOpenResponses: builder.query<OpenResponse[], string>({
       query: (surveyId) => `/surveys/${surveyId}/open-ended-responses`,
-      providesTags: (result, error, surveyId) => [
+      providesTags: (_result, _error, surveyId) => [
         { type: "Survey", id: surveyId },
       ],
     }),

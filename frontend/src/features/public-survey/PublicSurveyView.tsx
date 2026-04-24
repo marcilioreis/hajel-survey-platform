@@ -4,6 +4,7 @@ import {
   useStartSessionMutation,
 } from "./publicSurveyApi";
 import { toast } from "sonner";
+import Skeleton from "../../components/common/Skeleton";
 
 export default function PublicSurveyView() {
   const { slug } = useParams<{ slug: string }>();
@@ -25,8 +26,14 @@ export default function PublicSurveyView() {
   // Tratamento de loading
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
       </div>
     );
   }

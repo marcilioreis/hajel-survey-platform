@@ -4,6 +4,7 @@ import { useGetCurrentUserQuery } from "./authApi";
 import { useEffect } from "react";
 import { useAppDispatch } from "../../app/hooks";
 import { setCredentials, setLoading } from "./authSlice";
+import Skeleton from "../../components/common/Skeleton";
 
 export default function ProtectedRoute() {
   const dispatch = useAppDispatch();
@@ -20,8 +21,14 @@ export default function ProtectedRoute() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
       </div>
     );
   }

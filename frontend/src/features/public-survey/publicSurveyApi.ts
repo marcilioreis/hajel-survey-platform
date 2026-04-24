@@ -17,6 +17,10 @@ export const publicSurveyApi = createApi({
   endpoints: (builder) => ({
     getPublicSurvey: builder.query<PublicSurvey, string>({
       query: (slug) => `/s/${slug}`,
+      extraOptions: {
+        maxRetries: 3,
+        backoff: (attempt: number) => Math.pow(2, attempt) * 1000,
+      },
     }),
     startSession: builder.mutation<StartSessionResponse, string>({
       query: (slug) => ({
@@ -33,6 +37,10 @@ export const publicSurveyApi = createApi({
         method: "POST",
         body,
       }),
+      extraOptions: {
+        maxRetries: 3,
+        backoff: (attempt: number) => Math.pow(2, attempt) * 1000,
+      },
     }),
     submitAnswersBatch: builder.mutation<
       void,
@@ -43,6 +51,10 @@ export const publicSurveyApi = createApi({
         method: "POST",
         body,
       }),
+      extraOptions: {
+        maxRetries: 3,
+        backoff: (attempt: number) => Math.pow(2, attempt) * 1000,
+      },
     }),
     getProgress: builder.query<ProgressResponse, string>({
       query: (token) => `/s/${token}/progress`,

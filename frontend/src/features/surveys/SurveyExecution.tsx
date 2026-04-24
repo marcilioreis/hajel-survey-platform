@@ -6,6 +6,7 @@ import {
   useSubmitResponsesMutation,
 } from "./surveysApi";
 import type { DemographicData } from "./surveys.types";
+import Skeleton from "../../components/common/Skeleton";
 
 type AnswersMap = Record<number, string | string[]>;
 
@@ -47,7 +48,17 @@ export default function SurveyExecution() {
   }, [answers, id]);
 
   if (isLoading)
-    return <div className="p-4 text-center">Carregando pesquisa...</div>;
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
+      </div>
+    );
   if (!survey)
     return (
       <div className="p-4 text-center text-red-600">
@@ -102,6 +113,15 @@ export default function SurveyExecution() {
     setDemographics((prev) => ({ ...prev, [field]: value }));
   };
 
+  const triggerVibration = () => {
+    if ("vibrate" in navigator) {
+      // Vibrate for 30ms, pause for 50ms, vibrate for 30ms
+      navigator.vibrate([30, 50, 30]);
+    } else {
+      console.log("Vibration API not supported");
+    }
+  };
+
   const handleComplete = async () => {
     if (Object.values(demographics).some((v) => !v)) {
       toast.error("Preencha todos os campos demográficos.");
@@ -123,6 +143,7 @@ export default function SurveyExecution() {
     try {
       await submitResponses(payload).unwrap();
       localStorage.removeItem(`survey-${id}-answers`);
+      triggerVibration();
       toast.success("Pesquisa concluída com sucesso!");
       navigate("/surveys");
     } catch {

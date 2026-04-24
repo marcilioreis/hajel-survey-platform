@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useGetSurveyByIdQuery, useDeleteSurveyMutation } from "./surveysApi";
 import { useAppDispatch } from "../../app/hooks";
 import { api } from "../../lib/api";
+import Skeleton from "../../components/common/Skeleton";
 
 export default function SurveyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -72,7 +73,17 @@ export default function SurveyDetail() {
   };
 
   if (isLoading) {
-    return <div className="p-4">Carregando...</div>;
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (!survey) return null;
