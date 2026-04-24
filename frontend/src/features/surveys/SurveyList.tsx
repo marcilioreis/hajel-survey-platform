@@ -50,8 +50,6 @@ export default function SurveyList() {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-  console.log("filteredSurveys :>> ", filteredSurveys);
-
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">

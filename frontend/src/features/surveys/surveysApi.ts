@@ -9,6 +9,7 @@ import type {
   UpdateQuestionPayload,
   SubmitResponsePayload,
   SurveyResults,
+  OpenResponse,
 } from "./surveys.types";
 
 export const surveysApi = api.injectEndpoints({
@@ -136,6 +137,12 @@ export const surveysApi = api.injectEndpoints({
         { type: "Survey", id: surveyId },
       ],
     }),
+    getOpenResponses: builder.query<OpenResponse[], string>({
+      query: (surveyId) => `/surveys/${surveyId}/open-ended-responses`,
+      providesTags: (result, error, surveyId) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
   }),
 });
 
@@ -152,5 +159,6 @@ export const {
   useDeleteQuestionMutation,
   useSubmitResponsesMutation,
   useGetSurveyResultsQuery,
+  useGetOpenResponsesQuery,
   useUpdateSurveyLocationsMutation,
 } = surveysApi;

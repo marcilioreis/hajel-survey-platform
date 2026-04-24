@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -23,12 +23,18 @@ export default function DemographicForm() {
     locationId: "",
   });
 
-  if (!token || !survey) {
-    navigate(`/s/${slug}`);
-    return null;
-  }
+  // Redirecionamento seguro via useEffect
+  useEffect(() => {
+    if (!token || !survey) {
+      navigate(`/s/${slug}`);
+    }
+  }, [token, survey, slug, navigate]);
 
-  console.log("survey :>> ", survey);
+  // Agora o componente sempre retorna o mesmo JSX inicialmente,
+  // e o redirecionamento ocorre como efeito colateral após a montagem.
+  if (!token || !survey) {
+    return null; // ou um loading spinner
+  }
 
   const locations = survey.locations || [];
 

@@ -160,8 +160,10 @@ export default function SurveyExecution() {
                   type="radio"
                   name={`q-${q.id}`}
                   value={opt}
-                  checked={currentAnswer === opt}
-                  onChange={(e) => handleAnswerChange(e.target.value)}
+                  checked={
+                    Array.isArray(currentAnswer) && currentAnswer.includes(opt)
+                  }
+                  onChange={(e) => handleAnswerChange([e.target.value])}
                   className="w-5 h-5 text-blue-600"
                 />
                 <span className="text-base">{opt}</span>

@@ -7,6 +7,7 @@ import {
   useSubmitAnswersBatchMutation,
 } from "./publicSurveyApi";
 import type { AnswerPayload } from "./publicSurvey.types";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
 type AnswersMap = Record<number, string | string[]>;
 
@@ -93,6 +94,45 @@ export default function SurveySession() {
     }
   }, [answers, slug]);
 
+  function isSessionExpiredError(error: unknown): boolean {
+    if (!error) return false;
+
+    // Trata FetchBaseQueryError (erro de rede/HTTP)
+    const fetchError = error as FetchBaseQueryError;
+    if (fetchError && "status" in fetchError) {
+      const status = fetchError.status;
+      if (status === 409 || status === 400) return true;
+
+      // Se tiver dados, verifica a mensagem
+      const data = fetchError.data as { error?: string } | undefined;
+      const message = data?.error ?? "";
+      if (
+        message.toLowerCase().includes("finalizada") ||
+        message.toLowerCase().includes("abandonada")
+      ) {
+        return true;
+      }
+    }
+
+    // Trata SerializedError (erro inesperado, ex.: exceção na query)
+    const serializedError = error as { message?: string };
+    if (serializedError?.message) {
+      const msg = serializedError.message.toLowerCase();
+      if (msg.includes("finalizada") || msg.includes("abandonada")) return true;
+    }
+
+    return false;
+  }
+
+  useEffect(() => {
+    if (progressError && isSessionExpiredError(progressError)) {
+      toast.error("Sessão expirada ou já finalizada.");
+      localStorage.removeItem(`survey-token-${slug}`);
+      localStorage.removeItem(`survey-${slug}-answers`);
+      navigate(`/s/${slug}`);
+    }
+  }, [progressError, slug, navigate]);
+
   if (!survey || !token)
     return <div className="p-4">Carregando pesquisa...</div>;
 
@@ -137,8 +177,15 @@ export default function SurveySession() {
       // Limpa localStorage após envio bem-sucedido
       localStorage.removeItem(`survey-${slug}-answers`);
       navigate(`/s/${slug}/demographics`);
-    } catch {
-      toast.error("Erro ao enviar respostas. Verifique sua conexão.");
+    } catch (err) {
+      if (isSessionExpiredError(err)) {
+        toast.error("Sessão expirada ou já finalizada.");
+        localStorage.removeItem(`survey-token-${slug}`);
+        localStorage.removeItem(`survey-${slug}-answers`);
+        navigate(`/s/${slug}`);
+      } else {
+        toast.error("Erro ao enviar respostas. Verifique sua conexão.");
+      }
     }
   };
 
@@ -173,8 +220,10 @@ export default function SurveySession() {
                   type="radio"
                   name={`q-${q.id}`}
                   value={opt}
-                  checked={currentAnswer === opt}
-                  onChange={(e) => handleAnswerChange(e.target.value)}
+                  checked={
+                    Array.isArray(currentAnswer) && currentAnswer.includes(opt)
+                  }
+                  onChange={(e) => handleAnswerChange([e.target.value])}
                   className="w-5 h-5 text-blue-600"
                 />
                 <span className="text-base">{opt}</span>

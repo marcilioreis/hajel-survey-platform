@@ -150,8 +150,16 @@ export interface QuestionResult {
     option: string;
     count: number;
     percentage: number;
+    response?: string;
   }[];
 }
 
 // Resposta completa do endpoint
 export type SurveyResults = QuestionResult[];
+
+export interface OpenResponse {
+  questionId: number;
+  questionText: string;
+  type: string;
+  responses: string[];
+}
