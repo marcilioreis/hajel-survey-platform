@@ -138,6 +138,14 @@ export default function SurveyDetail() {
             Iniciar Coleta
           </button>
         )}
+        {survey.responses_count > 0 && (
+          <button
+            onClick={() => navigate(`/reports/${id}`)}
+            className="py-3 bg-purple-600 text-white rounded-lg font-medium"
+          >
+            Ver Resultados
+          </button>
+        )}
         <button
           onClick={confirmDelete}
           disabled={isDeleting}

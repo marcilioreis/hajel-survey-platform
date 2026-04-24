@@ -10,6 +10,7 @@ import SurveyFormWrapper from "../features/surveys/SurveyFormWrapper";
 import SurveyExecution from "../features/surveys/SurveyExecution";
 import PublicSurveyView from "../features/public-survey/PublicSurveyView";
 import SurveySession from "../features/public-survey/SurveySession";
+import SurveyReport from "../features/reports/SurveyReport";
 
 // Importa as rotas públicas
 import { publicRoutes } from "./publicRoutes";
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: "surveys/:id/execute", element: <SurveyExecution /> },
           { path: "/s/:slug", element: <PublicSurveyView /> },
           { path: "/s/:token/continue", element: <SurveySession /> }, // rota opcional para continuar sessão
+          { path: "reports/:surveyId", element: <SurveyReport /> },
           { path: "reports", element: <Reports /> },
           { path: "profile", element: <Profile /> },
         ],

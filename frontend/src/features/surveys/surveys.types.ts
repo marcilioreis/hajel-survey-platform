@@ -38,7 +38,7 @@ export interface BackendSurvey {
   created_at: string;
   questions: BackendQuestion[];
   locations?: Location[];
-  responses_count: string | number;
+  responses_count: number;
   status: string;
 }
 
@@ -56,7 +56,7 @@ export interface Survey {
   createdAt: string;
   questions: Question[];
   locations?: Location[];
-  responses_count: string | number;
+  responses_count: number;
   status: string;
 }
 
@@ -140,3 +140,18 @@ export interface Location {
   name: string;
   address?: string | null;
 }
+
+export interface QuestionResult {
+  questionId: number;
+  questionText: string;
+  type: string;
+  totalResponses: number;
+  data: {
+    option: string;
+    count: number;
+    percentage: number;
+  }[];
+}
+
+// Resposta completa do endpoint
+export type SurveyResults = QuestionResult[];

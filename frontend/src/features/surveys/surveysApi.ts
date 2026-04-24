@@ -8,6 +8,7 @@ import type {
   BackendQuestion,
   UpdateQuestionPayload,
   SubmitResponsePayload,
+  SurveyResults,
 } from "./surveys.types";
 
 export const surveysApi = api.injectEndpoints({
@@ -129,6 +130,12 @@ export const surveysApi = api.injectEndpoints({
         { type: "Survey", id: surveyId },
       ],
     }),
+    getSurveyResults: builder.query<SurveyResults, string>({
+      query: (surveyId) => `/surveys/${surveyId}/results`,
+      providesTags: (result, error, surveyId) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
   }),
 });
 
@@ -144,4 +151,6 @@ export const {
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
   useSubmitResponsesMutation,
+  useGetSurveyResultsQuery,
+  useUpdateSurveyLocationsMutation,
 } = surveysApi;

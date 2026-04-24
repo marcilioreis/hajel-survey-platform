@@ -31,8 +31,6 @@ export default function SurveySession() {
     skip: !token,
   });
 
-  console.log("Progress :>> ", progress);
-
   useEffect(() => {
     if (
       progressError &&
