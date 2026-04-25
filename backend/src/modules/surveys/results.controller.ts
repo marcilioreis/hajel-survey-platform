@@ -14,14 +14,12 @@ export const getSurveyResults = async (req: Request, res: Response) => {
     const surveyId = getNumericId(req.params.surveyId);
     const userId = req.user!.id;
 
-    // Verifica se a pesquisa existe e se o usuário pode vê-la
     const survey = await surveyService.findById(surveyId);
     if (!survey) return res.status(404).json({ error: 'Survey not found' });
 
-    // Verifica permissão de visualizar resultados agregados
-    const canViewAggregated = await hasPermission(userId, 'response:view_aggregated');
+    const canViewAggregated = hasPermission(req, 'response:view_aggregated');
     const isOwner = survey.createdBy === userId;
-    const isAdmin = await hasPermission(userId, 'survey:view_any');
+    const isAdmin = req.isAdmin; // já disponível
 
     if (!canViewAggregated && !isOwner && !isAdmin) {
       return res.status(403).json({ error: 'Forbidden' });
@@ -48,16 +46,13 @@ export const getOpenEndedResponses = async (req: Request, res: Response) => {
     const surveyId = getNumericId(req.params.surveyId);
     const userId = req.user!.id;
 
-    // Verifica acesso à pesquisa (igual ao getSurveyResults)
     const survey = await surveyService.findById(surveyId);
     if (!survey) return res.status(404).json({ error: 'Survey not found' });
 
     const isOwner = survey.createdBy === userId;
-    const isAdmin = await hasPermission(userId, 'survey:view_any');
-    // Permite visualização se for dono, admin, ou a pesquisa é pública e ativa
-    // (Não exigimos permissão response:view_individual)
+    const isAdmin = req.isAdmin;
+
     if (!isOwner && !isAdmin) {
-      // Para usuários comuns, a pesquisa precisa estar pública e ativa
       const enriched = await surveyService.findByIdWithAccess(surveyId, userId);
       if (!enriched || enriched.status !== 'ativa') {
         return res.status(403).json({ error: 'Forbidden' });

@@ -16,11 +16,26 @@ export const addQuestion = async (req: Request, res: Response) => {
     res.status(201).json(question);
   } catch (error: any) {
     console.error('Add question error:', error);
-
     if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
     if (error.message === 'Survey not found')
       return res.status(404).json({ error: 'Pesquisa não encontrada' });
     res.status(500).json({ error: 'Falha ao adicionar pergunta' });
+  }
+};
+
+export const addQuestionsBatch = async (req: Request, res: Response) => {
+  try {
+    const surveyId = getNumericId(req.params.surveyId);
+    const userId = req.user!.id;
+    console.info('req.body', req.body);
+    const questions = await surveyService.addQuestionsBatch(surveyId, req.body, userId);
+    res.status(201).json(questions);
+  } catch (error: any) {
+    console.error('Batch add questions error:', error);
+    if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
+    if (error.message === 'Pesquisa não encontrada')
+      return res.status(404).json({ error: 'Pesquisa não encontrada' });
+    res.status(500).json({ error: 'Falha ao adicionar perguntas em lote' });
   }
 };
 
@@ -41,23 +56,33 @@ export const updateQuestion = async (req: Request, res: Response) => {
     const questionId = getNumericId(req.params.questionId);
     const userId = req.user!.id;
 
-    // Verifica se pode editar qualquer pergunta (admin)
-    const canEditAny = await hasPermission(userId, 'survey:edit_any');
-    if (canEditAny) {
-      const question = await surveyService.updateQuestion(surveyId, questionId, req.body, userId);
-      if (!question) return res.status(404).json({ error: 'Pergunta não encontrada' });
-      return res.json(question);
-    }
-    // Senão, verifica se pode editar a própria pergunta (dono da pesquisa)
-    const canEditOwn = await hasPermission(userId, 'survey:edit');
-    if (canEditOwn) {
-      const question = await surveyService.updateQuestion(surveyId, questionId, req.body, userId);
-      if (!question) return res.status(404).json({ error: 'Pergunta não encontrada' });
-      return res.json(question);
+    // Verifica permissão
+    const canEditAny = hasPermission(req, 'survey:edit_any');
+    const canEditOwn = hasPermission(req, 'survey:edit');
+    if (!canEditAny && !canEditOwn) {
+      return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    // Se não tem permissão para editar, retorna 403
-    return res.status(403).json({ error: 'Acesso negado' });
+    // Monta apenas campos enviados
+    const updateData: Partial<{
+      text: string;
+      type: string;
+      required: boolean;
+      order: number;
+      options: unknown;
+      conditionalLogic: unknown;
+    }> = {};
+
+    if ('text' in req.body) updateData.text = req.body.text;
+    if ('type' in req.body) updateData.type = req.body.type;
+    if ('required' in req.body) updateData.required = req.body.required;
+    if ('order' in req.body) updateData.order = req.body.order;
+    if ('options' in req.body) updateData.options = req.body.options;
+    if ('conditionalLogic' in req.body) updateData.conditionalLogic = req.body.conditionalLogic;
+
+    const question = await surveyService.updateQuestion(surveyId, questionId, updateData, userId);
+    if (!question) return res.status(404).json({ error: 'Pergunta não encontrada' });
+    return res.json(question);
   } catch (error: any) {
     console.error('Update question error:', error);
     if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
@@ -71,21 +96,13 @@ export const deleteQuestion = async (req: Request, res: Response) => {
     const questionId = getNumericId(req.params.questionId);
     const userId = req.user!.id;
 
-    // Verifica se pode deletar qualquer pergunta (admin)
-    const canDeleteAny = await hasPermission(userId, 'survey:edit_any');
-    if (canDeleteAny) {
-      await surveyService.deleteQuestion(surveyId, questionId, userId);
-      return res.status(204).send();
+    const canDeleteAny = hasPermission(req, 'survey:delete_any');
+    const canDeleteOwn = hasPermission(req, 'survey:delete');
+    if (!canDeleteAny && !canDeleteOwn) {
+      return res.status(403).json({ error: 'Acesso negado' });
     }
-    // Senão, verifica se pode deletar a própria pergunta (dono da pesquisa)
-    const canDeleteOwn = await hasPermission(userId, 'survey:edit');
-    if (canDeleteOwn) {
-      await surveyService.deleteQuestion(surveyId, questionId, userId);
-      return res.status(204).send();
-    }
-
-    // Se não tem permissão para deletar, retorna 403
-    return res.status(403).json({ error: 'Acesso negado' });
+    await surveyService.deleteQuestion(surveyId, questionId, userId);
+    return res.status(204).send();
   } catch (error: any) {
     console.error('Delete question error:', error);
     if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });

@@ -18,18 +18,16 @@ export const requestExport = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { format = 'csv', filters } = req.body;
 
-    // Converte datas para string ISO se existirem
     const sanitizedFilters = filters
       ? {
           ...filters,
           startDate: filters.startDate ? new Date(filters.startDate).toISOString() : undefined,
           endDate: filters.endDate ? new Date(filters.endDate).toISOString() : undefined,
-          // locationIds já é array de números, não precisa alterar
         }
       : undefined;
 
     // Verifica permissão de exportar relatórios
-    const canExport = await hasPermission(userId, 'report:export');
+    const canExport = hasPermission(req, 'report:export');
     const survey = await surveyService.findById(surveyId);
     if (!survey) return res.status(404).json({ error: 'Pesquisa não encontrada' });
     const isOwner = survey.createdBy === userId;
@@ -37,7 +35,6 @@ export const requestExport = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    // Cria registro de exportação
     const exportRecord = await reportsService.createExportRequest(
       surveyId,
       userId,
@@ -45,7 +42,6 @@ export const requestExport = async (req: Request, res: Response) => {
       sanitizedFilters
     );
 
-    // Enfileira job
     await exportQueue.add({
       exportId: exportRecord.id,
       surveyId,
@@ -90,6 +86,7 @@ export const downloadExport = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Exportação não está pronta ou não encontrada' });
     }
 
+    // Se o arquivo estiver em disco (local), faça o pipe
     const filePath = path.join(process.cwd(), 'exports', exportRecord.fileName!);
     const stat = await fs.stat(filePath);
     res.setHeader('Content-Type', exportRecord.format === 'csv' ? 'text/csv' : 'application/json');

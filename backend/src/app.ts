@@ -1,27 +1,40 @@
 import 'dotenv/config';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import { toNodeHandler } from 'better-auth/node';
+import { RedisStore } from 'rate-limit-redis';
 import { auth } from './shared/auth/auth.js';
 import surveyRoutes from './modules/surveys/surveys.routes.js';
 import globalLocationRoutes from './modules/locations/global.routes.js';
 import publicRoutes from './modules/responses/public.routes.js';
 import { createApolloServer } from './graphql/apollo.js';
+import { redis } from './shared/redis/index.js';
+import { authenticate } from './shared/auth/middleware.js';
+import { loadPermissions } from './shared/middleware/loadPermissions.js';
+
+// ---- Rate limiter com prefixo ÚNICO no Redis ----
+const apiLimiter = rateLimit({
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redis.call(...args),
+    prefix: 'rl:api:', // prefixo único
+  }),
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { error: 'Limite de requisições da API excedido, tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const app = express();
 
 try {
   // Middlewares globais
   if (process.env.NODE_ENV !== 'production') {
-    app.use(
-      helmet({
-        contentSecurityPolicy: false,
-        crossOriginEmbedderPolicy: false,
-      })
-    );
+    app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
   } else {
     app.use(helmet());
   }
@@ -29,7 +42,7 @@ try {
   app.use(compression());
   app.use(morgan('dev'));
 
-  // CORS deve vir ANTES do handler do Better Auth, com credentials: true
+  // CORS antes do handler do Better Auth
   app.use(
     cors({
       origin: [
@@ -41,27 +54,27 @@ try {
     })
   );
 
-  // Health check (antes do handler do Better Auth)
+  // Health check
   app.get('/health', (req, res) => res.send('OK'));
 
-  // Handler do Better Auth – wrapper que preserva a URL completa
-  // app.all('/api/auth/{*any}', toNodeHandler(auth));
-  app.all('/api/auth/*splat', toNodeHandler(auth));
+  // ================== ROTEAMENTO PRINCIPAL ==================
 
-  // ⚠️ IMPORTANTE: NÃO use express.json() ANTES do handler do Better Auth
-  // Mova o express.json() para DEPOIS, se necessário para outras rotas
+  // 1. Autenticação (Better Auth) com rate limit específico
+  app.all('/api/auth/*splat', apiLimiter, toNodeHandler(auth));
+
+  // 2. JSON parser para as próximas rotas (pode ser aplicado globalmente após o handler)
   app.use(express.json());
 
-  // Outras rotas da sua aplicação (ex: surveys)
-  app.use('/api/surveys', surveyRoutes);
-  app.use('/api/locations', globalLocationRoutes);
-  app.use('/', publicRoutes); // rotas públicas sem prefixo /api
+  // 3. Rotas autenticadas (surveys, locations) – autenticação, permissões e apiLimiter
+  app.use('/api/surveys', authenticate, loadPermissions, apiLimiter, surveyRoutes);
+  app.use('/api/locations', authenticate, loadPermissions, apiLimiter, globalLocationRoutes);
 
-  // Inicializa o Apollo e obtém os middlewares
+  // 4. Rotas públicas com publicLimiter (aplicado dentro do próprio arquivo de rotas)
+  app.use('/', publicRoutes); // o publicLimiter é aplicado dentro de publicRoutes
+
+  // 5. GraphQL
   const { authMiddleware, apolloMiddleware } = await createApolloServer();
-
-  // Monta o endpoint GraphQL
-  app.use('/graphql', express.json(), authMiddleware, apolloMiddleware);
+  app.use('/graphql', authMiddleware, apolloMiddleware);
 } catch (error) {
   console.error('Erro ao iniciar servidor:', error);
 }

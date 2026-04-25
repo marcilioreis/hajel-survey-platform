@@ -191,6 +191,27 @@ export const addQuestion = async (
     .returning();
   return question;
 };
+export const addQuestionsBatch = async (
+  surveyId: number,
+  questionsData: Omit<InsertQuestion, 'surveyId'>[],
+  userId: string
+) => {
+  // Verifica se o usuário pode editar a pesquisa
+  const [survey] = await db
+    .select({ createdBy: surveys.createdBy })
+    .from(surveys)
+    .where(eq(surveys.id, surveyId));
+  if (!survey) throw new Error('Pesquisa não encontrada');
+  if (survey.createdBy !== userId) throw new Error('Forbidden');
+
+  return await db.transaction(async (tx) => {
+    const createdQuestions = await tx
+      .insert(questions)
+      .values(questionsData.map((q) => ({ ...q, surveyId })))
+      .returning();
+    return createdQuestions;
+  });
+};
 
 /**
  * Lista todas as perguntas de uma pesquisa.

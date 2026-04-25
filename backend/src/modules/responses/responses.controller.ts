@@ -2,7 +2,6 @@
 import { Request, Response } from 'express';
 import * as surveyService from '../surveys/surveys.service.js';
 import * as responseService from './responses.service.js';
-import { hasPermission } from '../../shared/middleware/rbac.js';
 
 // Helper para extrair string de parâmetro
 const getStringParam = (param: string | string[]): string => {
@@ -142,9 +141,9 @@ export const submitAuthenticatedResponses = async (req: Request, res: Response) 
   try {
     const surveyId = getNumericId(req.params.surveyId);
     const userId = req.user!.id;
-    const { answers, profile } = req.body as {
+    const { answers, respondent } = req.body as {
       answers: responseService.AnswerPayload[];
-      profile?: {
+      respondent?: {
         ageRange?: string;
         gender?: string;
         incomeRange?: string;
@@ -166,7 +165,7 @@ export const submitAuthenticatedResponses = async (req: Request, res: Response) 
 
     const isPublicActive = survey.public && survey.active;
     const isOwner = survey.createdBy === userId;
-    const isAdmin = await hasPermission(userId, 'survey:view_any');
+    const isAdmin = req.isAdmin;
     if (!isPublicActive && !isOwner && !isAdmin) {
       return res.status(403).json({ error: 'Acesso negado' });
     }
@@ -181,9 +180,9 @@ export const submitAuthenticatedResponses = async (req: Request, res: Response) 
     }
 
     // Validar locationId se fornecido
-    if (profile?.locationId) {
+    if (respondent?.locationId) {
       const locations = await surveyService.getLocations(surveyId);
-      const locationExists = locations.some((loc) => loc.id === profile.locationId);
+      const locationExists = locations.some((loc) => loc.id === respondent.locationId);
       if (!locationExists) {
         return res.status(400).json({ error: 'Localização inválida' });
       }
@@ -220,15 +219,19 @@ export const submitAuthenticatedResponses = async (req: Request, res: Response) 
 
     // Salvar perfil (se enviado)
     let profileUpdated = false;
-    if (profile) {
-      await responseService.upsertRespondentProfile(session.id, profile);
+    if (respondent) {
+      await responseService.upsertRespondentProfile(session.id, respondent);
       profileUpdated = true;
     }
+
+    // Finalizar a sessão automaticamente
+    await responseService.finalizeUserSession(session.id);
 
     res.json({
       success: true,
       answersSaved: affectedAnswers,
       profileUpdated,
+      sessionCompleted: true,
     });
   } catch (error) {
     console.error('Submit authenticated responses error:', error);

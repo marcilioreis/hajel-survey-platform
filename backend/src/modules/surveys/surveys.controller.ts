@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import * as surveyService from './surveys.service.js';
 import { hasPermission } from '../../shared/middleware/rbac.js';
+import { InsertSurvey } from '../../shared/db/schema/index.js';
 
-// Helper para obter o id de forma segura
 const getNumericId = (param: string | string[]): number => {
   const id = Array.isArray(param) ? param[0] : param;
   return parseInt(id, 10);
@@ -25,21 +25,18 @@ export const listSurveys = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
-    // 1. Verifica se o usuário pode ver todas as pesquisas
-    const canViewAny = await hasPermission(userId, 'survey:view_any');
+    const canViewAny = hasPermission(req, 'survey:view_any');
     if (canViewAny) {
       const allSurveys = await surveyService.findAllSurveys();
       return res.json(allSurveys);
     }
 
-    // 2. Verifica se pode ver as próprias pesquisas
-    const canViewOwn = await hasPermission(userId, 'survey:view');
+    const canViewOwn = hasPermission(req, 'survey:view');
     if (canViewOwn) {
       const ownSurveys = await surveyService.findAll(userId);
       return res.json(ownSurveys);
     }
 
-    // 3. Se não tem nenhuma permissão, retorna apenas pesquisas públicas (se aplicável)
     const publicSurveys = await surveyService.findPublicSurveys();
     return res.json(publicSurveys);
   } catch (error) {
@@ -47,25 +44,23 @@ export const listSurveys = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Falha ao listar pesquisas' });
   }
 };
+
 export const listSurveysEnriched = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
-    // 1. Verifica se o usuário pode ver todas as pesquisas
-    const canViewAny = await hasPermission(userId, 'survey:view_any');
+    const canViewAny = hasPermission(req, 'survey:view_any');
     if (canViewAny) {
       const allSurveys = await surveyService.findAllSurveysEnriched();
       return res.json(allSurveys);
     }
 
-    // 2. Verifica se pode ver as próprias pesquisas
-    const canViewOwn = await hasPermission(userId, 'survey:view');
+    const canViewOwn = hasPermission(req, 'survey:view');
     if (canViewOwn) {
       const ownSurveys = await surveyService.findAllEnriched(userId);
       return res.json(ownSurveys);
     }
 
-    // 3. Se não tem nenhuma permissão, retorna apenas pesquisas públicas (se aplicável)
     const publicSurveys = await surveyService.findPublicSurveysEnriched(userId);
     return res.json(publicSurveys);
   } catch (error) {
@@ -78,11 +73,9 @@ export const getSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);
     const survey = await surveyService.findByIdEnriched(surveyId);
-
     if (!survey) {
       return res.status(404).json({ error: 'Pesquisa não encontrada' });
     }
-
     res.json(survey);
   } catch (error) {
     console.error('Get survey error:', error);
@@ -94,27 +87,35 @@ export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);
     const userId = req.user!.id;
-    const { title, description, public: isPublic, active, endDate } = req.body;
-    const updateData: any = {
-      title,
-      description,
-      public: isPublic,
-      active,
-    };
 
-    if (endDate) {
-      updateData.endDate = new Date(endDate); // converte string para Date
+    // Monta updateData apenas com campos enviados (PATCH semântico)
+    const updateData: Partial<{
+      title: string;
+      description: string | null;
+      public: boolean;
+      active: boolean;
+      endDate: Date;
+    }> = {};
+
+    if ('title' in req.body) updateData.title = req.body.title;
+    if ('description' in req.body) updateData.description = req.body.description;
+    if ('public' in req.body) updateData.public = req.body.public;
+    if ('active' in req.body) updateData.active = req.body.active;
+    if ('endDate' in req.body) updateData.endDate = new Date(req.body.endDate);
+
+    // Valida endDate se fornecida
+    if (updateData.endDate && isNaN(updateData.endDate.getTime())) {
+      return res.status(400).json({ error: 'Formato de data inválido' });
     }
 
-    // Verifica se pode editar qualquer pesquisa
-    const canEditAny = await hasPermission(userId, 'survey:edit_any');
+    // Verifica permissões
+    const canEditAny = hasPermission(req, 'survey:edit_any');
     if (canEditAny) {
       const survey = await surveyService.update(surveyId, updateData, userId);
       return res.json(survey);
     }
 
-    // Verifica se pode editar apenas as próprias
-    const canEditOwn = await hasPermission(userId, 'survey:edit');
+    const canEditOwn = hasPermission(req, 'survey:edit');
     if (canEditOwn) {
       const survey = await surveyService.update(surveyId, updateData, userId);
       return res.json(survey);
@@ -132,15 +133,13 @@ export const deleteSurvey = async (req: Request, res: Response) => {
     const surveyId = getNumericId(req.params.id);
     const userId = req.user!.id;
 
-    // Verifica se pode deletar qualquer pesquisa
-    const canDeleteAny = await hasPermission(userId, 'survey:delete_any');
+    const canDeleteAny = hasPermission(req, 'survey:delete_any');
     if (canDeleteAny) {
       await surveyService.remove(surveyId, userId);
       return res.status(204).send();
     }
 
-    // Verifica se pode deletar apenas as próprias
-    const canDeleteOwn = await hasPermission(userId, 'survey:delete');
+    const canDeleteOwn = hasPermission(req, 'survey:delete');
     if (canDeleteOwn) {
       await surveyService.remove(surveyId, userId);
       return res.status(204).send();

@@ -9,7 +9,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const session = await auth.api.getSession({ headers });
 
     if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: 'Não autorizado' });
     }
     req.user = session.user;
     req.session = session.session; // Armazena a sessão completa para uso futuro, se necessário
@@ -19,6 +19,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };

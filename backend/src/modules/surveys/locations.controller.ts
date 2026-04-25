@@ -39,7 +39,7 @@ export const listAllLocations = async (req: Request, res: Response) => {
     const allLocations = await surveyService.getAllLocations();
     res.json(allLocations);
   } catch (error) {
-    console.error('Fetch locations error:', error);
+    console.error('Fetch all locations error:', error);
     res.status(500).json({ error: 'Falha ao listar locais' });
   }
 };
@@ -49,8 +49,17 @@ export const updateLocation = async (req: Request, res: Response) => {
     const surveyId = getNumericId(req.params.surveyId);
     const locationId = getNumericId(req.params.locationId);
     const userId = req.user!.id;
-    // Verifica se pode editar qualquer local (admin)
-    const location = await surveyService.updateLocation(surveyId, locationId, req.body, userId);
+
+    // Monta atualização apenas com campos enviados
+    const updateData: Partial<{
+      name: string;
+      order: number;
+    }> = {};
+
+    if ('name' in req.body) updateData.name = req.body.name;
+    if ('order' in req.body) updateData.order = req.body.order;
+
+    const location = await surveyService.updateLocation(surveyId, locationId, updateData, userId);
     if (!location) return res.status(404).json({ error: 'Local não encontrado' });
     return res.json(location);
   } catch (error: any) {
@@ -66,7 +75,6 @@ export const deleteLocation = async (req: Request, res: Response) => {
     const surveyId = getNumericId(req.params.surveyId);
     const locationId = getNumericId(req.params.locationId);
     const userId = req.user!.id;
-
     await surveyService.deleteLocation(surveyId, locationId, userId);
     return res.status(204).send();
   } catch (error: any) {

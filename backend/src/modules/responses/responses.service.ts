@@ -285,19 +285,45 @@ export const completeSession = async (
   sessionId: number,
   respondentData: Omit<InsertRespondent, 'sessionId' | 'id'>
 ) => {
+  // 1. Atualiza o status da sessão (idempotente)
   await db
     .update(responseSessions)
     .set({ status: 'concluida', completedAt: new Date() })
     .where(eq(responseSessions.id, sessionId));
 
-  const [respondent] = await db
+  // 2. Verifica se já existe respondente para esta sessão
+  const [existingRespondent] = await db
+    .select()
+    .from(respondents)
+    .where(eq(respondents.sessionId, sessionId))
+    .limit(1);
+
+  if (existingRespondent) {
+    // Se já existe, retorna o existente (ignora os dados reenviados)
+    return existingRespondent;
+  }
+
+  // 3. Insere novo respondente apenas se não existir
+  const [newRespondent] = await db
     .insert(respondents)
     .values({
       ...respondentData,
       sessionId,
     })
     .returning();
-  return respondent;
+
+  return newRespondent;
+};
+
+/**
+ * Finaliza uma sessão de usuário autenticado, marcando-a como concluída.
+ * Presume que o perfil do respondente já foi salvo.
+ */
+export const finalizeUserSession = async (sessionId: number) => {
+  await db
+    .update(responseSessions)
+    .set({ status: 'concluida', completedAt: new Date() })
+    .where(eq(responseSessions.id, sessionId));
 };
 
 // ========== VALIDAÇÕES ==========
@@ -312,10 +338,16 @@ export const validateAnswer = (
 ): boolean => {
   switch (questionType) {
     case 'unica_escolha':
+      // return (
+      //   Array.isArray(value) &&
+      //   Array.isArray(options) &&
+      //   value.every((v) => typeof v === 'string' && options.includes(v))
+      // );
       return (
         Array.isArray(value) &&
+        value.length === 1 &&
         Array.isArray(options) &&
-        value.every((v) => typeof v === 'string' && options.includes(v))
+        (options as string[]).includes(value[0] as string)
       );
     case 'multipla_escolha':
       return (

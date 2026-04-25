@@ -6,6 +6,8 @@ declare global {
     interface Request {
       user?: User;
       session?: Session;
+      userPermissions?: Set<string>;
+      isAdmin?: boolean;
     }
   }
 }
