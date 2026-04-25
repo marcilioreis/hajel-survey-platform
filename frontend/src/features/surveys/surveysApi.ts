@@ -67,6 +67,19 @@ export const surveysApi = api.injectEndpoints({
         { type: "Survey", id: surveyId },
       ],
     }),
+    addQuestionsBatch: builder.mutation<
+      BackendQuestion[],
+      { surveyId: number; body: CreateQuestionPayload[] }
+    >({
+      query: ({ surveyId, body }) => ({
+        url: `/surveys/${surveyId}/questions/batch`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { surveyId }) => [
+        { type: "Survey", id: surveyId },
+      ],
+    }),
     updateQuestion: builder.mutation<
       BackendQuestion,
       {
@@ -152,6 +165,7 @@ export const {
   useCreateSurveyMutation,
   useUpdateSurveyMutation,
   useAddQuestionMutation,
+  useAddQuestionsBatchMutation,
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
   useSubmitResponsesMutation,

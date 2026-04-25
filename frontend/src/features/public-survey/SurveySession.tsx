@@ -8,6 +8,7 @@ import {
 } from "./publicSurveyApi";
 import type { AnswerPayload } from "./publicSurvey.types";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import Skeleton from "../../components/common/Skeleton";
 
 type AnswersMap = Record<number, string | string[]>;
 
@@ -134,7 +135,17 @@ export default function SurveySession() {
   }, [progressError, slug, navigate]);
 
   if (!survey || !token)
-    return <div className="p-4">Carregando pesquisa...</div>;
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
+      </div>
+    );
 
   const questions = survey.questions;
   const currentQuestion = questions[currentIndex];

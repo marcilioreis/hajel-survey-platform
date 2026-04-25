@@ -5,6 +5,7 @@ import {
 } from "../surveys/surveysApi";
 import ReportCharts from "./ReportCharts";
 import OpenResponsesList from "./OpenResponsesList"; // novo componente
+import Skeleton from "../../components/common/Skeleton";
 
 export default function SurveyReport() {
   const { surveyId } = useParams<{ surveyId: string }>();
@@ -21,7 +22,17 @@ export default function SurveyReport() {
   } = useGetOpenResponsesQuery(surveyId!);
 
   if (loadingResults || loadingOpen)
-    return <div className="p-4 text-center">Carregando resultados...</div>;
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
+      </div>
+    );
   if ((errorResults || !results) && (errorOpen || !openResponses)) {
     return (
       <div className="p-4 text-center text-red-600">

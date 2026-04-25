@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   useCreateSurveyMutation,
   useUpdateSurveyMutation,
-  useAddQuestionMutation,
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
   useGetLocationsQuery,
+  useAddQuestionsBatchMutation,
 } from "./surveysApi";
 import type {
   BackendQuestion,
@@ -191,7 +191,7 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
   const { data: allLocations = [] } = useGetLocationsQuery();
   const [createSurvey, { isLoading: isCreating }] = useCreateSurveyMutation();
   const [updateSurvey, { isLoading: isUpdating }] = useUpdateSurveyMutation();
-  const [addQuestion] = useAddQuestionMutation();
+  const [addQuestionsBatch] = useAddQuestionsBatchMutation();
   const [updateQuestion] = useUpdateQuestionMutation();
   const [deleteQuestion] = useDeleteQuestionMutation();
 
@@ -210,8 +210,11 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
     initialSurvey ? normalizeQuestions(initialSurvey.questions) : [],
   );
 
+  const tempIdCounter = useRef(0);
+
   const addNewQuestion = () => {
     const newQuestion: Question = {
+      id: tempIdCounter.current--, // ID string único
       text: "",
       type: "texto_longo",
       required: false,
@@ -236,43 +239,71 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
   ) => {
     const currentQuestions = questions;
     const originalMap = new Map(originalQuestions.map((q) => [q.id, q]));
+
+    // Perguntas removidas (estavam na original, mas não estão no estado atual)
     const removedQuestions = originalQuestions.filter(
       (orig) => !currentQuestions.some((curr) => curr.id === orig.id),
     );
-    const operations: Promise<unknown>[] = [];
+
+    // Separa novas perguntas das existentes
+    const newQuestions: Question[] = [];
+    const existingQuestions: Question[] = [];
 
     for (const q of currentQuestions) {
-      const payload: CreateQuestionPayload = {
+      if (q.id && typeof q.id === "number" && originalMap.has(q.id)) {
+        existingQuestions.push(q);
+      } else {
+        newQuestions.push(q);
+      }
+    }
+
+    const operations: Promise<unknown>[] = [];
+
+    // 1. Envio em lote de novas perguntas (se houver)
+    if (newQuestions.length > 0) {
+      const batchPayload = newQuestions.map((q, idx) => ({
         text: q.text.trim(),
         type: mapFrontendTypeToBackend(q.type),
         required: q.required,
         options: q.options.map((opt) => opt.text.trim()),
-        order: q.order ?? 0,
+        order: q.order ?? idx + 1, // ordem sequencial
+      }));
+      operations.push(
+        addQuestionsBatch({ surveyId, body: batchPayload }).unwrap(),
+      );
+    }
+
+    // 2. Atualização de perguntas existentes que foram modificadas
+    for (const q of existingQuestions) {
+      const original = originalMap.get(q.id!)!;
+      const payload = {
+        text: q.text.trim(),
+        type: mapFrontendTypeToBackend(q.type),
+        required: q.required,
+        options: q.options.map((opt) => opt.text.trim()),
+        order:
+          q.order ?? currentQuestions.findIndex((curr) => curr.id === q.id) + 1, // mantém a ordem do array
       };
 
-      if (q.id && typeof q.id === "number" && originalMap.has(q.id)) {
-        const original = originalMap.get(q.id)!;
-        const hasChanged =
-          original.text !== payload.text ||
-          original.type !== payload.type ||
-          original.required !== payload.required ||
-          JSON.stringify(original.options) !==
-            JSON.stringify(payload.options) ||
-          original.order !== payload.order;
-        if (hasChanged) {
-          operations.push(
-            updateQuestion({
-              surveyId,
-              questionId: q.id,
-              body: payload,
-            }).unwrap(),
-          );
-        }
-      } else {
-        operations.push(addQuestion({ surveyId, body: payload }).unwrap());
+      const hasChanged =
+        original.text !== payload.text ||
+        original.type !== payload.type ||
+        original.required !== payload.required ||
+        JSON.stringify(original.options) !== JSON.stringify(payload.options) ||
+        original.order !== payload.order;
+
+      if (hasChanged) {
+        operations.push(
+          updateQuestion({
+            surveyId,
+            questionId: q.id!,
+            body: payload,
+          }).unwrap(),
+        );
       }
     }
 
+    // 3. Remoção de perguntas
     for (const q of removedQuestions) {
       operations.push(deleteQuestion({ surveyId, questionId: q.id }).unwrap());
     }
@@ -410,7 +441,7 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
       <div className="space-y-3">
         {questions.map((q, idx) => (
           <QuestionEditor
-            key={q.id || idx}
+            key={q.id != null ? q.id : idx}
             question={q}
             onChange={(updated) => updateQuestionHandler(idx, updated)}
             onRemove={() => removeQuestionHandler(idx)}
