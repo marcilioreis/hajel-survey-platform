@@ -5,14 +5,14 @@ import { startExportWorker } from './shared/queue/export.worker.js';
 import { redis } from './shared/redis/index.js';
 import { exportQueue } from './shared/queue/export.queue.js';
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Inicia o worker do Bull
 startExportWorker();
 console.log('📦 Export worker started');
 
 // Inicia o servidor HTTP
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });
 

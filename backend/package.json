@@ -9,13 +9,14 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc --outDir dist",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix --no-color",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "db:push": "ts-node drizzle.config.ts",
+    "migrate": "drizzle-kit push:pg",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
