@@ -29,18 +29,18 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const authLimiterMem = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  message: { error: 'Muitas requisições, tente novamente.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// const authLimiterMem = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 30,
+//   message: { error: 'Muitas requisições, tente novamente.' },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
 const app = express();
 
 try {
-  app.set('trust proxy', 1);
+  // app.set('trust proxy', 1);
   // Middlewares globais
   if (process.env.NODE_ENV !== 'production') {
     app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
