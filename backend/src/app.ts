@@ -32,6 +32,7 @@ const apiLimiter = rateLimit({
 const app = express();
 
 try {
+  app.set('trust proxy', 1);
   // Middlewares globais
   if (process.env.NODE_ENV !== 'production') {
     app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
@@ -60,7 +61,7 @@ try {
   // ================== ROTEAMENTO PRINCIPAL ==================
 
   // 1. Autenticação (Better Auth) com rate limit específico
-  app.all('/api/auth/*splat', apiLimiter, toNodeHandler(auth));
+  app.all('/api/auth/{*any}', apiLimiter, toNodeHandler(auth));
 
   // 2. JSON parser para as próximas rotas (pode ser aplicado globalmente após o handler)
   app.use(express.json());
