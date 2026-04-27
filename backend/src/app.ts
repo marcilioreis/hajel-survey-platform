@@ -47,14 +47,6 @@ try {
   // });
   app.set('trust proxy', 1);
   // Middlewares globais
-  if (process.env.NODE_ENV !== 'production') {
-    app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-  } else {
-    app.use(helmet());
-  }
-
-  app.use(compression());
-  app.use(morgan('dev'));
 
   // CORS antes do handler do Better Auth
   app.use(
@@ -67,6 +59,15 @@ try {
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     })
   );
+
+  if (process.env.NODE_ENV !== 'production') {
+    app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+  } else {
+    app.use(helmet());
+  }
+
+  app.use(compression());
+  app.use(morgan('dev'));
 
   // Health check
   app.get('/health', (req, res) => res.send('OK'));
