@@ -20,8 +20,8 @@ export const auth = betterAuth({
     enabled: true,
   },
   trustedOrigins: [
-    process.env.BETTER_AUTH_URL!, // para testes via curl/localhost
-    'http://localhost:5173', // frontend (se houver)
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    process.env.BETTER_AUTH_URL || 'http://localhost:3000',
   ],
   session: {
     expiresIn: 30 * 24 * 60 * 60,

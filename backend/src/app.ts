@@ -40,7 +40,12 @@ const apiLimiter = rateLimit({
 const app = express();
 
 try {
-  // app.set('trust proxy', 1);
+  console.info('[DIAG] Express app created');
+  app.use((req, res, next) => {
+    console.info(`[DIAG] Request: ${req.method} ${req.path}`);
+    next();
+  });
+  app.set('trust proxy', 1);
   // Middlewares globais
   if (process.env.NODE_ENV !== 'production') {
     app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
@@ -72,8 +77,8 @@ try {
   app.get('/api/auth/test', (req, res) => res.json({ ok: true }));
 
   // 1. Autenticação (Better Auth) com rate limit específico
-  // app.all('/api/auth/{*splat}', toNodeHandler(auth));
-  app.use('/api/auth', toNodeHandler(auth));
+  app.all('/api/auth/{*splat}', toNodeHandler(auth));
+  // app.use('/api/auth', auth.handler);
 
   // 2. JSON parser para as próximas rotas (pode ser aplicado globalmente após o handler)
   app.use(express.json());
