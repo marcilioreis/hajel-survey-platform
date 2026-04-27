@@ -3,7 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>
+    if (location.hostname === 'hajel-survey-app.onrender.com' && location.pathname.at(-1) !== 'l') {
+      history.replaceState({}, '', 'index.html');
+    }
+  </script>
+  <link rel="icon" type="image/svg+xml" href="/favicon.png" />
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="/src/style.css" rel="stylesheet">

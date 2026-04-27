@@ -24,17 +24,23 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_URL || 'http://localhost:3000',
   ],
   session: {
-    expiresIn: 30 * 24 * 60 * 60,
-    updateAge: 15 * 24 * 60 * 60,
+    expiresIn: 30 * 24 * 60 * 60, // 30 dias
+    updateAge: 15 * 24 * 60 * 60, // 15 dias
+    cookie: {
+      attributes: {
+        sameSite: 'none',
+        secure: true,
+        httpOnly: true,
+        domain: undefined, // deixa o Better Auth decidir
+      },
+    },
   },
   logger: {
     disabled: false,
     disableColors: false,
     level: 'debug',
     log: (level, message, ...args) => {
-      // Custom logging implementation
-      // eslint-disable-next-line no-console
-      console.log(`[${level}] ${message}`, ...args);
+      console.info(`[${level}] ${message}`, ...args);
     },
   },
 });
