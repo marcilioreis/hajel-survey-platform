@@ -69,7 +69,7 @@ try {
   // ================== ROTEAMENTO PRINCIPAL ==================
 
   // 1. Autenticação (Better Auth) com rate limit específico
-  app.all('/api/auth/{*splat}', authLimiterMem, toNodeHandler(auth));
+  // app.all('/api/auth/{*splat}', authLimiterMem, toNodeHandler(auth));
   // app.use('/api/auth', apiLimiter, toNodeHandler(auth));
 
   // 2. JSON parser para as próximas rotas (pode ser aplicado globalmente após o handler)
