@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import * as surveyService from './surveys.service.js';
 import { hasPermission } from '../../shared/middleware/rbac.js';
-import { InsertSurvey } from '../../shared/db/schema/index.js';
 
 const getNumericId = (param: string | string[]): number => {
   const id = Array.isArray(param) ? param[0] : param;

@@ -64,15 +64,15 @@ export const resolvers = {
       const { userId } = context;
       if (!userId) throw new Error('Unauthorized');
 
-      const canViewAny = await hasPermission(userId, 'survey:view_any');
-      if (canViewAny) {
-        return surveyService.findAllSurveysEnriched();
-      }
+      // const canViewAny = await hasPermission(userId, 'survey:view_any');
+      // if (canViewAny) {
+      //   return surveyService.findAllSurveysEnriched();
+      // }
 
-      const canViewOwn = await hasPermission(userId, 'survey:view');
-      if (canViewOwn) {
-        return surveyService.findAllEnriched(userId);
-      }
+      // const canViewOwn = await hasPermission(userId, 'survey:view');
+      // if (canViewOwn) {
+      //   return surveyService.findAllEnriched(userId);
+      // }
 
       return surveyService.findPublicSurveysEnriched(userId);
       //   const isAdmin = await hasPermission(userId, 'survey:view_any');
@@ -95,11 +95,12 @@ export const resolvers = {
       const { userId } = context;
       if (!userId) throw new Error('Unauthorized');
 
-      const canView = await hasPermission(userId, 'response:view_aggregated');
+      // const canView = await hasPermission(userId, 'response:view_aggregated');
       const survey = await surveyService.findById(parseInt(surveyId, 10));
       if (!survey) throw new Error('Survey not found');
       const isOwner = survey.createdBy === userId;
-      if (!canView && !isOwner) throw new Error('Forbidden');
+      // if (!canView && !isOwner) throw new Error('Forbidden');
+      if (!isOwner) throw new Error('Forbidden');
 
       const parsedFilters = {
         startDate: filters?.startDate ? new Date(filters.startDate) : undefined,
@@ -117,11 +118,12 @@ export const resolvers = {
       const { userId } = context;
       if (!userId) throw new Error('Unauthorized');
 
-      const canView = await hasPermission(userId, 'response:view_aggregated');
+      // const canView = await hasPermission(userId, 'response:view_aggregated');
       const survey = await surveyService.findById(parseInt(surveyId, 10));
       if (!survey) throw new Error('Survey not found');
       const isOwner = survey.createdBy === userId;
-      if (!canView && !isOwner) throw new Error('Forbidden');
+      // if (!canView && !isOwner) throw new Error('Forbidden');
+      if (!isOwner) throw new Error('Forbidden');
 
       const numericSurveyId = parseInt(surveyId, 10);
       const numericQIdA = parseInt(questionA, 10);
