@@ -72,8 +72,8 @@ try {
   app.get('/api/auth/test', (req, res) => res.json({ ok: true }));
 
   // 1. Autenticação (Better Auth) com rate limit específico
-  app.all('/api/auth/{*splat}', toNodeHandler(auth));
-  // app.use('/api/auth', apiLimiter, toNodeHandler(auth));
+  // app.all('/api/auth/{*splat}', toNodeHandler(auth));
+  app.use('/api/auth', toNodeHandler(auth));
 
   // 2. JSON parser para as próximas rotas (pode ser aplicado globalmente após o handler)
   app.use(express.json());
