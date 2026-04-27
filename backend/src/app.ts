@@ -40,11 +40,11 @@ const apiLimiter = rateLimit({
 const app = express();
 
 try {
-  console.info('[DIAG] Express app created');
-  app.use((req, res, next) => {
-    console.info(`[DIAG] Request: ${req.method} ${req.path}`);
-    next();
-  });
+  // console.info('[DIAG] Express app created');
+  // app.use((req, res, next) => {
+  //   console.info(`[DIAG] Request: ${req.method} ${req.path}`);
+  //   next();
+  // });
   app.set('trust proxy', 1);
   // Middlewares globais
   if (process.env.NODE_ENV !== 'production') {
