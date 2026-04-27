@@ -60,8 +60,9 @@ try {
 
   // ================== ROTEAMENTO PRINCIPAL ==================
 
+  app.get('/api/auth/test', (req, res) => res.json({ ok: true }));
   // 1. Autenticação (Better Auth) com rate limit específico
-  app.all('/api/auth/{*any}', apiLimiter, toNodeHandler(auth));
+  app.all('/api/auth/{*splat}', apiLimiter, toNodeHandler(auth));
 
   // 2. JSON parser para as próximas rotas (pode ser aplicado globalmente após o handler)
   app.use(express.json());

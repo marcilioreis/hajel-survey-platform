@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useLoginMutation } from "./authApi";
 import { useAppDispatch } from "../../app/hooks";
 import { setCredentials } from "./authSlice";
+import logo from "../../assets/logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -31,7 +32,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-sm bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-center mb-6">
-          <img src="/src/assets/logo.png" alt="Retrato" className="h-10" />
+          <img src={logo} alt="Retrato" className="h-10" />
         </div>
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
           Entrar
