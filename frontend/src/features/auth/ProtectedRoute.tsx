@@ -6,18 +6,35 @@ import { useAppDispatch } from "../../app/hooks";
 import { setCredentials, setLoading } from "./authSlice";
 import Skeleton from "../../components/common/Skeleton";
 
+function isSessionResponse(obj: unknown): obj is {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    emailVerified: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    image?: string | null;
+  };
+  session: unknown;
+} {
+  return (
+    typeof obj === "object" && obj !== null && "user" in obj && "session" in obj
+  );
+}
+
 export default function ProtectedRoute() {
   const dispatch = useAppDispatch();
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
-  const { data: user, error, isSuccess } = useGetCurrentUserQuery();
+  const { data: sessionData, error, isSuccess } = useGetCurrentUserQuery();
 
   useEffect(() => {
-    if (isSuccess && user) {
-      dispatch(setCredentials({ user }));
+    if (isSuccess && sessionData && isSessionResponse(sessionData)) {
+      dispatch(setCredentials({ user: sessionData.user }));
     } else if (error) {
       dispatch(setLoading(false));
     }
-  }, [isSuccess, user, error, dispatch]);
+  }, [isSuccess, sessionData, error, dispatch]);
 
   if (isLoading) {
     return (

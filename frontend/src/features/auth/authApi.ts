@@ -1,9 +1,5 @@
 import { api } from "../../lib/api";
-import {
-  login as authLogin,
-  register as authRegister,
-  getSession,
-} from "../../lib/auth";
+import { login as authLogin, register as authRegister } from "../../lib/auth";
 import type { BetterAuthUser, ApiError } from "../../lib/auth.types";
 
 export interface User {
@@ -25,6 +21,12 @@ interface RegisterRequest {
   email: string;
   password: string;
   name: string;
+}
+
+// Type guard para a resposta da sessão
+interface SessionResponse {
+  user: BetterAuthUser;
+  session: { token: string; expiresAt?: string };
 }
 
 // Type guard para verificar se o objeto tem 'user'
@@ -114,20 +116,8 @@ export const authApi = api.injectEndpoints({
       },
     }),
 
-    getCurrentUser: builder.query<User | null, void>({
-      queryFn: async () => {
-        try {
-          const session = await getSession();
-          if (session?.user) {
-            // Converte para o formato User se necessário (pode ser idêntico)
-            return { data: session.user as User };
-          }
-          return { error: { status: 401, data: "Não autenticado" } };
-        } catch (error) {
-          console.error("Erro ao obter sessão:", error);
-          return { error: { status: 401, data: "Sessão inválida" } };
-        }
-      },
+    getCurrentUser: builder.query<SessionResponse, void>({
+      query: () => "/auth/get-session",
     }),
   }),
 });
