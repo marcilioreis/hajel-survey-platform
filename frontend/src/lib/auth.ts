@@ -14,7 +14,13 @@ export const authClient = createAuthClient({
  * A sessão será armazenada automaticamente em cookie HttpOnly.
  */
 export const login = async (email: string, password: string) => {
-  return await authClient.signIn.email({ email, password });
+  const result = await authClient.signIn.email({ email, password });
+  // O token pode estar em result.token ou result.data.token – ajuste conforme a resposta real
+  const token = result.data?.token;
+  if (token) {
+    localStorage.setItem("auth-token", token);
+  }
+  return result;
 };
 
 /**
@@ -33,6 +39,7 @@ export const register = async (
  */
 export const logout = async () => {
   await authClient.signOut();
+  localStorage.removeItem("auth-token");
 };
 
 // Tipo que representa o que realmente queremos extrair

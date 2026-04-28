@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema/auth.js';
@@ -22,6 +23,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.FRONTEND_URL || 'http://localhost:5173',
     process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    'http://localhost:4173', // ✅ Vite preview
   ],
   session: {
     expiresIn: 30 * 24 * 60 * 60, // 30 dias
@@ -35,6 +37,12 @@ export const auth = betterAuth({
       },
     },
   },
+  plugins: [
+    bearer({
+      // Opcional: requerer assinatura do token (mais seguro)
+      requireSignature: false,
+    }),
+  ],
   logger: {
     disabled: false,
     disableColors: false,
