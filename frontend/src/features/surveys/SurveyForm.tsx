@@ -1,22 +1,21 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   useCreateSurveyMutation,
   useUpdateSurveyMutation,
+  useAddQuestionsBatchMutation,
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
-  useGetLocationsQuery,
-  useAddQuestionsBatchMutation,
 } from "./surveysApi";
 import type {
   BackendQuestion,
   BackendSurvey,
   CreateQuestionPayload,
-  Location,
   Question,
   QuestionOption,
   SurveyPayload,
+  SurveyLocationItem,
 } from "./surveys.types";
 
 // ----------------------------------------------------------------------
@@ -28,16 +27,16 @@ const mapBackendTypeToFrontend = (backendType: string): Question["type"] => {
     multipla_escolha: "multipla_escolha",
     texto_longo: "texto_longo",
   };
-  return mapping[backendType] || "text";
+  return mapping[backendType] || "texto_longo";
 };
 
 const mapFrontendTypeToBackend = (
   frontendType: Question["type"],
 ): CreateQuestionPayload["type"] => {
   const mapping: Record<Question["type"], CreateQuestionPayload["type"]> = {
-    texto_longo: "texto_longo",
     unica_escolha: "unica_escolha",
     multipla_escolha: "multipla_escolha",
+    texto_longo: "texto_longo",
   };
   return mapping[frontendType];
 };
@@ -70,9 +69,7 @@ function QuestionEditor({
   onChange: (updated: Question) => void;
   onRemove: () => void;
 }) {
-  const [showOptions, setShowOptions] = useState(
-    question.type !== "texto_longo",
-  );
+  const showOptions = question.type !== "texto_longo";
 
   const addOption = () => {
     const newOption: QuestionOption = { text: "" };
@@ -121,7 +118,6 @@ function QuestionEditor({
               options: newType === "texto_longo" ? [] : question.options,
             };
             onChange(newQuestion);
-            setShowOptions(newType !== "texto_longo");
           }}
           className="px-3 py-2 border border-gray-300 rounded-md text-base"
         >
@@ -188,7 +184,6 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
   const isEditing = Boolean(initialSurvey);
   const surveyId = initialSurvey?.id;
 
-  const { data: allLocations = [] } = useGetLocationsQuery();
   const [createSurvey, { isLoading: isCreating }] = useCreateSurveyMutation();
   const [updateSurvey, { isLoading: isUpdating }] = useUpdateSurveyMutation();
   const [addQuestionsBatch] = useAddQuestionsBatchMutation();
@@ -203,18 +198,21 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
     initialSurvey?.end_date ? initialSurvey.end_date.slice(0, 16) : "",
   );
   const [isPublic, setIsPublic] = useState(() => initialSurvey?.public ?? true);
-  const [selectedLocationIds, setSelectedLocationIds] = useState<number[]>(
-    () => initialSurvey?.locations?.map((l: Location) => l.id) ?? [],
+  const [isActive, setIsActive] = useState(() => initialSurvey?.active ?? true);
+  const [locations, setLocations] = useState<SurveyLocationItem[]>(() =>
+    initialSurvey?.locations
+      ? initialSurvey.locations.map((l, idx) => ({
+          name: l.name,
+          order: idx + 1,
+        }))
+      : [],
   );
   const [questions, setQuestions] = useState<Question[]>(() =>
     initialSurvey ? normalizeQuestions(initialSurvey.questions) : [],
   );
 
-  const tempIdCounter = useRef(0);
-
   const addNewQuestion = () => {
     const newQuestion: Question = {
-      id: tempIdCounter.current--, // ID string único
       text: "",
       type: "texto_longo",
       required: false,
@@ -233,47 +231,55 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
+  const addLocation = () => {
+    setLocations([...locations, { name: "", order: locations.length + 1 }]);
+  };
+
+  const updateLocation = (
+    index: number,
+    field: "name" | "order",
+    value: string | number,
+  ) => {
+    const updated = [...locations];
+    updated[index] = { ...updated[index], [field]: value };
+    setLocations(updated);
+  };
+
+  const removeLocation = (index: number) => {
+    setLocations(locations.filter((_, i) => i !== index));
+  };
+
   const syncQuestions = async (
     surveyId: number,
     originalQuestions: BackendQuestion[],
   ) => {
     const currentQuestions = questions;
     const originalMap = new Map(originalQuestions.map((q) => [q.id, q]));
-
-    // Perguntas removidas (estavam na original, mas não estão no estado atual)
     const removedQuestions = originalQuestions.filter(
       (orig) => !currentQuestions.some((curr) => curr.id === orig.id),
     );
-
-    // Separa novas perguntas das existentes
-    const newQuestions: Question[] = [];
-    const existingQuestions: Question[] = [];
-
-    for (const q of currentQuestions) {
-      if (q.id && typeof q.id === "number" && originalMap.has(q.id)) {
-        existingQuestions.push(q);
-      } else {
-        newQuestions.push(q);
-      }
-    }
+    const newQuestions = currentQuestions.filter(
+      (q) => !q.id || typeof q.id !== "number" || !originalMap.has(q.id),
+    );
+    const existingQuestions = currentQuestions.filter(
+      (q) => q.id && typeof q.id === "number" && originalMap.has(q.id),
+    );
 
     const operations: Promise<unknown>[] = [];
 
-    // 1. Envio em lote de novas perguntas (se houver)
     if (newQuestions.length > 0) {
       const batchPayload = newQuestions.map((q, idx) => ({
         text: q.text.trim(),
         type: mapFrontendTypeToBackend(q.type),
         required: q.required,
         options: q.options.map((opt) => opt.text.trim()),
-        order: q.order ?? idx + 1, // ordem sequencial
+        order: q.order ?? idx + 1,
       }));
       operations.push(
         addQuestionsBatch({ surveyId, body: batchPayload }).unwrap(),
       );
     }
 
-    // 2. Atualização de perguntas existentes que foram modificadas
     for (const q of existingQuestions) {
       const original = originalMap.get(q.id!)!;
       const payload = {
@@ -282,16 +288,14 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
         required: q.required,
         options: q.options.map((opt) => opt.text.trim()),
         order:
-          q.order ?? currentQuestions.findIndex((curr) => curr.id === q.id) + 1, // mantém a ordem do array
+          q.order ?? currentQuestions.findIndex((curr) => curr.id === q.id) + 1,
       };
-
       const hasChanged =
         original.text !== payload.text ||
         original.type !== payload.type ||
         original.required !== payload.required ||
         JSON.stringify(original.options) !== JSON.stringify(payload.options) ||
         original.order !== payload.order;
-
       if (hasChanged) {
         operations.push(
           updateQuestion({
@@ -303,7 +307,6 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
       }
     }
 
-    // 3. Remoção de perguntas
     for (const q of removedQuestions) {
       operations.push(deleteQuestion({ surveyId, questionId: q.id }).unwrap());
     }
@@ -326,9 +329,14 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
       title: title.trim(),
       description: description.trim() || null,
       public: isPublic,
-      active: true,
+      active: isActive,
       endDate: new Date(endDate).toISOString(),
-      locationIds: selectedLocationIds,
+      locations: locations
+        .filter((l) => l.name.trim() !== "")
+        .map((l, idx) => ({
+          name: l.name.trim(),
+          order: l.order || idx + 1,
+        })),
     };
 
     try {
@@ -338,10 +346,14 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
           initialSurvey!.title !== title.trim() ||
           (initialSurvey!.description || "") !== description.trim() ||
           initialSurvey!.public !== isPublic ||
+          initialSurvey!.active !== isActive ||
           (initialSurvey!.end_date?.slice(0, 16) ?? "") !== endDate ||
           JSON.stringify(
-            initialSurvey!.locations?.map((l: Location) => l.id).sort(),
-          ) !== JSON.stringify([...selectedLocationIds].sort());
+            initialSurvey!.locations?.map((l) => ({
+              name: l.name,
+              order: (initialSurvey!.locations?.indexOf(l) ?? 0) + 1,
+            })),
+          ) !== JSON.stringify(surveyPayload.locations);
 
         if (hasBasicChanges) {
           await updateSurvey({ id: surveyId!, body: surveyPayload }).unwrap();
@@ -393,6 +405,7 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
           />
         </div>
+
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -402,46 +415,61 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
           <span className="text-sm">Pesquisa pública</span>
         </label>
 
-        {/* Seleção de locais */}
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+          />
+          <span className="text-sm">Pesquisa ativa</span>
+        </label>
+
+        {/* Editor de locais */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Locais de coleta
           </label>
-          {allLocations.length === 0 ? (
-            <p className="text-sm text-gray-500">Nenhum local disponível.</p>
-          ) : (
-            <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1">
-              {allLocations.map((loc) => (
-                <label key={loc.id} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedLocationIds.includes(loc.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedLocationIds((prev) => [...prev, loc.id]);
-                      } else {
-                        setSelectedLocationIds((prev) =>
-                          prev.filter((id) => id !== loc.id),
-                        );
-                      }
-                    }}
-                    className="rounded"
-                  />
-                  <span>{loc.name}</span>
-                </label>
-              ))}
+          {locations.map((loc, idx) => (
+            <div key={idx} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="Nome do local"
+                value={loc.name}
+                onChange={(e) => updateLocation(idx, "name", e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base"
+              />
+              <input
+                type="number"
+                placeholder="Ordem"
+                value={loc.order}
+                onChange={(e) =>
+                  updateLocation(idx, "order", Number(e.target.value))
+                }
+                className="w-20 px-3 py-2 border border-gray-300 rounded-md text-base"
+              />
+              <button
+                type="button"
+                onClick={() => removeLocation(idx)}
+                className="p-2 text-red-600"
+              >
+                ✕
+              </button>
             </div>
-          )}
-          <p className="text-xs text-gray-500 mt-1">
-            Selecione os locais onde esta pesquisa será aplicada.
-          </p>
+          ))}
+          <button
+            type="button"
+            onClick={addLocation}
+            className="text-blue-600 text-sm font-medium"
+          >
+            + Adicionar local
+          </button>
         </div>
       </div>
 
       <div className="space-y-3">
         {questions.map((q, idx) => (
           <QuestionEditor
-            key={q.id != null ? q.id : idx}
+            key={q.id != null ? String(q.id) : `new-${idx}`}
             question={q}
             onChange={(updated) => updateQuestionHandler(idx, updated)}
             onRemove={() => removeQuestionHandler(idx)}

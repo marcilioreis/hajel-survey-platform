@@ -19,6 +19,14 @@ export const updateSurveySchema = z.object({
   public: z.boolean().optional(),
   active: z.boolean().optional(),
   endDate: z.string().datetime().optional(),
+  locations: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        order: z.number().int().min(1),
+      })
+    )
+    .optional(),
   customStyle: z.any().optional(),
 });
 

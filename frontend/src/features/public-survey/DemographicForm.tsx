@@ -1,18 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  useCompleteSessionMutation,
-  useGetPublicSurveyQuery,
-} from "./publicSurveyApi";
-import type { CompleteSessionPayload } from "./publicSurvey.types";
+import { useGetPublicSurveyQuery } from "./publicSurveyApi";
 
 export default function DemographicForm() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const token = slug ? localStorage.getItem(`survey-token-${slug}`) : null;
   const { data: survey } = useGetPublicSurveyQuery(slug!, { skip: !slug });
-  const [completeSession, { isLoading }] = useCompleteSessionMutation();
 
   const [form, setForm] = useState({
     ageRange: "",
@@ -54,31 +49,10 @@ export default function DemographicForm() {
       return;
     }
 
-    const payload: CompleteSessionPayload = {
-      ...form,
-      locationId: Number(form.locationId),
-    };
-
-    try {
-      await completeSession({ token, body: payload }).unwrap();
-      localStorage.removeItem(`survey-token-${slug}`);
-      triggerVibration();
-      toast.success("Pesquisa concluída! Obrigado por participar.");
-      navigate(`/s/${slug}/thank-you`);
-    } catch (err) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "status" in err &&
-        (err.status === 401 || err.status === 404)
-      ) {
-        toast.error("Sessão expirada. Inicie novamente.");
-        localStorage.removeItem(`survey-token-${slug}`);
-        navigate(`/s/${slug}`);
-      } else {
-        toast.error("Erro ao finalizar. Tente novamente.");
-      }
-    }
+    // Salva dados demográficos no localStorage
+    localStorage.setItem(`survey-${slug}-demographics`, JSON.stringify(form));
+    triggerVibration();
+    navigate(`/s/${slug}/session`);
   };
 
   return (
@@ -134,14 +108,18 @@ export default function DemographicForm() {
           <option value=">4 SM">Mais de 4 salários mínimos</option>
         </select>
 
-        <input
-          type="text"
-          placeholder="Escolaridade"
+        <select
           value={form.education}
           onChange={(e) => setForm({ ...form, education: e.target.value })}
           required
           className="w-full p-3 border rounded-lg"
-        />
+        >
+          <option value="">Escolaridade</option>
+          <option value="NA">Não alfabetizado</option>
+          <option value="ENSINO_FUNDAMENTAL">Ensino Fundamental</option>
+          <option value="ENSINO_MEDIO">Ensino Médio</option>
+          <option value="ENSINO_SUPERIOR">Ensino Superior</option>
+        </select>
 
         <input
           type="text"
@@ -170,10 +148,9 @@ export default function DemographicForm() {
 
         <button
           type="submit"
-          disabled={isLoading}
           className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
         >
-          {isLoading ? "Finalizando..." : "Concluir Pesquisa"}
+          Avançar para perguntas
         </button>
       </form>
     </div>

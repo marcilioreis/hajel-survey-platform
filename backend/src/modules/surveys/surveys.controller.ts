@@ -82,12 +82,14 @@ export const getSurvey = async (req: Request, res: Response) => {
   }
 };
 
+// src/modules/surveys/surveys.controller.ts
 export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);
     const userId = req.user!.id;
+    const { locations, ...surveyFields } = req.body;
 
-    // Monta updateData apenas com campos enviados (PATCH semântico)
+    // Monta updateData apenas com campos permitidos e com tipos corretos
     const updateData: Partial<{
       title: string;
       description: string | null;
@@ -96,33 +98,47 @@ export const updateSurvey = async (req: Request, res: Response) => {
       endDate: Date;
     }> = {};
 
-    if ('title' in req.body) updateData.title = req.body.title;
-    if ('description' in req.body) updateData.description = req.body.description;
-    if ('public' in req.body) updateData.public = req.body.public;
-    if ('active' in req.body) updateData.active = req.body.active;
-    if ('endDate' in req.body) updateData.endDate = new Date(req.body.endDate);
+    if ('title' in surveyFields) updateData.title = surveyFields.title;
+    if ('description' in surveyFields) updateData.description = surveyFields.description;
+    if ('public' in surveyFields) updateData.public = surveyFields.public;
+    if ('active' in surveyFields) updateData.active = surveyFields.active;
+    if ('endDate' in surveyFields) {
+      const parsed = new Date(surveyFields.endDate);
+      if (isNaN(parsed.getTime())) {
+        return res.status(400).json({ error: 'Formato de data inválido' });
+      }
+      updateData.endDate = parsed;
+    }
 
-    // Valida endDate se fornecida
-    if (updateData.endDate && isNaN(updateData.endDate.getTime())) {
-      return res.status(400).json({ error: 'Formato de data inválido' });
+    // Valida locations (se enviado) como array de objetos
+    if (locations !== undefined) {
+      if (!Array.isArray(locations)) {
+        return res.status(400).json({ error: 'Locations deve ser um array' });
+      }
+      for (const loc of locations) {
+        if (!loc.name || typeof loc.name !== 'string' || loc.order == null) {
+          return res.status(400).json({ error: 'Cada local precisa de name e order' });
+        }
+      }
     }
 
     // Verifica permissões
     const canEditAny = hasPermission(req, 'survey:edit_any');
-    if (canEditAny) {
-      const survey = await surveyService.update(surveyId, updateData, userId);
-      return res.json(survey);
-    }
-
     const canEditOwn = hasPermission(req, 'survey:edit');
-    if (canEditOwn) {
-      const survey = await surveyService.update(surveyId, updateData, userId);
-      return res.json(survey);
+    if (!canEditAny && !canEditOwn) {
+      return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    return res.status(403).json({ error: 'Acesso negado' });
-  } catch (error) {
+    // Chama o serviço (que faz atualização da pesquisa + substituição de locais em transação)
+    const updatedSurvey = await surveyService.update(surveyId, updateData, userId, locations);
+
+    // Retorna o dado enriquecido (já com locations) – sem chamada extra
+    return res.json(updatedSurvey);
+  } catch (error: any) {
     console.error('Update survey error:', error);
+    if (error.message === 'Pesquisa não encontrada ou acesso negado') {
+      return res.status(404).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Falha ao atualizar pesquisa' });
   }
 };

@@ -106,10 +106,10 @@ export default function SurveyDetail() {
           <p className="text-gray-600 p-2">{survey.description}</p>
         )}
         <p className="text-sm text-gray-400 mt-2">
-          Data de início: {new Date(survey.start_date).toLocaleDateString()}
+          Início em: {new Date(survey.start_date).toLocaleDateString()}
         </p>
         <p className="text-sm text-gray-400 mt-2">
-          Criada em: {new Date(survey.created_at).toLocaleDateString()}
+          Encerramento em: {new Date(survey.end_date).toLocaleDateString()}
         </p>
       </div>
 

@@ -186,7 +186,10 @@ export default function SurveyList() {
                   ` • ${survey.responses_count} resposta(s)`}
               </p>
               <p className="text-xs text-gray-400 mt-2">
-                Criada em: {new Date(survey.createdAt).toLocaleDateString()}
+                Início em: {new Date(survey.startDate).toLocaleDateString()}
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                Encerramento em: {new Date(survey.endDate).toLocaleDateString()}
               </p>
             </div>
           ))}

@@ -17,7 +17,7 @@ export default function PublicSurveyView() {
     try {
       const { token } = await startSession(slug).unwrap();
       localStorage.setItem(`survey-token-${slug}`, token);
-      navigate(`/s/${slug}/session`);
+      navigate(`/s/${slug}/demographics`);
     } catch {
       toast.error("Não foi possível iniciar a pesquisa. Tente novamente.");
     }

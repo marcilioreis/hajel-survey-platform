@@ -5,8 +5,12 @@ import {
   useGetPublicSurveyQuery,
   useGetProgressQuery,
   useSubmitAnswersBatchMutation,
+  useCompleteSessionMutation,
 } from "./publicSurveyApi";
-import type { AnswerPayload } from "./publicSurvey.types";
+import type {
+  AnswerPayload,
+  CompleteSessionPayload,
+} from "./publicSurvey.types";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import Skeleton from "../../components/common/Skeleton";
 
@@ -15,6 +19,7 @@ type AnswersMap = Record<number, string | string[]>;
 export default function SurveySession() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [completeSession] = useCompleteSessionMutation();
 
   const token = slug ? localStorage.getItem(`survey-token-${slug}`) : null;
 
@@ -172,10 +177,7 @@ export default function SurveySession() {
 
   const handleFinish = async () => {
     const allAnswers: AnswerPayload[] = Object.entries(answers).map(
-      ([qId, value]) => ({
-        questionId: Number(qId),
-        value,
-      }),
+      ([qId, value]) => ({ questionId: Number(qId), value }),
     );
 
     if (allAnswers.length === 0) {
@@ -185,14 +187,37 @@ export default function SurveySession() {
 
     try {
       await submitAnswersBatch({ token: token!, body: allAnswers }).unwrap();
-      // Limpa localStorage após envio bem-sucedido
+      // Limpa localStorage das respostas
       localStorage.removeItem(`survey-${slug}-answers`);
-      navigate(`/s/${slug}/demographics`);
+
+      // Recupera dados demográficos salvos
+      const demographicsStr = localStorage.getItem(
+        `survey-${slug}-demographics`,
+      );
+      if (!demographicsStr) {
+        toast.error(
+          "Dados demográficos não encontrados. Por favor, reinicie a pesquisa.",
+        );
+        return;
+      }
+
+      const demographics = JSON.parse(
+        demographicsStr,
+      ) as CompleteSessionPayload;
+
+      // Finaliza a sessão
+      await completeSession({ token: token!, body: demographics }).unwrap();
+      localStorage.removeItem(`survey-token-${slug}`);
+      localStorage.removeItem(`survey-${slug}-demographics`);
+
+      toast.success("Pesquisa concluída! Obrigado por participar.");
+      navigate(`/s/${slug}/thank-you`);
     } catch (err) {
       if (isSessionExpiredError(err)) {
         toast.error("Sessão expirada ou já finalizada.");
         localStorage.removeItem(`survey-token-${slug}`);
         localStorage.removeItem(`survey-${slug}-answers`);
+        localStorage.removeItem(`survey-${slug}-demographics`);
         navigate(`/s/${slug}`);
       } else {
         toast.error("Erro ao enviar respostas. Verifique sua conexão.");

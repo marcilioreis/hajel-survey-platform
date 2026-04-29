@@ -1,6 +1,7 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '../../shared/db/index.js';
 import { surveys, questions, locations } from '../../shared/db/schema/surveys.js';
+import { locations as locationsTable } from '../../shared/db/schema/surveys.js';
 import type { SurveyEnriched } from '../../shared/db/schema/views.types.js';
 import type {
   InsertSurvey,
@@ -149,13 +150,43 @@ export const findByIdWithAccess = async (
   return survey;
 };
 
-export const update = async (id: number, data: Partial<InsertSurvey>, userId: string) => {
-  const [survey] = await db
-    .update(surveys)
-    .set(data)
-    .where(and(eq(surveys.id, id), eq(surveys.createdBy, userId)))
-    .returning();
-  return survey;
+export const update = async (
+  id: number,
+  data: Partial<InsertSurvey>,
+  userId: string,
+  locations?: Array<{ name: string; order: number }>
+) => {
+  return await db.transaction(async (tx) => {
+    // Atualiza a pesquisa (se houver campos)
+    if (Object.keys(data).length > 0) {
+      const [survey] = await tx
+        .update(surveys)
+        .set(data)
+        .where(and(eq(surveys.id, id), eq(surveys.createdBy, userId)))
+        .returning();
+      if (!survey) throw new Error('Pesquisa não encontrada ou acesso negado');
+    }
+
+    // Se locations forem enviadas, substitui todas as locations da pesquisa
+    if (locations !== undefined) {
+      // Remove todas as locations existentes
+      await tx.delete(locationsTable).where(eq(locationsTable.surveyId, id));
+      // Insere as novas
+      if (locations.length > 0) {
+        await tx.insert(locationsTable).values(
+          locations.map((loc) => ({
+            surveyId: id,
+            name: loc.name,
+            order: loc.order,
+          }))
+        );
+      }
+    }
+
+    // Retorna a pesquisa atualizada (sem os relacionamentos)
+    const [updated] = await tx.select().from(surveys).where(eq(surveys.id, id));
+    return updated;
+  });
 };
 
 export const remove = async (id: number, userId: string) => {

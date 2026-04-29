@@ -32,7 +32,7 @@ export interface BackendSurvey {
   public: boolean;
   slug: string;
   start_date: string;
-  end_date: string | null;
+  end_date: string;
   active: boolean;
   custom_style: unknown | null;
   created_at: string;
@@ -50,7 +50,7 @@ export interface Survey {
   public: boolean;
   slug: string;
   startDate: string;
-  endDate: string | null;
+  endDate: string;
   active: boolean;
   custom_style: unknown | null;
   createdAt: string;
@@ -91,7 +91,12 @@ export interface SurveyPayload {
   slug?: string;
   endDate: string; // ISO string
   customStyle?: Record<string, unknown> | null;
-  locationIds?: number[];
+  locations?: { name: string; order: number }[];
+}
+
+export interface SurveyLocationItem {
+  name: string;
+  order: number;
 }
 
 // Payload para criação de pergunta (única)
