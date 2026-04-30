@@ -9,12 +9,13 @@ import { toNodeHandler } from 'better-auth/node';
 import { RedisStore } from 'rate-limit-redis';
 import { auth } from './shared/auth/auth.js';
 import surveyRoutes from './modules/surveys/surveys.routes.js';
-import globalLocationRoutes from './modules/locations/global.routes.js';
+import locationRoutes from './modules/locations/locations.routes.js';
 import publicRoutes from './modules/responses/public.routes.js';
 import { createApolloServer } from './graphql/apollo.js';
 import { redis } from './shared/redis/index.js';
 import { authenticate } from './shared/auth/middleware.js';
 import { loadPermissions } from './shared/middleware/loadPermissions.js';
+import geographyRoutes from './modules/geography/geography.routes.js';
 
 // ---- Rate limiter com prefixo ÚNICO no Redis ----
 const apiLimiter = rateLimit({
@@ -88,7 +89,8 @@ try {
 
   // 3. Rotas autenticadas (surveys, locations) – autenticação, permissões e apiLimiter
   app.use('/api/surveys', authenticate, loadPermissions, apiLimiter, surveyRoutes);
-  app.use('/api/locations', authenticate, loadPermissions, apiLimiter, globalLocationRoutes);
+  app.use('/api/locations', authenticate, loadPermissions, apiLimiter, locationRoutes);
+  app.use('/api/geography', geographyRoutes);
 
   // 4. Rotas públicas com publicLimiter (aplicado dentro do próprio arquivo de rotas)
   app.use('/', publicRoutes); // o publicLimiter é aplicado dentro de publicRoutes

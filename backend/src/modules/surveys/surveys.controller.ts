@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as surveyService from './surveys.service.js';
 import { hasPermission } from '../../shared/middleware/rbac.js';
+import * as locationsService from '../locations/locations.service.js';
 
 const getNumericId = (param: string | string[]): number => {
   const id = Array.isArray(param) ? param[0] : param;
@@ -10,10 +11,34 @@ const getNumericId = (param: string | string[]): number => {
 export const createSurvey = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const survey = await surveyService.create(req.body, userId);
-    res.status(201).json(survey);
+    const { locationIds, ...surveyData } = req.body;
+
+    // Validações de negócio (endDate já é validado pelo Zod, mas garantimos aqui)
+    if (!surveyData.endDate) {
+      return res.status(400).json({ error: 'endDate é obrigatória' });
+    }
+
+    // Cria a pesquisa
+    const survey = await surveyService.create(surveyData, userId);
+
+    // Se locationIds foram enviados, associa os locais
+    if (locationIds !== undefined) {
+      // Valida se os IDs existem (opcional, mas recomendado)
+      const allLocations = await locationsService.getAllLocations();
+      const validIds = allLocations.map((l) => l.id);
+      const invalidIds = locationIds.filter((id: number) => !validIds.includes(id));
+      if (invalidIds.length > 0) {
+        return res.status(400).json({ error: `IDs de local inválidos: ${invalidIds.join(', ')}` });
+      }
+      await locationsService.setSurveyLocations(survey.id, locationIds);
+    }
+
+    // Retorna a pesquisa enriquecida
+    const enriched = await surveyService.findByIdEnriched(survey.id);
+    res.status(201).json(enriched);
   } catch (error: any) {
-    if (error.message.includes('endDate')) {
+    console.error('Create survey error:', error);
+    if (error.message?.includes('endDate')) {
       return res.status(400).json({ error: error.message });
     }
     res.status(500).json({ error: 'Falha ao criar pesquisa' });
@@ -82,14 +107,13 @@ export const getSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// src/modules/surveys/surveys.controller.ts
 export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);
     const userId = req.user!.id;
-    const { locations, ...surveyFields } = req.body;
+    const { locationIds, ...surveyFields } = req.body;
 
-    // Monta updateData apenas com campos permitidos e com tipos corretos
+    // Monta updateData com campos permitidos
     const updateData: Partial<{
       title: string;
       description: string | null;
@@ -104,41 +128,35 @@ export const updateSurvey = async (req: Request, res: Response) => {
     if ('active' in surveyFields) updateData.active = surveyFields.active;
     if ('endDate' in surveyFields) {
       const parsed = new Date(surveyFields.endDate);
-      if (isNaN(parsed.getTime())) {
-        return res.status(400).json({ error: 'Formato de data inválido' });
-      }
+      if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Data inválida' });
       updateData.endDate = parsed;
     }
 
-    // Valida locations (se enviado) como array de objetos
-    if (locations !== undefined) {
-      if (!Array.isArray(locations)) {
-        return res.status(400).json({ error: 'Locations deve ser um array' });
-      }
-      for (const loc of locations) {
-        if (!loc.name || typeof loc.name !== 'string' || loc.order == null) {
-          return res.status(400).json({ error: 'Cada local precisa de name e order' });
-        }
-      }
-    }
-
-    // Verifica permissões
+    // Permissões
     const canEditAny = hasPermission(req, 'survey:edit_any');
     const canEditOwn = hasPermission(req, 'survey:edit');
-    if (!canEditAny && !canEditOwn) {
-      return res.status(403).json({ error: 'Acesso negado' });
+    if (!canEditAny && !canEditOwn) return res.status(403).json({ error: 'Acesso negado' });
+
+    // Atualiza campos básicos da pesquisa
+    const survey = await surveyService.update(surveyId, updateData, userId);
+    if (!survey) return res.status(404).json({ error: 'Pesquisa não encontrada' });
+
+    // Se locationIds enviados, substitui associações
+    if (locationIds !== undefined) {
+      const allLocations = await locationsService.getAllLocations();
+      const validIds = allLocations.map((l) => l.id);
+      const invalidIds = locationIds.filter((id: number) => !validIds.includes(id));
+      if (invalidIds.length > 0) {
+        return res.status(400).json({ error: `IDs de local inválidos: ${invalidIds.join(', ')}` });
+      }
+      await locationsService.setSurveyLocations(surveyId, locationIds);
     }
 
-    // Chama o serviço (que faz atualização da pesquisa + substituição de locais em transação)
-    const updatedSurvey = await surveyService.update(surveyId, updateData, userId, locations);
-
-    // Retorna o dado enriquecido (já com locations) – sem chamada extra
-    return res.json(updatedSurvey);
-  } catch (error: any) {
+    // Retorna a pesquisa enriquecida
+    const enriched = await surveyService.findByIdEnriched(surveyId);
+    res.json(enriched);
+  } catch (error) {
     console.error('Update survey error:', error);
-    if (error.message === 'Pesquisa não encontrada ou acesso negado') {
-      return res.status(404).json({ error: error.message });
-    }
     res.status(500).json({ error: 'Falha ao atualizar pesquisa' });
   }
 };

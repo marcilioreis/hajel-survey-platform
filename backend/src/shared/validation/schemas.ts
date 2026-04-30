@@ -3,14 +3,14 @@ import { z } from 'zod';
 
 // ================== SURVEYS ==================
 export const createSurveySchema = z.object({
-  title: z.string().min(1, 'Título é obrigatório'),
+  title: z.string().min(1),
   description: z.string().optional(),
   slug: z.string().optional(),
   public: z.boolean().optional().default(false),
   active: z.boolean().optional().default(false),
-  endDate: z.string().datetime({ message: 'Data inválida' }), // ISO 8601
-  startDate: z.string().datetime().optional(), // se permitir customização
+  endDate: z.string().datetime(),
   customStyle: z.any().optional(),
+  locationIds: z.array(z.number().int().positive()).optional(),
 });
 
 export const updateSurveySchema = z.object({
@@ -19,15 +19,7 @@ export const updateSurveySchema = z.object({
   public: z.boolean().optional(),
   active: z.boolean().optional(),
   endDate: z.string().datetime().optional(),
-  locations: z
-    .array(
-      z.object({
-        name: z.string().min(1),
-        order: z.number().int().min(1),
-      })
-    )
-    .optional(),
-  customStyle: z.any().optional(),
+  locationIds: z.array(z.number().int().positive()).optional(),
 });
 
 // ================== QUESTIONS ==================
@@ -69,6 +61,24 @@ export const updateLocationSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Nenhum campo para atualizar',
   });
+
+export const locationIdsSchema = z.array(z.number().int().positive());
+
+export const locationCatalogSchema = z.object({
+  name: z.string().min(1),
+  notes: z.string().optional(),
+  state: z.string().length(2).optional(),
+  city: z.string().optional(),
+  neighborhood: z.string().optional(),
+  cep: z.string().max(10).optional(),
+  address: z.string().optional(),
+  ibgeCode: z.string().max(7).optional(),
+});
+
+export const locationUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  notes: z.string().optional(),
+});
 
 // ================== RESPONSES ==================
 export const answerPayloadSchema = z.object({

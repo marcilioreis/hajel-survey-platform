@@ -9,7 +9,6 @@ import {
   updateSurveySchema,
 } from '../../shared/validation/schemas.js';
 import questionRoutes from './questions.routes.js';
-import locationRoutes from './locations.routes.js';
 import * as controller from './surveys.controller.js';
 import * as responsesController from '../responses/responses.controller.js';
 import * as resultsController from './results.controller.js';
@@ -54,7 +53,6 @@ router.post(
 
 // Rotas aninhadas
 router.use('/:surveyId/questions', questionRoutes);
-router.use('/:surveyId/locations', locationRoutes);
 
 // Resultados agregados
 router.get('/:surveyId/results', resultsController.getSurveyResults);

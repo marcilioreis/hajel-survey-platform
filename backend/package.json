@@ -27,10 +27,13 @@
     "@as-integrations/express5": "^1.1.2",
     "@better-auth/drizzle-adapter": "^1.6.5",
     "@graphql-tools/schema": "^10.0.32",
+    "axios": "^1.15.2",
     "better-auth": "^1.6.5",
     "bull": "^4.16.5",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.4.1",
@@ -42,7 +45,6 @@
     "pg": "^8.20.0",
     "postgres": "^3.4.9",
     "rate-limit-redis": "^4.3.1",
-    "dotenv": "^17.4.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
