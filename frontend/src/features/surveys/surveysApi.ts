@@ -10,6 +10,7 @@ import type {
   SubmitResponsePayload,
   SurveyResults,
   OpenResponse,
+  LocationPayload,
 } from "./surveys.types";
 
 export const surveysApi = api.injectEndpoints({
@@ -153,6 +154,32 @@ export const surveysApi = api.injectEndpoints({
         { type: "Survey", id: surveyId },
       ],
     }),
+    createLocation: builder.mutation<Location, LocationPayload>({
+      query: (body) => ({
+        url: "/locations",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Location"],
+    }),
+    updateLocation: builder.mutation<
+      Location,
+      { id: number; body: Partial<LocationPayload> }
+    >({
+      query: ({ id, body }) => ({
+        url: `/locations/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Location", id }],
+    }),
+    deleteLocation: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/locations/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Location"],
+    }),
   }),
 });
 
@@ -172,4 +199,7 @@ export const {
   useGetSurveyResultsQuery,
   useGetOpenResponsesQuery,
   useUpdateSurveyLocationsMutation,
+  useDeleteLocationMutation,
+  useCreateLocationMutation,
+  useUpdateLocationMutation,
 } = surveysApi;

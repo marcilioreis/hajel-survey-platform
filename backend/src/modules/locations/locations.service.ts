@@ -41,7 +41,16 @@ export const createLocation = async (
 
 export const updateLocation = async (
   id: number,
-  data: Partial<{ name: string; notes: string }>
+  data: Partial<{
+    name: string;
+    notes: string;
+    state: string;
+    city: string;
+    neighborhood: string;
+    cep: string;
+    address: string;
+    ibgeCode: string;
+  }>
 ) => {
   if (Object.keys(data).length === 0) return null;
   const [loc] = await db

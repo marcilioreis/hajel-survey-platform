@@ -40,9 +40,25 @@ export const create = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const id = getNumericId(req.params.id);
-    const updateData: Partial<{ name: string; notes: string }> = {};
+    const updateData: Partial<{
+      name: string;
+      notes: string;
+      state: string;
+      city: string;
+      neighborhood: string;
+      cep: string;
+      address: string;
+      ibgeCode: string;
+    }> = {};
+
     if ('name' in req.body) updateData.name = req.body.name;
     if ('notes' in req.body) updateData.notes = req.body.notes;
+    if ('state' in req.body) updateData.state = req.body.state;
+    if ('city' in req.body) updateData.city = req.body.city;
+    if ('neighborhood' in req.body) updateData.neighborhood = req.body.neighborhood;
+    if ('cep' in req.body) updateData.cep = req.body.cep;
+    if ('address' in req.body) updateData.address = req.body.address;
+    if ('ibgeCode' in req.body) updateData.ibgeCode = req.body.ibgeCode;
 
     const location = await locationsService.updateLocation(id, updateData);
     if (!location) return res.status(404).json({ error: 'Local não encontrado' });

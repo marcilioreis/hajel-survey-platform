@@ -12,6 +12,10 @@ export default function BottomNav() {
         <span className="text-xl">📋</span>
         <span>Pesquisas</span>
       </NavLink>
+      <NavLink to="/locations" className={linkClass}>
+        <span className="text-xl">📍</span>
+        <span>Localizações</span>
+      </NavLink>
       <NavLink to="/reports" className={linkClass}>
         <span className="text-xl">📊</span>
         <span>Relatórios</span>

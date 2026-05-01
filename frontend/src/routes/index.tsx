@@ -7,6 +7,7 @@ import ProtectedRoute from "../features/auth/ProtectedRoute";
 
 // Importa as rotas públicas
 import { publicRoutes } from "./publicRoutes";
+import LocationForm from "../features/locations/LocationForm";
 
 const Login = lazyPage(() => import("../features/auth/Login"));
 const Register = lazyPage(() => import("../features/auth/Register"));
@@ -24,6 +25,12 @@ const PublicSurveyView = lazyPage(
 );
 const SurveySession = lazyPage(
   () => import("../features/public-survey/SurveySession"),
+);
+const LocationList = lazyPage(
+  () => import("../features/locations/LocationList"),
+);
+const LocationFormWrapper = lazyPage(
+  () => import("../features/locations/LocationFormWrapper"),
 );
 
 // Placeholders temporários
@@ -52,6 +59,9 @@ export const router = createBrowserRouter([
           { path: "/s/:slug", element: PublicSurveyView },
           { path: "/s/:token/continue", element: SurveySession }, // rota opcional para continuar sessão
           { path: "reports/:surveyId", element: SurveyReport },
+          { path: "locations", element: LocationList },
+          { path: "locations/new", element: <LocationForm /> }, // sem props = criação
+          { path: "locations/:id/edit", element: LocationFormWrapper }, // wrapper para edição
           { path: "reports", element: <Reports /> },
           { path: "profile", element: <Profile /> },
         ],

@@ -143,7 +143,24 @@ export interface DemographicData {
 export interface Location {
   id: number;
   name: string;
-  address?: string | null;
+  state?: string;
+  city?: string;
+  neighborhood?: string;
+  cep?: string;
+  address?: string;
+  ibgeCode?: string;
+  notes?: string;
+}
+
+export interface LocationPayload {
+  name: string;
+  state: string;
+  city: string;
+  neighborhood?: string;
+  cep?: string;
+  address?: string;
+  ibgeCode?: string;
+  notes?: string;
 }
 
 export interface QuestionResult {

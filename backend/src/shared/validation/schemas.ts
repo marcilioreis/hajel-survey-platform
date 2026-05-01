@@ -78,6 +78,12 @@ export const locationCatalogSchema = z.object({
 export const locationUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   notes: z.string().optional(),
+  state: z.string().length(2).optional(),
+  city: z.string().optional(),
+  neighborhood: z.string().optional(),
+  cep: z.string().max(10).optional(),
+  address: z.string().optional(),
+  ibgeCode: z.string().max(7).optional(),
 });
 
 // ================== RESPONSES ==================
