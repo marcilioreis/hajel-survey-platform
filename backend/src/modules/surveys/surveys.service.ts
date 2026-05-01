@@ -32,13 +32,12 @@ const mapRowToSurveyEnriched = (row: Record<string, unknown>): SurveyEnriched =>
 
 // userId é string porque user.id (Better Auth) é texto/UUID
 export const create = async (
-  data: Omit<InsertSurvey, 'createdBy' | 'createdAt' | 'startDate'>,
+  data: Omit<InsertSurvey, 'createdBy' | 'createdAt'>,
   userId: string
 ) => {
-  // Define startDate como agora + 2 horas
-  const startDate = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  // Se startDate for enviado, usa ele; senão, começa imediatamente
+  const startDate = data.startDate ? new Date(data.startDate) : new Date();
 
-  // Valida endDate
   if (!data.endDate) {
     throw new Error('endDate é obrigatória');
   }

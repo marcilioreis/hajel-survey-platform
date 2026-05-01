@@ -6,6 +6,6 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
   return val ? JSON.parse(val) : null;
 }
 
-export async function cacheSet(key: string, value: any, ttlSeconds = 300) {
+export async function cacheSet(key: string, value: unknown, ttlSeconds = 300) {
   await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
 }

@@ -36,11 +36,11 @@ export const createSurvey = async (req: Request, res: Response) => {
     // Retorna a pesquisa enriquecida
     const enriched = await surveyService.findByIdEnriched(survey.id);
     res.status(201).json(enriched);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Create survey error:', error);
-    if (error.message?.includes('endDate')) {
-      return res.status(400).json({ error: error.message });
-    }
+    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+    if (message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
+    if (message?.includes('endDate')) return res.status(404).json({ error: message });
     res.status(500).json({ error: 'Falha ao criar pesquisa' });
   }
 };
@@ -119,6 +119,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
       description: string | null;
       public: boolean;
       active: boolean;
+      startDate: Date;
       endDate: Date;
     }> = {};
 
@@ -126,10 +127,24 @@ export const updateSurvey = async (req: Request, res: Response) => {
     if ('description' in surveyFields) updateData.description = surveyFields.description;
     if ('public' in surveyFields) updateData.public = surveyFields.public;
     if ('active' in surveyFields) updateData.active = surveyFields.active;
+    if ('startDate' in surveyFields) {
+      const parsed = new Date(surveyFields.startDate);
+      if (isNaN(parsed.getTime()))
+        return res.status(400).json({ error: 'Data de início inválida' });
+      updateData.startDate = parsed;
+    }
     if ('endDate' in surveyFields) {
       const parsed = new Date(surveyFields.endDate);
       if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Data inválida' });
       updateData.endDate = parsed;
+    }
+
+    if (updateData.startDate && updateData.endDate) {
+      if (updateData.endDate <= updateData.startDate) {
+        return res
+          .status(400)
+          .json({ error: 'Data de término precisa ser depois de data de início' });
+      }
     }
 
     // Permissões

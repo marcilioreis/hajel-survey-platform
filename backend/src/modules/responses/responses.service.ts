@@ -10,6 +10,8 @@ export interface AnswerPayload {
   value: unknown;
 }
 
+type AnswerValue = string | string[] | Record<string, unknown>;
+
 // ========== SESSÃO ==========
 
 /**
@@ -182,7 +184,7 @@ export const saveAnswer = async (
   if (existing) {
     const [updated] = await db
       .update(answers)
-      .set({ value: value as any, answeredAt: new Date() }) // value já validado
+      .set({ value: value as AnswerValue, answeredAt: new Date() }) // value já validado
       .where(eq(answers.id, existing.id))
       .returning();
     return updated;
@@ -193,7 +195,7 @@ export const saveAnswer = async (
     .values({
       sessionId,
       questionId,
-      value: value as any, // value validado
+      value: value as AnswerValue, // value validado
       answeredAt: new Date(),
     })
     .returning();
@@ -241,7 +243,7 @@ export const saveAnswersBatch = async (
       await tx
         .update(answers)
         .set({
-          value: ans.value as any, // valor já validado no controller
+          value: ans.value as AnswerValue, // valor já validado no controller
           answeredAt: new Date(),
         })
         .where(and(eq(answers.sessionId, sessionId), eq(answers.questionId, ans.questionId)));
@@ -253,7 +255,7 @@ export const saveAnswersBatch = async (
         toInsert.map((ans) => ({
           sessionId,
           questionId: ans.questionId,
-          value: ans.value as any,
+          value: ans.value as AnswerValue,
           answeredAt: new Date(),
         }))
       );

@@ -15,6 +15,18 @@ export interface AggregatedResult {
     percentage: number;
   }[];
 }
+export interface ExportFilters {
+  startDate?: Date;
+  endDate?: Date;
+  locationIds?: number[];
+}
+
+interface ExportRow {
+  pergunta: string;
+  opcao: string;
+  quantidade: number;
+  percentual: string;
+}
 
 export const getSurveyResults = async (
   surveyId: number,
@@ -147,9 +159,13 @@ export const getSurveyResults = async (
   return results;
 };
 
-export const getExportData = async (surveyId: number, filters?: any, format?: string) => {
+export const getExportData = async (
+  surveyId: number,
+  filters?: ExportFilters,
+  _format?: string
+) => {
   const results = await getSurveyResults(surveyId, filters);
-  const flatData: any[] = [];
+  const flatData: ExportRow[] = [];
   for (const r of results) {
     for (const d of r.data) {
       flatData.push({
@@ -168,11 +184,7 @@ export const getExportData = async (surveyId: number, filters?: any, format?: st
  */
 export const getOpenEndedResponses = async (
   surveyId: number,
-  filters?: {
-    startDate?: Date;
-    endDate?: Date;
-    locationIds?: number[];
-  }
+  filters?: ExportFilters
 ): Promise<
   {
     questionId: number;

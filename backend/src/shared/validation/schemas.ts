@@ -8,7 +8,8 @@ export const createSurveySchema = z.object({
   slug: z.string().optional(),
   public: z.boolean().optional().default(false),
   active: z.boolean().optional().default(false),
-  endDate: z.string().datetime(),
+  startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
+  endDate: z.iso.datetime({ message: 'Data de término inválida' }),
   customStyle: z.any().optional(),
   locationIds: z.array(z.number().int().positive()).optional(),
 });
@@ -18,7 +19,8 @@ export const updateSurveySchema = z.object({
   description: z.string().optional().nullable(),
   public: z.boolean().optional(),
   active: z.boolean().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
+  endDate: z.iso.datetime({ message: 'Data de término inválida' }).optional(),
   locationIds: z.array(z.number().int().positive()).optional(),
 });
 

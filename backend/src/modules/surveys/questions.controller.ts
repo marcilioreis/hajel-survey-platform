@@ -14,10 +14,11 @@ export const addQuestion = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const question = await surveyService.addQuestion(surveyId, req.body, userId);
     res.status(201).json(question);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Add question error:', error);
-    if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
-    if (error.message === 'Survey not found')
+    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+    if (message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
+    if (message === 'Survey not found')
       return res.status(404).json({ error: 'Pesquisa não encontrada' });
     res.status(500).json({ error: 'Falha ao adicionar pergunta' });
   }
@@ -30,10 +31,11 @@ export const addQuestionsBatch = async (req: Request, res: Response) => {
     console.info('req.body', req.body);
     const questions = await surveyService.addQuestionsBatch(surveyId, req.body, userId);
     res.status(201).json(questions);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Batch add questions error:', error);
-    if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
-    if (error.message === 'Pesquisa não encontrada')
+    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+    if (message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
+    if (message === 'Pesquisa não encontrada')
       return res.status(404).json({ error: 'Pesquisa não encontrada' });
     res.status(500).json({ error: 'Falha ao adicionar perguntas em lote' });
   }
@@ -83,9 +85,10 @@ export const updateQuestion = async (req: Request, res: Response) => {
     const question = await surveyService.updateQuestion(surveyId, questionId, updateData, userId);
     if (!question) return res.status(404).json({ error: 'Pergunta não encontrada' });
     return res.json(question);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update question error:', error);
-    if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
+    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+    if (message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
     res.status(500).json({ error: 'Falha ao atualizar pergunta' });
   }
 };
@@ -103,9 +106,10 @@ export const deleteQuestion = async (req: Request, res: Response) => {
     }
     await surveyService.deleteQuestion(surveyId, questionId, userId);
     return res.status(204).send();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete question error:', error);
-    if (error.message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
+    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+    if (message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
     res.status(500).json({ error: 'Falha ao excluir pergunta' });
   }
 };

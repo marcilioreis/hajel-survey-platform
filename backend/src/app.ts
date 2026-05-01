@@ -30,14 +30,6 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// const authLimiterMem = rateLimit({
-//   windowMs: 15 * 60 * 1000,
-//   max: 30,
-//   message: { error: 'Muitas requisições, tente novamente.' },
-//   standardHeaders: true,
-//   legacyHeaders: false,
-// });
-
 const app = express();
 
 try {
@@ -82,7 +74,6 @@ try {
 
   // 1. Autenticação (Better Auth) com rate limit específico
   app.all('/api/auth/{*splat}', toNodeHandler(auth));
-  // app.use('/api/auth', auth.handler);
 
   // 2. JSON parser para as próximas rotas (pode ser aplicado globalmente após o handler)
   app.use(express.json());

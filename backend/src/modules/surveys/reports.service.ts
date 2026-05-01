@@ -1,14 +1,19 @@
 // src/modules/surveys/reports.service.ts
 import { db } from '../../shared/db/index.js';
-import { reports, exportedReports } from '../../shared/db/schema/reports.js';
+import { exportedReports } from '../../shared/db/schema/reports.js';
 import { eq } from 'drizzle-orm';
-import type { InsertExportedReport } from '../../shared/db/schema/reports.js';
+
+export interface ExportFilters {
+  startDate?: Date;
+  endDate?: Date;
+  locationIds?: number[];
+}
 
 export const createExportRequest = async (
   surveyId: number,
   userId: string,
   format: 'csv' | 'xlsx' | 'json',
-  filters?: any
+  filters?: ExportFilters
 ) => {
   const [exportRecord] = await db
     .insert(exportedReports)
