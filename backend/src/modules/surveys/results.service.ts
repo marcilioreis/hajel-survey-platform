@@ -149,7 +149,6 @@ export const getSurveyResults = async (
 
 export const getExportData = async (surveyId: number, filters?: any, format?: string) => {
   const results = await getSurveyResults(surveyId, filters);
-  console.log('results :>> ', results);
   const flatData: any[] = [];
   for (const r of results) {
     for (const d of r.data) {

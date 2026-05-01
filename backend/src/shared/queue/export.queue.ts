@@ -1,6 +1,5 @@
 // src/shared/queue/export.queue.ts
 import Queue from 'bull';
-import { redis } from '../redis/index.js';
 
 export interface ExportJobData {
   exportId: number;

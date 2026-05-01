@@ -1,14 +1,5 @@
 // src/shared/db/schema/webhooks.ts
-import {
-  pgTable,
-  serial,
-  varchar,
-  text,
-  integer,
-  boolean,
-  jsonb,
-  timestamp,
-} from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
 import { surveys } from './surveys.js';
 
 export const webhooks = pgTable('webhooks', {

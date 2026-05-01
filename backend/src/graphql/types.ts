@@ -1,7 +1,4 @@
 // src/graphql/types.ts
-import { SurveyEnriched } from '../shared/db/schema/views.types.js';
-import { AggregatedResult } from '../modules/surveys/results.service.js';
-
 export interface GraphQLContext {
   userId?: string;
 }
