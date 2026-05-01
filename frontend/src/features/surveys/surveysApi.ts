@@ -125,6 +125,7 @@ export const surveysApi = api.injectEndpoints({
     }),
     getLocations: builder.query<Location[], void>({
       query: () => "/locations",
+      providesTags: ["Location"],
     }),
     getSurveyLocations: builder.query<Location[], string>({
       query: (id) => `/surveys/${id}/locations`,

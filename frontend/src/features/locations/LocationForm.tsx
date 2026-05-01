@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { useAppDispatch } from "../../app/hooks";
+import { api } from "../../lib/api";
 import {
   useCreateLocationMutation,
   useUpdateLocationMutation,
@@ -45,9 +47,11 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     { skip: !form.city || !form.state },
   );
   const [isCepLoading, setIsCepLoading] = useState(false);
+  const dispatch = useAppDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!form.name.trim() || !form.state || !form.city) {
       toast.error("Preencha nome, estado e cidade.");
       return;
@@ -56,11 +60,12 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     try {
       if (isEditing) {
         await updateLocation({ id: Number(id), body: form }).unwrap();
-        toast.success("Local atualizado.");
       } else {
         await createLocation(form).unwrap();
-        toast.success("Local criado.");
       }
+      // Invalida manualmente as tags de Location
+      dispatch(api.util.invalidateTags(["Location"]));
+      toast.success(isEditing ? "Local atualizado." : "Local criado.");
       navigate("/locations");
     } catch {
       toast.error("Erro ao salvar.");
