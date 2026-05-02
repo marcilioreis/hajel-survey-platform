@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import * as surveyService from '../surveys/surveys.service.js';
 import * as responseService from './responses.service.js';
+import * as locationsService from '../locations/locations.service.js';
 
 // Helper para extrair string de parâmetro
 const getStringParam = (param: string | string[]): string => {
@@ -181,7 +182,7 @@ export const submitAuthenticatedResponses = async (req: Request, res: Response) 
 
     // Validar locationId se fornecido
     if (respondent?.locationId) {
-      const locations = await surveyService.getLocations(surveyId);
+      const locations = await locationsService.getSurveyLocations(surveyId);
       const locationExists = locations.some((loc) => loc.id === respondent.locationId);
       if (!locationExists) {
         return res.status(400).json({ error: 'Localização inválida' });

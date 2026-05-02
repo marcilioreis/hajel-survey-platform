@@ -53,6 +53,19 @@ export const deleteLocation = async (id: number) => {
   await db.delete(locationCatalog).where(eq(locationCatalog.id, id));
 };
 
+export const getSurveyLocations = async (surveyId: number) => {
+  return db
+    .select({
+      id: locationCatalog.id,
+      name: locationCatalog.name,
+      order: surveyLocations.order,
+    })
+    .from(surveyLocations)
+    .innerJoin(locationCatalog, eq(surveyLocations.locationId, locationCatalog.id))
+    .where(eq(surveyLocations.surveyId, surveyId))
+    .orderBy(surveyLocations.order);
+};
+
 /**
  * Substitui todas as associações de locais de uma pesquisa.
  * @param items Pode ser um array de números (locationIds) ou um array de objetos { id, order? }.

@@ -122,3 +122,11 @@ export const isAuthenticated = async () => {
   const session = await getSession();
   return !!session?.user;
 };
+
+export const requestPasswordReset = async (email: string) => {
+  return await authClient.requestPasswordReset({ email });
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  return await authClient.resetPassword({ token, newPassword });
+};

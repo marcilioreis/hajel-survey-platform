@@ -1,4 +1,6 @@
 import { lazyPage } from "../components/common/LazyPage";
+import ForgotPassword from "../features/auth/ForgotPassword";
+import ResetPassword from "../features/auth/ResetPassword";
 
 const PublicSurveyView = lazyPage(
   () => import("../features/public-survey/PublicSurveyView"),
@@ -16,4 +18,6 @@ export const publicRoutes = [
   { path: "/s/:slug/session", element: SurveySession },
   { path: "/s/:slug/demographics", element: DemographicForm },
   { path: "/s/:slug/thank-you", element: ThankYou },
+  { path: "/forgot-password", element: <ForgotPassword /> },
+  { path: "/reset-password/:token", element: <ResetPassword /> },
 ];
