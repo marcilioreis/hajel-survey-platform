@@ -83,15 +83,21 @@ export interface UpdateSurveyRequest {
 }
 
 // Payload para criação/atualização da pesquisa
+export interface SurveyLocationPayload {
+  id: number;
+  order: number;
+}
+
 export interface SurveyPayload {
   title: string;
   description?: string | null;
   public: boolean;
   active: boolean;
   slug?: string;
+  startDate?: string;
   endDate: string; // ISO string
   customStyle?: Record<string, unknown> | null;
-  locations?: { name: string; order: number }[];
+  locations?: SurveyLocationPayload[];
 }
 
 export interface SurveyLocationItem {

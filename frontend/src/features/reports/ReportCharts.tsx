@@ -7,11 +7,31 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { RectangleProps } from "recharts"; // import somente o tipo
 import type { QuestionResult } from "../surveys/surveys.types";
 
 interface ReportChartsProps {
   results: QuestionResult[];
 }
+
+// Geração dinâmica de cores por índice
+const getBarColor = (index: number) => {
+  const hue = (index * 137.508) % 360;
+  return `hsl(${hue}, 65%, 55%)`;
+};
+
+// Estendemos RectangleProps para incluir o índice
+interface BarShapeProps extends RectangleProps {
+  index: number;
+}
+
+const CustomBar = (props: BarShapeProps) => {
+  const { x, y, width, height, index } = props;
+  const fill = getBarColor(index);
+  return (
+    <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} ry={4} />
+  );
+};
 
 export default function ReportCharts({ results }: ReportChartsProps) {
   return (
@@ -21,8 +41,9 @@ export default function ReportCharts({ results }: ReportChartsProps) {
           question.type === "texto_longo" ||
           question.type === "texto_curto"
         ) {
-          return null; // Não renderiza gráfico para perguntas abertas
+          return null;
         }
+
         return (
           <div
             key={question.questionId}
@@ -33,10 +54,9 @@ export default function ReportCharts({ results }: ReportChartsProps) {
             </h3>
             <p className="text-xs text-gray-500 mb-4">
               {question.totalResponses} resposta(s) •{" "}
-              {question.type === "multipla_escolha"
-                ? "Múltipla escolha"
-                : "Única escolha"}
+              {question.data.reduce((sum, row) => sum + row.count, 0)} total
             </p>
+
             <ResponsiveContainer width="100%" height={250}>
               <BarChart
                 data={question.data}
@@ -46,7 +66,10 @@ export default function ReportCharts({ results }: ReportChartsProps) {
                 <XAxis dataKey="option" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="count"
+                  shape={(props: BarShapeProps) => <CustomBar {...props} />}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -55,4 +78,3 @@ export default function ReportCharts({ results }: ReportChartsProps) {
     </div>
   );
 }
-//question.type !== 'texto_longo' &&

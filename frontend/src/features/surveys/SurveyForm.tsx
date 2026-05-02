@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   useCreateSurveyMutation,
@@ -7,6 +7,7 @@ import {
   useAddQuestionsBatchMutation,
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
+  useGetLocationsQuery,
 } from "./surveysApi";
 import type {
   BackendQuestion,
@@ -15,11 +16,12 @@ import type {
   Question,
   QuestionOption,
   SurveyPayload,
-  SurveyLocationItem,
+  SurveyLocationPayload, // tipo do payload (id + order)
 } from "./surveys.types";
+import DateTimePicker from "../../components/common/DateTimePicker";
 
 // ----------------------------------------------------------------------
-// Mapeamento de tipos entre backend e frontend
+// Mapeamento e normalizadores (mantidos como antes)
 // ----------------------------------------------------------------------
 const mapBackendTypeToFrontend = (backendType: string): Question["type"] => {
   const mapping: Record<string, Question["type"]> = {
@@ -41,9 +43,6 @@ const mapFrontendTypeToBackend = (
   return mapping[frontendType];
 };
 
-// ----------------------------------------------------------------------
-// Normalizadores
-// ----------------------------------------------------------------------
 const normalizeQuestions = (
   backendQuestions: BackendQuestion[],
 ): Question[] => {
@@ -58,7 +57,7 @@ const normalizeQuestions = (
 };
 
 // ----------------------------------------------------------------------
-// Componente QuestionEditor (interno)
+// QuestionEditor (inalterado)
 // ----------------------------------------------------------------------
 function QuestionEditor({
   question,
@@ -121,9 +120,8 @@ function QuestionEditor({
           }}
           className="px-3 py-2 border border-gray-300 rounded-md text-base"
         >
-          <option value="texto_longo">Texto longo</option>
-          <option value="unica_escolha">Única escolha</option>
-          <option value="multipla_escolha">Múltipla escolha</option>
+          <option value="texto_longo">Espontânea</option>
+          <option value="unica_escolha">Induzida</option>
         </select>
 
         <label className="flex items-center gap-2">
@@ -189,28 +187,59 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
   const [addQuestionsBatch] = useAddQuestionsBatchMutation();
   const [updateQuestion] = useUpdateQuestionMutation();
   const [deleteQuestion] = useDeleteQuestionMutation();
+  const { data: allLocations = [] } = useGetLocationsQuery(); // 🆕 catálogo de locais
 
+  // Estados básicos
   const [title, setTitle] = useState(() => initialSurvey?.title ?? "");
   const [description, setDescription] = useState(
     () => initialSurvey?.description ?? "",
   );
-  const [endDate, setEndDate] = useState(() =>
+  const [startDate, setStartDate] = useState<string>(() =>
+    initialSurvey?.start_date ? initialSurvey.start_date.slice(0, 16) : "",
+  );
+  const [endDate, setEndDate] = useState<string>(() =>
     initialSurvey?.end_date ? initialSurvey.end_date.slice(0, 16) : "",
   );
   const [isPublic, setIsPublic] = useState(() => initialSurvey?.public ?? true);
   const [isActive, setIsActive] = useState(() => initialSurvey?.active ?? true);
-  const [locations, setLocations] = useState<SurveyLocationItem[]>(() =>
-    initialSurvey?.locations
-      ? initialSurvey.locations.map((l, idx) => ({
-          name: l.name,
-          order: idx + 1,
-        }))
-      : [],
-  );
+
+  // 🆕 Novo estado para locais selecionados com ordem
+  const [selectedLocations, setSelectedLocations] = useState<
+    SurveyLocationPayload[]
+  >(() => {
+    if (initialSurvey?.locations) {
+      return initialSurvey.locations.map((l, idx) => ({
+        id: l.id,
+        order: idx + 1, // ordem inicial baseada na posição
+      }));
+    }
+    return [];
+  });
+
   const [questions, setQuestions] = useState<Question[]>(() =>
     initialSurvey ? normalizeQuestions(initialSurvey.questions) : [],
   );
 
+  // Helpers para locais
+  const toggleLocation = (locationId: number) => {
+    setSelectedLocations((prev) => {
+      const exists = prev.find((l) => l.id === locationId);
+      if (exists) {
+        return prev.filter((l) => l.id !== locationId);
+      } else {
+        const maxOrder = prev.reduce((max, l) => Math.max(max, l.order), 0);
+        return [...prev, { id: locationId, order: maxOrder + 1 }];
+      }
+    });
+  };
+
+  const updateSelectedOrder = (locationId: number, order: number) => {
+    setSelectedLocations((prev) =>
+      prev.map((l) => (l.id === locationId ? { ...l, order } : l)),
+    );
+  };
+
+  // Lógica de perguntas (inalterada, exceto renomear funções para clareza)
   const addNewQuestion = () => {
     const newQuestion: Question = {
       text: "",
@@ -231,28 +260,11 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
-  const addLocation = () => {
-    setLocations([...locations, { name: "", order: locations.length + 1 }]);
-  };
-
-  const updateLocation = (
-    index: number,
-    field: "name" | "order",
-    value: string | number,
-  ) => {
-    const updated = [...locations];
-    updated[index] = { ...updated[index], [field]: value };
-    setLocations(updated);
-  };
-
-  const removeLocation = (index: number) => {
-    setLocations(locations.filter((_, i) => i !== index));
-  };
-
   const syncQuestions = async (
     surveyId: number,
     originalQuestions: BackendQuestion[],
   ) => {
+    // ... (código existente mantido, sem alterações)
     const currentQuestions = questions;
     const originalMap = new Map(originalQuestions.map((q) => [q.id, q]));
     const removedQuestions = originalQuestions.filter(
@@ -330,13 +342,9 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
       description: description.trim() || null,
       public: isPublic,
       active: isActive,
-      endDate: new Date(endDate).toISOString(),
-      locations: locations
-        .filter((l) => l.name.trim() !== "")
-        .map((l, idx) => ({
-          name: l.name.trim(),
-          order: l.order || idx + 1,
-        })),
+      startDate: startDate ? `${startDate}` : undefined,
+      endDate: `${endDate}`,
+      locations: selectedLocations.map((l) => ({ id: l.id, order: l.order })),
     };
 
     try {
@@ -347,11 +355,12 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
           (initialSurvey!.description || "") !== description.trim() ||
           initialSurvey!.public !== isPublic ||
           initialSurvey!.active !== isActive ||
+          (initialSurvey!.start_date?.slice(0, 16) ?? "") !== startDate ||
           (initialSurvey!.end_date?.slice(0, 16) ?? "") !== endDate ||
           JSON.stringify(
-            initialSurvey!.locations?.map((l) => ({
-              name: l.name,
-              order: (initialSurvey!.locations?.indexOf(l) ?? 0) + 1,
+            initialSurvey!.locations?.map((l, idx) => ({
+              id: l.id,
+              order: idx + 1,
             })),
           ) !== JSON.stringify(surveyPayload.locations);
 
@@ -393,79 +402,100 @@ export default function SurveyForm({ initialSurvey }: SurveyFormProps) {
           rows={2}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
         />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Data de término
+        <div className="flex gap-2">
+          <label className="hidden items-center gap-2 ">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            <span className="text-sm">Pesquisa pública</span>
           </label>
-          <input
-            type="datetime-local"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
-          />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
+            <span className="text-sm">Pesquisa ativa</span>
+          </label>
         </div>
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isPublic}
-            onChange={(e) => setIsPublic(e.target.checked)}
-          />
-          <span className="text-sm">Pesquisa pública</span>
-        </label>
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          <span className="text-sm">Pesquisa ativa</span>
-        </label>
-
-        {/* Editor de locais */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Locais de coleta
-          </label>
-          {locations.map((loc, idx) => (
-            <div key={idx} className="flex gap-2 mb-2">
-              <input
-                type="text"
-                placeholder="Nome do local"
-                value={loc.name}
-                onChange={(e) => updateLocation(idx, "name", e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base"
-              />
-              <input
-                type="number"
-                placeholder="Ordem"
-                value={loc.order}
-                onChange={(e) =>
-                  updateLocation(idx, "order", Number(e.target.value))
-                }
-                className="w-20 px-3 py-2 border border-gray-300 rounded-md text-base"
-              />
-              <button
-                type="button"
-                onClick={() => removeLocation(idx)}
-                className="p-2 text-red-600"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addLocation}
-            className="text-blue-600 text-sm font-medium"
-          >
-            + Adicionar local
-          </button>
+        <div className="flex gap-8">
+          {/* Bloco de datas */}
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Período da pesquisa *
+            </label>
+            <DateTimePicker
+              startValue={startDate}
+              endValue={endDate}
+              onStartChange={setStartDate}
+              onEndChange={setEndDate}
+              required
+              minDate={new Date()}
+            />
+          </div>
+          {/* Seletor de locais do catálogo com ordem */}
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Locais de coleta *
+            </label>
+            {allLocations.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Nenhum local cadastrado.{" "}
+                <Link to="/locations/new" className="text-blue-600">
+                  Cadastrar agora
+                </Link>
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-2">
+                {allLocations.map((loc) => {
+                  const selected = selectedLocations.find(
+                    (l) => l.id === loc.id,
+                  );
+                  return (
+                    <div key={loc.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={!!selected}
+                        onChange={() => toggleLocation(loc.id)}
+                        className="rounded w-8"
+                      />
+                      <span className="flex-1 text-left text-sm">
+                        {loc.name}
+                      </span>
+                      {selected ? (
+                        <input
+                          type="number"
+                          min="1"
+                          value={selected.order}
+                          onChange={(e) =>
+                            updateSelectedOrder(loc.id, Number(e.target.value))
+                          }
+                          className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="Ordem"
+                          title="Ordem de exibição"
+                        />
+                      ) : (
+                        <div className="w-16 px-2 py-1">
+                          <span className="hidden"></span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <Link
+              to="/locations/new"
+              className="text-blue-600 text-sm mt-1 inline-block"
+            >
+              + Cadastrar novo local
+            </Link>
+          </div>
         </div>
       </div>
-
+      {/* Perguntas */}
       <div className="space-y-3">
         {questions.map((q, idx) => (
           <QuestionEditor

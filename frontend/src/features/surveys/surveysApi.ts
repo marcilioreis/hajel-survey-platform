@@ -3,6 +3,7 @@ import type {
   Survey,
   BackendSurvey,
   SurveyPayload,
+  SurveyLocationPayload,
   Location,
   CreateQuestionPayload,
   BackendQuestion,
@@ -132,12 +133,12 @@ export const surveysApi = api.injectEndpoints({
     }),
     updateSurveyLocations: builder.mutation<
       void,
-      { surveyId: number; locationIds: number[] }
+      { surveyId: number; locations: SurveyLocationPayload[] }
     >({
-      query: ({ surveyId, locationIds }) => ({
+      query: ({ surveyId, locations }) => ({
         url: `/surveys/${surveyId}/locations`,
         method: "PUT",
-        body: { locationIds },
+        body: { locations }, // envia o array de { id, order }
       }),
       invalidatesTags: (_result, _error, { surveyId }) => [
         { type: "Survey", id: surveyId },

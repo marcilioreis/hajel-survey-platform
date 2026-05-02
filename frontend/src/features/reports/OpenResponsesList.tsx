@@ -18,7 +18,7 @@ export default function OpenResponsesList({
             {question.questionText}
           </h3>
           <p className="text-xs text-gray-500 mb-4">
-            {question.responses.length} resposta(s) • {question.type}
+            {question.responses.length} resposta(s) • Pergunta espontanea
           </p>
           <div className="max-h-60 overflow-y-auto space-y-2">
             {question.responses.map((resp, idx) => (

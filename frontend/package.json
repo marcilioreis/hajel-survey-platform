@@ -19,6 +19,7 @@
     "@tailwindcss/vite": "^4.2.2",
     "better-auth": "^1.6.5",
     "react": "^19.2.4",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.4",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.1",
