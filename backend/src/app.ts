@@ -7,6 +7,8 @@ import morgan from 'morgan';
 import compression from 'compression';
 import { toNodeHandler } from 'better-auth/node';
 import { RedisStore } from 'rate-limit-redis';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './docs/swagger.js';
 import { auth } from './shared/auth/auth.js';
 import surveyRoutes from './modules/surveys/surveys.routes.js';
 import locationRoutes from './modules/locations/locations.routes.js';
@@ -85,6 +87,8 @@ try {
 
   // 4. Rotas públicas com publicLimiter (aplicado dentro do próprio arquivo de rotas)
   app.use('/', publicRoutes); // o publicLimiter é aplicado dentro de publicRoutes
+
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // 5. GraphQL
   const { authMiddleware, apolloMiddleware } = await createApolloServer();

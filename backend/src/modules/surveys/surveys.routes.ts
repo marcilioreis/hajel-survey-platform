@@ -16,7 +16,28 @@ import * as reportsController from './reports.controller.js';
 
 const router = Router();
 
-// Criar pesquisa: requer permissão survey:create
+/**
+ * @openapi
+ * /api/surveys:
+ *   post:
+ *     summary: Criar uma nova pesquisa
+ *     tags: [Surveys]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateSurvey'
+ *     responses:
+ *       201:
+ *         description: Pesquisa criada (enriquecida)
+ *       400:
+ *         description: Dados inválidos
+ *       403:
+ *         description: Sem permissão
+ */
 router.post(
   '/',
   authorize('survey:create'),
@@ -24,27 +45,133 @@ router.post(
   controller.createSurvey
 );
 
-// Listar pesquisas do usuário: requer survey:view ou survey:view_any
-router.get('/', controller.listSurveysEnriched); // a lógica de permissão está dentro do controller
+/**
+ * @openapi
+ * /api/surveys:
+ *   get:
+ *     summary: Listar pesquisas acessíveis ao usuário (formato enriquecido)
+ *     tags: [Surveys]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de pesquisas enriquecidas
+ */
+router.get('/', controller.listSurveysEnriched);
 
-// Visualizar uma pesquisa específica: pode ser própria (survey:view) ou qualquer (survey:view_any)
-router.get('/:id', controller.getSurvey); // a lógica de permissão está dentro do controller
+/**
+ * @openapi
+ * /api/surveys/{id}:
+ *   get:
+ *     summary: Obter uma pesquisa específica (enriquecida)
+ *     tags: [Surveys]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Pesquisa encontrada
+ *       404:
+ *         description: Pesquisa não encontrada
+ */
+router.get('/:id', controller.getSurvey);
 
-// Atualizar: se for dono (survey:edit) ou admin (survey:edit_any)
+/**
+ * @openapi
+ * /api/surveys/{id}:
+ *   put:
+ *     summary: Atualizar uma pesquisa
+ *     tags: [Surveys]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateSurvey'
+ *     responses:
+ *       200:
+ *         description: Pesquisa atualizada (enriquecida)
+ *       400:
+ *         description: Dados inválidos
+ *       403:
+ *         description: Sem permissão
+ *       404:
+ *         description: Pesquisa não encontrada
+ */
 router.put(
   '/:id',
   authorize({ any: ['survey:edit', 'survey:edit_any'] }),
   validateBody(updateSurveySchema),
   controller.updateSurvey
 );
-// Excluir: similar
+
+/**
+ * @openapi
+ * /api/surveys/{id}:
+ *   delete:
+ *     summary: Excluir uma pesquisa
+ *     tags: [Surveys]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Pesquisa excluída
+ *       403:
+ *         description: Sem permissão
+ */
 router.delete(
   '/:id',
   authorize({ any: ['survey:delete', 'survey:delete_any'] }),
   controller.deleteSurvey
 );
 
-// Submissão de respostas (usuário autenticado)
+/**
+ * @openapi
+ * /api/surveys/{surveyId}/responses:
+ *   post:
+ *     summary: Submeter respostas (usuário autenticado)
+ *     tags: [Respostas Autenticadas]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: surveyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AuthenticatedResponses'
+ *     responses:
+ *       200:
+ *         description: Respostas salvas e sessão finalizada
+ *       400:
+ *         description: Dados inválidos
+ *       403:
+ *         description: Acesso negado
+ */
 router.post(
   '/:surveyId/responses',
   validateBody(authenticatedResponsesSchema),
@@ -54,17 +181,152 @@ router.post(
 // Rotas aninhadas
 router.use('/:surveyId/questions', questionRoutes);
 
-// Resultados agregados
+/**
+ * @openapi
+ * /api/surveys/{surveyId}/results:
+ *   get:
+ *     summary: Obter resultados agregados da pesquisa
+ *     tags: [Resultados]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: surveyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: locationIds
+ *         schema:
+ *           type: string
+ *           description: IDs separados por vírgula
+ *     responses:
+ *       200:
+ *         description: Resultados agregados
+ *       403:
+ *         description: Sem permissão
+ */
 router.get('/:surveyId/results', resultsController.getSurveyResults);
+
+/**
+ * @openapi
+ * /api/surveys/{surveyId}/open-ended-responses:
+ *   get:
+ *     summary: Obter respostas abertas (texto longo/curto)
+ *     tags: [Resultados]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: surveyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: locationIds
+ *         schema:
+ *           type: string
+ *           description: IDs separados por vírgula
+ *     responses:
+ *       200:
+ *         description: Lista de respostas abertas
+ *       403:
+ *         description: Sem permissão
+ */
 router.get('/:surveyId/open-ended-responses', resultsController.getOpenEndedResponses);
 
-// Exportações
+/**
+ * @openapi
+ * /api/surveys/{surveyId}/exports:
+ *   post:
+ *     summary: Solicitar exportação de relatório (em background)
+ *     tags: [Exportações]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: surveyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ExportRequest'
+ *     responses:
+ *       202:
+ *         description: Exportação solicitada
+ *       403:
+ *         description: Sem permissão
+ */
 router.post(
   '/:surveyId/exports',
   validateBody(exportRequestSchema),
   reportsController.requestExport
 );
+
+/**
+ * @openapi
+ * /api/exports/{exportId}/status:
+ *   get:
+ *     summary: Verificar status de uma exportação
+ *     tags: [Exportações]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: exportId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Status da exportação
+ */
 router.get('/exports/:exportId/status', reportsController.getExportStatus);
+
+/**
+ * @openapi
+ * /api/exports/{exportId}/download:
+ *   get:
+ *     summary: Baixar arquivo exportado
+ *     tags: [Exportações]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: exportId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Arquivo CSV/JSON
+ *       404:
+ *         description: Exportação não encontrada ou não concluída
+ */
 router.get('/exports/:exportId/download', reportsController.downloadExport);
 
 export default router;

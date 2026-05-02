@@ -1,4 +1,3 @@
-// src/modules/surveys/reports.service.ts
 import { db } from '../../shared/db/index.js';
 import { exportedReports } from '../../shared/db/schema/reports.js';
 import { eq } from 'drizzle-orm';
