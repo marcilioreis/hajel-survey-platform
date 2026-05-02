@@ -1,6 +1,7 @@
 import { api } from "../../lib/api";
 import { login as authLogin, register as authRegister } from "../../lib/auth";
 import type { BetterAuthUser, ApiError } from "../../lib/auth.types";
+import { authClient } from "../../lib/auth";
 
 export interface User {
   id: string;
@@ -32,6 +33,16 @@ interface SessionResponse {
 // Type guard para verificar se o objeto tem 'user'
 function hasUser(obj: unknown): obj is { user: BetterAuthUser } {
   return typeof obj === "object" && obj !== null && "user" in obj;
+}
+
+// Type guard para a resposta de updateUser
+function isUpdateUserResponse(obj: unknown): obj is { user: BetterAuthUser } {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "user" in obj &&
+    typeof (obj as Record<string, unknown>).user === "object"
+  );
 }
 
 // Função auxiliar para extrair o usuário da resposta do Better Auth
@@ -85,7 +96,6 @@ export const authApi = api.injectEndpoints({
         }
       },
     }),
-
     register: builder.mutation<{ user: User }, RegisterRequest>({
       queryFn: async (userData) => {
         try {
@@ -115,12 +125,64 @@ export const authApi = api.injectEndpoints({
         }
       },
     }),
-
     getCurrentUser: builder.query<SessionResponse, void>({
       query: () => "/auth/get-session",
+    }),
+    updateUser: builder.mutation<User, Partial<Pick<User, "name" | "email">>>({
+      queryFn: async (patch) => {
+        try {
+          const result = await authClient.updateUser(patch);
+          // Tenta acessar result.data primeiro; se não existir, usa o próprio result
+          const responseData: unknown =
+            (result as Record<string, unknown>).data ?? result;
+          if (isUpdateUserResponse(responseData)) {
+            const u = responseData.user;
+            return {
+              data: {
+                id: u.id,
+                email: u.email,
+                name: u.name,
+                emailVerified: u.emailVerified,
+                createdAt: u.createdAt?.toString(),
+                updatedAt: u.updatedAt?.toString(),
+                image: u.image,
+              },
+            };
+          }
+          return { error: { status: 400, data: "Falha ao atualizar perfil." } };
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Falha ao atualizar perfil.";
+          return { error: { status: 400, data: message } };
+        }
+      },
+    }),
+
+    // Mutation changePassword (inalterada, apenas removi toast)
+    changePassword: builder.mutation<
+      void,
+      { currentPassword: string; newPassword: string }
+    >({
+      queryFn: async (passwords) => {
+        try {
+          await authClient.changePassword(passwords);
+          return { data: undefined };
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : "Falha ao alterar senha.";
+          return { error: { status: 400, data: message } };
+        }
+      },
     }),
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery } =
-  authApi;
+export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useGetCurrentUserQuery,
+  useUpdateUserMutation,
+  useChangePasswordMutation,
+} = authApi;

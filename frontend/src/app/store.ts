@@ -24,9 +24,10 @@ export const store = configureStore({
         },
       },
     })
-      .concat(api.middleware, rtkQueryErrorLogger)
+      .concat(api.middleware)
       .concat(publicSurveyApi.middleware)
-      .concat(geographyApi.middleware),
+      .concat(geographyApi.middleware)
+      .concat(rtkQueryErrorLogger),
   //
 });
 

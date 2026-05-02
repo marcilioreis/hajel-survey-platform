@@ -1,5 +1,4 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { toast } from "sonner";
 import { authClient } from "../lib/auth";
 
 const baseQuery = fetchBaseQuery({
@@ -41,9 +40,10 @@ const baseQueryWithReauth: typeof baseQuery = async (
         localStorage.removeItem("auth-token");
         window.location.href = "/login";
       }
-    } catch (error) {
-      // 6. Se a chamada getSession() falhar, logout
-      toast.error(`Erro: ${error}`);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Falha ao reidratar a sessão.";
+      console.error(message);
       localStorage.removeItem("auth-token");
       window.location.href = "/login";
     }

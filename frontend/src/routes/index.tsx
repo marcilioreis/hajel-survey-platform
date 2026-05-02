@@ -32,11 +32,12 @@ const LocationList = lazyPage(
 const LocationFormWrapper = lazyPage(
   () => import("../features/locations/LocationFormWrapper"),
 );
+const Profile = lazyPage(() => import("../features/auth/Profile"));
 
 // Placeholders temporários
 // const Dashboard = () => <div>Dashboard (protegido)</div>;
 const Reports = () => <div>Relatórios (protegido)</div>;
-const Profile = () => <div>Perfil (protegido)</div>;
+// const Profile = () => <div>Perfil (protegido)</div>;
 
 export const router = createBrowserRouter([
   ...publicRoutes,
@@ -63,7 +64,7 @@ export const router = createBrowserRouter([
           { path: "locations/new", element: <LocationForm /> }, // sem props = criação
           { path: "locations/:id/edit", element: LocationFormWrapper }, // wrapper para edição
           { path: "reports", element: <Reports /> },
-          { path: "profile", element: <Profile /> },
+          { path: "profile", element: Profile },
         ],
       },
     ],
