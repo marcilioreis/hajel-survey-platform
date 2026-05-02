@@ -1,15 +1,11 @@
+// src/modules/surveys/surveys.service.ts
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '../../shared/db/index.js';
-import { surveys, questions, locations } from '../../shared/db/schema/surveys.js';
-import { locations as locationsTable } from '../../shared/db/schema/surveys.js';
+import { surveys, questions } from '../../shared/db/schema/surveys.js';
+import { locationCatalog, surveyLocations } from '../../shared/db/schema/locations.js';
 import type { SurveyEnriched } from '../../shared/db/schema/views.types.js';
-import type {
-  InsertSurvey,
-  InsertQuestion,
-  InsertLocation,
-} from '../../shared/db/schema/surveys.js';
+import type { InsertSurvey, InsertQuestion } from '../../shared/db/schema/surveys.js';
 
-// Função auxiliar para mapear uma linha da view para o tipo SurveyEnriched
 const mapRowToSurveyEnriched = (row: Record<string, unknown>): SurveyEnriched => ({
   id: row.id as number,
   title: row.title as string,
@@ -29,31 +25,18 @@ const mapRowToSurveyEnriched = (row: Record<string, unknown>): SurveyEnriched =>
 });
 
 // ========== PESQUISAS ==========
-
-// userId é string porque user.id (Better Auth) é texto/UUID
 export const create = async (
   data: Omit<InsertSurvey, 'createdBy' | 'createdAt'>,
   userId: string
 ) => {
-  // Se startDate for enviado, usa ele; senão, começa imediatamente
   const startDate = data.startDate ? new Date(data.startDate) : new Date();
-
-  if (!data.endDate) {
-    throw new Error('endDate é obrigatória');
-  }
+  if (!data.endDate) throw new Error('endDate é obrigatória');
   const endDate = new Date(data.endDate);
-  if (endDate <= startDate) {
-    throw new Error('endDate precisa ser depois de startDate');
-  }
+  if (endDate <= startDate) throw new Error('endDate precisa ser depois de startDate');
 
   const [survey] = await db
     .insert(surveys)
-    .values({
-      ...data,
-      createdBy: userId,
-      startDate,
-      endDate: endDate,
-    })
+    .values({ ...data, createdBy: userId, startDate, endDate })
     .returning();
   return survey;
 };
@@ -65,9 +48,7 @@ export const findAll = async (userId: string) => {
     .where(eq(surveys.createdBy, userId))
     .orderBy(desc(surveys.createdAt));
 };
-/**
- * Lista pesquisas públicas (ativas e marcadas como public).
- */
+
 export const findPublicSurveys = async () => {
   return db
     .select()
@@ -75,38 +56,27 @@ export const findPublicSurveys = async () => {
     .where(and(eq(surveys.active, true), eq(surveys.public, true)))
     .orderBy(desc(surveys.createdAt));
 };
-/**
- * Lista todas as pesquisas do sistema (uso exclusivo para administradores).
- */
+
 export const findAllSurveys = async () => {
   return db.select().from(surveys).orderBy(desc(surveys.createdAt));
 };
 
 export const findAllEnriched = async (userId: string) => {
-  const rows = await db.execute(sql`
-    SELECT * FROM surveys_enriched
-    WHERE created_by = ${userId}       
-    ORDER BY created_at DESC
-  `);
+  const rows = await db.execute(
+    sql`SELECT * FROM surveys_enriched WHERE created_by = ${userId} ORDER BY created_at DESC`
+  );
   return rows as unknown as SurveyEnriched[];
 };
 
-// Se quiser filtrar por usuário (pesquisas próprias + públicas)
 export const findPublicSurveysEnriched = async (userId: string): Promise<SurveyEnriched[]> => {
-  // Pesquisador: vê suas próprias + pesquisas públicas ativas
-  const rows = await db.execute(sql`
-    SELECT * FROM surveys_enriched
-    WHERE created_by = ${userId}
-       OR (public = true AND status = 'ativa')
-    ORDER BY created_at DESC
-  `);
+  const rows = await db.execute(
+    sql`SELECT * FROM surveys_enriched WHERE created_by = ${userId} OR (public = true AND status = 'ativa') ORDER BY created_at DESC`
+  );
   return (rows as unknown as Record<string, unknown>[]).map(mapRowToSurveyEnriched);
 };
 
 export const findAllSurveysEnriched = async (): Promise<SurveyEnriched[]> => {
-  const rows = await db.execute(sql`
-    SELECT * FROM surveys_enriched ORDER BY created_at DESC
-  `);
+  const rows = await db.execute(sql`SELECT * FROM surveys_enriched ORDER BY created_at DESC`);
   return (rows as unknown as Record<string, unknown>[]).map(mapRowToSurveyEnriched);
 };
 
@@ -118,74 +88,33 @@ export const findById = async (id: number, userId?: string) => {
   return survey;
 };
 
-// Retorna dados enriquecidos da view
 export const findByIdEnriched = async (surveyId: number): Promise<SurveyEnriched | null> => {
-  const rows = await db.execute(sql`
-    SELECT * FROM surveys_enriched WHERE id = ${surveyId}
-  `);
+  const rows = await db.execute(sql`SELECT * FROM surveys_enriched WHERE id = ${surveyId}`);
   const results = rows as unknown as SurveyEnriched[];
   return results.length > 0 ? results[0] : null;
 };
 
-/**
- * Busca uma pesquisa pelo ID, com verificação opcional de permissão de dono.
- */
 export const findByIdWithAccess = async (
   surveyId: number,
   userId?: string
 ): Promise<SurveyEnriched | null> => {
-  const rows = await db.execute(sql`
-    SELECT * FROM surveys_enriched WHERE id = ${surveyId}
-  `);
+  const rows = await db.execute(sql`SELECT * FROM surveys_enriched WHERE id = ${surveyId}`);
   const results = (rows as unknown as Record<string, unknown>[]).map(mapRowToSurveyEnriched);
   const survey = results[0];
   if (!survey) return null;
-
-  // Verifica acesso
   const isOwner = userId && survey.createdBy === userId;
   const isPublicActive = survey.public && survey.status === 'ativa';
   if (!isOwner && !isPublicActive) return null;
-
   return survey;
 };
 
-export const update = async (
-  id: number,
-  data: Partial<InsertSurvey>,
-  userId: string,
-  locations?: Array<{ name: string; order: number }>
-) => {
-  return await db.transaction(async (tx) => {
-    // Atualiza a pesquisa (se houver campos)
-    if (Object.keys(data).length > 0) {
-      const [survey] = await tx
-        .update(surveys)
-        .set(data)
-        .where(and(eq(surveys.id, id), eq(surveys.createdBy, userId)))
-        .returning();
-      if (!survey) throw new Error('Pesquisa não encontrada ou acesso negado');
-    }
-
-    // Se locations forem enviadas, substitui todas as locations da pesquisa
-    if (locations !== undefined) {
-      // Remove todas as locations existentes
-      await tx.delete(locationsTable).where(eq(locationsTable.surveyId, id));
-      // Insere as novas
-      if (locations.length > 0) {
-        await tx.insert(locationsTable).values(
-          locations.map((loc) => ({
-            surveyId: id,
-            name: loc.name,
-            order: loc.order,
-          }))
-        );
-      }
-    }
-
-    // Retorna a pesquisa atualizada (sem os relacionamentos)
-    const [updated] = await tx.select().from(surveys).where(eq(surveys.id, id));
-    return updated;
-  });
+export const update = async (id: number, data: Partial<InsertSurvey>, userId: string) => {
+  const [survey] = await db
+    .update(surveys)
+    .set(data)
+    .where(and(eq(surveys.id, id), eq(surveys.createdBy, userId)))
+    .returning();
+  return survey;
 };
 
 export const remove = async (id: number, userId: string) => {
@@ -197,56 +126,44 @@ export const remove = async (id: number, userId: string) => {
 };
 
 // ========== PERGUNTAS ==========
-
-/**
- * Adiciona uma nova pergunta a uma pesquisa.
- * Verifica se a pesquisa existe e pertence ao usuário (ou admin).
- */
 export const addQuestion = async (
   surveyId: number,
   data: Omit<InsertQuestion, 'surveyId'>,
   userId: string
 ) => {
-  // Verifica se o usuário pode editar a pesquisa
   const [survey] = await db
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
   if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Acesso negado');
-
   const [question] = await db
     .insert(questions)
     .values({ ...data, surveyId })
     .returning();
   return question;
 };
+
 export const addQuestionsBatch = async (
   surveyId: number,
   questionsData: Omit<InsertQuestion, 'surveyId'>[],
   userId: string
 ) => {
-  // Verifica se o usuário pode editar a pesquisa
   const [survey] = await db
     .select({ createdBy: surveys.createdBy })
     .from(surveys)
     .where(eq(surveys.id, surveyId));
   if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
-
   return await db.transaction(async (tx) => {
-    const createdQuestions = await tx
+    const created = await tx
       .insert(questions)
       .values(questionsData.map((q) => ({ ...q, surveyId })))
       .returning();
-    return createdQuestions;
+    return created;
   });
 };
 
-/**
- * Lista todas as perguntas de uma pesquisa.
- * Acesso permitido se o usuário pode visualizar a pesquisa.
- */
 export const getQuestions = async (surveyId: number) => {
   return db
     .select()
@@ -255,9 +172,6 @@ export const getQuestions = async (surveyId: number) => {
     .orderBy(questions.order);
 };
 
-/**
- * Atualiza uma pergunta existente.
- */
 export const updateQuestion = async (
   surveyId: number,
   questionId: number,
@@ -270,7 +184,6 @@ export const updateQuestion = async (
     .where(eq(surveys.id, surveyId));
   if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
-
   const [question] = await db
     .update(questions)
     .set(data)
@@ -279,9 +192,6 @@ export const updateQuestion = async (
   return question;
 };
 
-/**
- * Remove uma pergunta.
- */
 export const deleteQuestion = async (surveyId: number, questionId: number, userId: string) => {
   const [survey] = await db
     .select({ createdBy: surveys.createdBy })
@@ -289,7 +199,6 @@ export const deleteQuestion = async (surveyId: number, questionId: number, userI
     .where(eq(surveys.id, surveyId));
   if (!survey) throw new Error('Pesquisa não encontrada');
   if (survey.createdBy !== userId) throw new Error('Forbidden');
-
   const [deleted] = await db
     .delete(questions)
     .where(and(eq(questions.id, questionId), eq(questions.surveyId, surveyId)))
@@ -297,75 +206,7 @@ export const deleteQuestion = async (surveyId: number, questionId: number, userI
   return deleted;
 };
 
-// ========== LOCAIS ==========
-
-export const addLocation = async (
-  surveyId: number,
-  data: Omit<InsertLocation, 'surveyId'>,
-  userId: string
-) => {
-  const [survey] = await db
-    .select({ createdBy: surveys.createdBy })
-    .from(surveys)
-    .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Pesquisa não encontrada');
-  if (survey.createdBy !== userId) throw new Error('Não autorizado');
-
-  const [location] = await db
-    .insert(locations)
-    .values({ ...data, surveyId })
-    .returning();
-  return location;
-};
-
-export const getLocations = async (surveyId: number) => {
-  return db
-    .select()
-    .from(locations)
-    .where(eq(locations.surveyId, surveyId))
-    .orderBy(locations.order);
-};
-
-export const getAllLocations = async () => {
-  return db.select().from(locations).orderBy(locations.name);
-};
-
-export const updateLocation = async (
-  surveyId: number,
-  locationId: number,
-  data: Partial<Omit<InsertLocation, 'surveyId' | 'id'>>,
-  userId: string
-) => {
-  const [survey] = await db
-    .select({ createdBy: surveys.createdBy })
-    .from(surveys)
-    .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Pesquisa não encontrada');
-  if (survey.createdBy !== userId) throw new Error('Não autorizado');
-
-  const [location] = await db
-    .update(locations)
-    .set(data)
-    .where(and(eq(locations.id, locationId), eq(locations.surveyId, surveyId)))
-    .returning();
-  return location;
-};
-
-export const deleteLocation = async (surveyId: number, locationId: number, userId: string) => {
-  const [survey] = await db
-    .select({ createdBy: surveys.createdBy })
-    .from(surveys)
-    .where(eq(surveys.id, surveyId));
-  if (!survey) throw new Error('Pesquisa não encontrada');
-  if (survey.createdBy !== userId) throw new Error('Não autorizado');
-
-  const [deleted] = await db
-    .delete(locations)
-    .where(and(eq(locations.id, locationId), eq(locations.surveyId, surveyId)))
-    .returning();
-  return deleted;
-};
-
+// ========== PESQUISA PÚBLICA (usa novas tabelas de locais) ==========
 export const getPublicSurveyBySlug = async (slug: string) => {
   const [survey] = await db
     .select({
@@ -384,12 +225,10 @@ export const getPublicSurveyBySlug = async (slug: string) => {
 
   if (!survey) return null;
 
-  // Verifica período de validade
   const now = new Date();
   if (survey.startDate && new Date(survey.startDate) > now) return null;
   if (survey.endDate && new Date(survey.endDate) < now) return null;
 
-  // Busca perguntas (ordenadas)
   const surveyQuestions = await db
     .select({
       id: questions.id,
@@ -404,20 +243,20 @@ export const getPublicSurveyBySlug = async (slug: string) => {
     .where(eq(questions.surveyId, survey.id))
     .orderBy(questions.order);
 
-  // Busca locais
-  const surveyLocations = await db
+  const surveyLocationsResult = await db
     .select({
-      id: locations.id,
-      name: locations.name,
-      order: locations.order,
+      id: locationCatalog.id,
+      name: locationCatalog.name,
+      order: surveyLocations.order,
     })
-    .from(locations)
-    .where(eq(locations.surveyId, survey.id))
-    .orderBy(locations.order);
+    .from(surveyLocations)
+    .innerJoin(locationCatalog, eq(surveyLocations.locationId, locationCatalog.id))
+    .where(eq(surveyLocations.surveyId, survey.id))
+    .orderBy(surveyLocations.order);
 
   return {
     ...survey,
     questions: surveyQuestions,
-    locations: surveyLocations,
+    locations: surveyLocationsResult,
   };
 };

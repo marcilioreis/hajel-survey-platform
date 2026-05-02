@@ -2,27 +2,51 @@
 import { z } from 'zod';
 
 // ================== SURVEYS ==================
-export const createSurveySchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional(),
-  slug: z.string().optional(),
-  public: z.boolean().optional().default(false),
-  active: z.boolean().optional().default(false),
-  startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
-  endDate: z.iso.datetime({ message: 'Data de término inválida' }),
-  customStyle: z.any().optional(),
-  locationIds: z.array(z.number().int().positive()).optional(),
-});
+export const createSurveySchema = z
+  .object({
+    title: z.string().min(1),
+    description: z.string().optional(),
+    slug: z.string().optional(),
+    public: z.boolean().optional().default(false),
+    active: z.boolean().optional().default(false),
+    startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
+    endDate: z.iso.datetime({ message: 'Data de término inválida' }),
+    customStyle: z.unknown().optional(),
+    locations: z
+      .array(
+        z.object({
+          id: z.number().int().positive(),
+          order: z.number().int().optional(),
+        })
+      )
+      .optional(),
+    locationIds: z.array(z.number().int().positive()).optional(),
+  })
+  .refine((data) => !(data.locations && data.locationIds), {
+    message: 'Use apenas locations ou locationIds, não ambos',
+  });
 
-export const updateSurveySchema = z.object({
-  title: z.string().min(1).optional(),
-  description: z.string().optional().nullable(),
-  public: z.boolean().optional(),
-  active: z.boolean().optional(),
-  startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
-  endDate: z.iso.datetime({ message: 'Data de término inválida' }).optional(),
-  locationIds: z.array(z.number().int().positive()).optional(),
-});
+export const updateSurveySchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    description: z.string().optional().nullable(),
+    public: z.boolean().optional(),
+    active: z.boolean().optional(),
+    startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
+    endDate: z.iso.datetime({ message: 'Data de término inválida' }).optional(),
+    locations: z
+      .array(
+        z.object({
+          id: z.number().int().positive(),
+          order: z.number().int().optional(),
+        })
+      )
+      .optional(),
+    locationIds: z.array(z.number().int().positive()).optional(),
+  })
+  .refine((data) => !(data.locations && data.locationIds), {
+    message: 'Use apenas locations ou locationIds, não ambos',
+  });
 
 // ================== QUESTIONS ==================
 export const createQuestionSchema = z.object({
@@ -31,7 +55,7 @@ export const createQuestionSchema = z.object({
   required: z.boolean().optional().default(true),
   order: z.number().int().min(1),
   options: z.array(z.string()).optional(),
-  conditionalLogic: z.any().optional(),
+  conditionalLogic: z.unknown().optional(),
 });
 
 export const updateQuestionSchema = z
@@ -41,7 +65,7 @@ export const updateQuestionSchema = z
     required: z.boolean().optional(),
     order: z.number().int().min(1).optional(),
     options: z.array(z.string()).optional(),
-    conditionalLogic: z.any().optional(),
+    conditionalLogic: z.unknown().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Nenhum campo para atualizar',
@@ -91,7 +115,7 @@ export const locationUpdateSchema = z.object({
 // ================== RESPONSES ==================
 export const answerPayloadSchema = z.object({
   questionId: z.number().int().positive(),
-  value: z.unknown(), // validação específica será feita pelo serviço
+  value: z.unknown(),
 });
 
 export const submitSingleAnswerSchema = z.object({
@@ -129,8 +153,8 @@ export const exportRequestSchema = z.object({
   format: z.enum(['csv', 'xlsx', 'json']).optional().default('csv'),
   filters: z
     .object({
-      startDate: z.string().datetime().optional(),
-      endDate: z.string().datetime().optional(),
+      startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
+      endDate: z.iso.datetime({ message: 'Data de término inválida' }).optional(),
       locationIds: z.array(z.number().int().positive()).optional(),
     })
     .optional(),

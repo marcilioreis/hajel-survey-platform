@@ -1,3 +1,4 @@
+// src/modules/surveys/surveys.controller.ts
 import { Request, Response } from 'express';
 import * as surveyService from './surveys.service.js';
 import { hasPermission } from '../../shared/middleware/rbac.js';
@@ -11,36 +12,40 @@ const getNumericId = (param: string | string[]): number => {
 export const createSurvey = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { locationIds, ...surveyData } = req.body;
+    const { locationIds, locations, ...surveyData } = req.body;
 
-    // Validações de negócio (endDate já é validado pelo Zod, mas garantimos aqui)
     if (!surveyData.endDate) {
       return res.status(400).json({ error: 'endDate é obrigatória' });
     }
 
-    // Cria a pesquisa
     const survey = await surveyService.create(surveyData, userId);
 
-    // Se locationIds foram enviados, associa os locais
-    if (locationIds !== undefined) {
-      // Valida se os IDs existem (opcional, mas recomendado)
+    // Associação de locais
+    let items = locationIds;
+    if (locations !== undefined) {
+      if (!Array.isArray(locations) || locations.length === 0) {
+        return res.status(400).json({ error: 'Locations deve ser um array não vazio' });
+      }
+      items = locations;
+    }
+    if (items !== undefined) {
       const allLocations = await locationsService.getAllLocations();
       const validIds = allLocations.map((l) => l.id);
-      const invalidIds = locationIds.filter((id: number) => !validIds.includes(id));
+      const ids = items.map((item: any) => (typeof item === 'number' ? item : item.id));
+      const invalidIds = ids.filter((id: number) => !validIds.includes(id));
       if (invalidIds.length > 0) {
         return res.status(400).json({ error: `IDs de local inválidos: ${invalidIds.join(', ')}` });
       }
-      await locationsService.setSurveyLocations(survey.id, locationIds);
+      await locationsService.setSurveyLocations(survey.id, items);
     }
 
-    // Retorna a pesquisa enriquecida
     const enriched = await surveyService.findByIdEnriched(survey.id);
     res.status(201).json(enriched);
   } catch (error: unknown) {
     console.error('Create survey error:', error);
     const message = error instanceof Error ? error.message : 'Erro desconhecido';
     if (message === 'Forbidden') return res.status(403).json({ error: 'Acesso negado' });
-    if (message?.includes('endDate')) return res.status(404).json({ error: message });
+    if (message?.includes('endDate')) return res.status(400).json({ error: message });
     res.status(500).json({ error: 'Falha ao criar pesquisa' });
   }
 };
@@ -48,19 +53,16 @@ export const createSurvey = async (req: Request, res: Response) => {
 export const listSurveys = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-
     const canViewAny = hasPermission(req, 'survey:view_any');
     if (canViewAny) {
       const allSurveys = await surveyService.findAllSurveys();
       return res.json(allSurveys);
     }
-
     const canViewOwn = hasPermission(req, 'survey:view');
     if (canViewOwn) {
       const ownSurveys = await surveyService.findAll(userId);
       return res.json(ownSurveys);
     }
-
     const publicSurveys = await surveyService.findPublicSurveys();
     return res.json(publicSurveys);
   } catch (error) {
@@ -72,19 +74,16 @@ export const listSurveys = async (req: Request, res: Response) => {
 export const listSurveysEnriched = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-
     const canViewAny = hasPermission(req, 'survey:view_any');
     if (canViewAny) {
       const allSurveys = await surveyService.findAllSurveysEnriched();
       return res.json(allSurveys);
     }
-
     const canViewOwn = hasPermission(req, 'survey:view');
     if (canViewOwn) {
       const ownSurveys = await surveyService.findAllEnriched(userId);
       return res.json(ownSurveys);
     }
-
     const publicSurveys = await surveyService.findPublicSurveysEnriched(userId);
     return res.json(publicSurveys);
   } catch (error) {
@@ -111,9 +110,8 @@ export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = getNumericId(req.params.id);
     const userId = req.user!.id;
-    const { locationIds, ...surveyFields } = req.body;
+    const { locationIds, locations, ...surveyFields } = req.body;
 
-    // Monta updateData com campos permitidos
     const updateData: Partial<{
       title: string;
       description: string | null;
@@ -138,7 +136,6 @@ export const updateSurvey = async (req: Request, res: Response) => {
       if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Data inválida' });
       updateData.endDate = parsed;
     }
-
     if (updateData.startDate && updateData.endDate) {
       if (updateData.endDate <= updateData.startDate) {
         return res
@@ -147,27 +144,31 @@ export const updateSurvey = async (req: Request, res: Response) => {
       }
     }
 
-    // Permissões
     const canEditAny = hasPermission(req, 'survey:edit_any');
     const canEditOwn = hasPermission(req, 'survey:edit');
     if (!canEditAny && !canEditOwn) return res.status(403).json({ error: 'Acesso negado' });
 
-    // Atualiza campos básicos da pesquisa
     const survey = await surveyService.update(surveyId, updateData, userId);
     if (!survey) return res.status(404).json({ error: 'Pesquisa não encontrada' });
 
-    // Se locationIds enviados, substitui associações
-    if (locationIds !== undefined) {
+    let items = locationIds;
+    if (locations !== undefined) {
+      if (!Array.isArray(locations) || locations.length === 0) {
+        return res.status(400).json({ error: 'Locations deve ser um array não vazio' });
+      }
+      items = locations;
+    }
+    if (items !== undefined) {
       const allLocations = await locationsService.getAllLocations();
       const validIds = allLocations.map((l) => l.id);
-      const invalidIds = locationIds.filter((id: number) => !validIds.includes(id));
+      const ids = items.map((item: any) => (typeof item === 'number' ? item : item.id));
+      const invalidIds = ids.filter((id: number) => !validIds.includes(id));
       if (invalidIds.length > 0) {
         return res.status(400).json({ error: `IDs de local inválidos: ${invalidIds.join(', ')}` });
       }
-      await locationsService.setSurveyLocations(surveyId, locationIds);
+      await locationsService.setSurveyLocations(surveyId, items);
     }
 
-    // Retorna a pesquisa enriquecida
     const enriched = await surveyService.findByIdEnriched(surveyId);
     res.json(enriched);
   } catch (error) {
@@ -186,13 +187,11 @@ export const deleteSurvey = async (req: Request, res: Response) => {
       await surveyService.remove(surveyId, userId);
       return res.status(204).send();
     }
-
     const canDeleteOwn = hasPermission(req, 'survey:delete');
     if (canDeleteOwn) {
       await surveyService.remove(surveyId, userId);
       return res.status(204).send();
     }
-
     return res.status(403).json({ error: 'Acesso negado' });
   } catch (error) {
     console.error('Delete survey error:', error);

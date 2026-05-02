@@ -19,17 +19,7 @@ export const listAll = async (req: Request, res: Response) => {
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const { name, notes, state, city, neighborhood, cep, address, ibgeCode } = req.body;
-    const location = await locationsService.createLocation(
-      name,
-      notes,
-      state,
-      city,
-      neighborhood,
-      cep,
-      address,
-      ibgeCode
-    );
+    const location = await locationsService.createLocation(req.body);
     res.status(201).json(location);
   } catch (error) {
     console.error('Create location error:', error);

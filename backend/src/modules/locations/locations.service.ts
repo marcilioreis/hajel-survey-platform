@@ -3,7 +3,6 @@ import { db } from '../../shared/db/index.js';
 import { locationCatalog, surveyLocations } from '../../shared/db/schema/locations.js';
 import { eq } from 'drizzle-orm';
 
-// Catálogo global
 export const getAllLocations = async () => {
   return db.select().from(locationCatalog).orderBy(locationCatalog.name);
 };
@@ -13,29 +12,17 @@ export const getLocationById = async (id: number) => {
   return loc;
 };
 
-export const createLocation = async (
-  name: string,
-  notes?: string,
-  state?: string,
-  city?: string,
-  neighborhood?: string,
-  cep?: string,
-  address?: string,
-  ibgeCode?: string
-) => {
-  const [loc] = await db
-    .insert(locationCatalog)
-    .values({
-      name,
-      notes,
-      state,
-      city,
-      neighborhood,
-      cep,
-      address,
-      ibgeCode,
-    })
-    .returning();
+export const createLocation = async (data: {
+  name: string;
+  notes?: string;
+  state?: string;
+  city?: string;
+  neighborhood?: string;
+  cep?: string;
+  address?: string;
+  ibgeCode?: string;
+}) => {
+  const [loc] = await db.insert(locationCatalog).values(data).returning();
   return loc;
 };
 
@@ -62,43 +49,41 @@ export const updateLocation = async (
 };
 
 export const deleteLocation = async (id: number) => {
-  // Verifica se existe associação com surveys
-  const [assoc] = await db
-    .select()
-    .from(surveyLocations)
-    .where(eq(surveyLocations.locationId, id))
-    .limit(1);
-  if (assoc) {
-    throw new Error('O local está associado a uma ou mais pesquisas e não pode ser excluído.');
-  }
+  // Verifica associação com surveys antes de excluir? (não implementado aqui)
   await db.delete(locationCatalog).where(eq(locationCatalog.id, id));
 };
 
-// Associação com pesquisas
-export const getSurveyLocations = async (surveyId: number) => {
-  return db
-    .select({
-      id: locationCatalog.id,
-      name: locationCatalog.name,
-      notes: locationCatalog.notes,
-      order: surveyLocations.order,
-    })
-    .from(surveyLocations)
-    .innerJoin(locationCatalog, eq(surveyLocations.locationId, locationCatalog.id))
-    .where(eq(surveyLocations.surveyId, surveyId))
-    .orderBy(surveyLocations.order);
-};
+/**
+ * Substitui todas as associações de locais de uma pesquisa.
+ * @param items Pode ser um array de números (locationIds) ou um array de objetos { id, order? }.
+ *             A ordem final será determinada pelo campo `order` de cada objeto (se presente) ou pela posição no array.
+ */
+export const setSurveyLocations = async (
+  surveyId: number,
+  items: number[] | { id: number; order?: number }[]
+) => {
+  // Normaliza para array de { id, order }
+  const entries: { id: number; order: number }[] = [];
+  if (items.length > 0) {
+    if (typeof items[0] === 'number') {
+      (items as number[]).forEach((id, index) => entries.push({ id, order: index + 1 }));
+    } else {
+      (items as { id: number; order?: number }[]).forEach((item, index) => {
+        entries.push({ id: item.id, order: item.order ?? index + 1 });
+      });
+    }
+  }
 
-export const setSurveyLocations = async (surveyId: number, locationIds: number[]) => {
   return await db.transaction(async (tx) => {
     await tx.delete(surveyLocations).where(eq(surveyLocations.surveyId, surveyId));
-    if (locationIds.length > 0) {
-      const inserts = locationIds.map((locId, index) => ({
-        surveyId,
-        locationId: locId,
-        order: index + 1,
-      }));
-      await tx.insert(surveyLocations).values(inserts);
+    if (entries.length > 0) {
+      await tx.insert(surveyLocations).values(
+        entries.map((e) => ({
+          surveyId,
+          locationId: e.id,
+          order: e.order,
+        }))
+      );
     }
   });
 };
