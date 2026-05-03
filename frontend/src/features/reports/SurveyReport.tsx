@@ -4,8 +4,9 @@ import {
   useGetOpenResponsesQuery,
 } from "../surveys/surveysApi";
 import ReportCharts from "./ReportCharts";
-import OpenResponsesList from "./OpenResponsesList"; // novo componente
+import OpenResponsesList from "./OpenResponsesList";
 import Skeleton from "../../components/common/Skeleton";
+import ExportButton from "./ExportButton";
 
 export default function SurveyReport() {
   const { surveyId } = useParams<{ surveyId: string }>();
@@ -50,9 +51,14 @@ export default function SurveyReport() {
   return (
     <div className="pb-20">
       <div className="p-4">
-        <button onClick={() => navigate(-1)} className="mb-4 text-blue-600">
-          ← Voltar
-        </button>
+        <div className="flex justify-between">
+          <button onClick={() => navigate(-1)} className="mb-4 text-blue-600">
+            ← Voltar
+          </button>
+          <div className="mb-4">
+            <ExportButton surveyId={surveyId!} />
+          </div>
+        </div>
         {openResponses && openResponses.length > 0 && (
           <OpenResponsesList responses={openResponses} />
         )}

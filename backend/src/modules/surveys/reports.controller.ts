@@ -70,7 +70,10 @@ export const getExportStatus = async (req: Request, res: Response) => {
     res.json({
       id: exportRecord.id,
       status: exportRecord.status,
-      downloadLink: exportRecord.status === 'concluido' ? exportRecord.downloadLink : null,
+      downloadLink:
+        exportRecord.status === 'concluido'
+          ? `/api/surveys/exports/${exportRecord.id}/download`
+          : null,
     });
   } catch (error) {
     console.error('Get export status error:', error);

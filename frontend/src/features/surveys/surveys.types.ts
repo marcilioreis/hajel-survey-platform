@@ -191,3 +191,13 @@ export interface OpenResponse {
   type: string;
   responses: string[];
 }
+
+export interface ExportRequestResponse {
+  exportId: string;
+}
+
+export interface ExportStatus {
+  id: number;
+  status: "processando" | "concluido" | "falha";
+  downloadLink?: string;
+}

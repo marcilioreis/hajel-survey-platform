@@ -74,7 +74,7 @@ export const startExportWorker = () => {
       await fs.writeFile(filePath, fileContent);
 
       // Atualiza o registro de exportação com o link
-      const downloadLink = `/api/exports/${exportId}/download`;
+      const downloadLink = `/api/surveys/exports/${exportId}/download`;
       console.info(`📝 Finalizando exportação no banco...`);
       await reportsService.completeExport(
         exportId,

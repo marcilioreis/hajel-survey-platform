@@ -12,6 +12,8 @@ import type {
   SurveyResults,
   OpenResponse,
   LocationPayload,
+  ExportRequestResponse,
+  ExportStatus,
 } from "./surveys.types";
 
 export const surveysApi = api.injectEndpoints({
@@ -182,6 +184,19 @@ export const surveysApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Location"],
     }),
+    requestExport: builder.mutation<
+      ExportRequestResponse,
+      { surveyId: string; format?: "csv" | "pdf" }
+    >({
+      query: ({ surveyId, format = "csv" }) => ({
+        url: `/surveys/${surveyId}/exports`,
+        method: "POST",
+        body: { format }, // 👈 envia o formato (padrão 'csv')
+      }),
+    }),
+    getExportStatus: builder.query<ExportStatus, string>({
+      query: (exportId) => `/surveys/exports/${exportId}/status`,
+    }),
   }),
 });
 
@@ -204,4 +219,7 @@ export const {
   useDeleteLocationMutation,
   useCreateLocationMutation,
   useUpdateLocationMutation,
+  useRequestExportMutation,
+  useGetExportStatusQuery,
+  useLazyGetExportStatusQuery,
 } = surveysApi;
