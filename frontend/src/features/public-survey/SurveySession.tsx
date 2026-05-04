@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import {
   useGetPublicSurveyQuery,
   useGetProgressQuery,
@@ -11,52 +12,12 @@ import type {
   AnswerPayload,
   CompleteSessionPayload,
 } from "./publicSurvey.types";
-import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import type { QuestionOption, AnswersMap } from "../surveys/surveys.types";
 import Skeleton from "../../components/common/Skeleton";
 import { useConditionalLogic } from "../surveys/useConditionalLogic";
-import type {
-  Question,
-  QuestionOption,
-  ConditionalLogic,
-} from "../surveys/surveys.types";
+import { normalizeQuestions } from "../../utils/normalizers";
 
-type AnswersMap = Record<number, string | string[]>;
-
-// Tipo auxiliar para perguntas brutas (antes da normalização)
-interface RawQuestion {
-  id: number;
-  text: string;
-  type: string;
-  required: boolean;
-  order: number;
-  options: string[];
-  conditional_logic?: ConditionalLogic | null;
-  conditionalLogic?: ConditionalLogic | null; // chave alternativa do backend público
-}
-
-// Mapeamento de tipos do backend para o frontend
-const mapBackendTypeToFrontend = (backendType: string): Question["type"] => {
-  const mapping: Record<string, Question["type"]> = {
-    unica_escolha: "unica_escolha",
-    multipla_escolha: "multipla_escolha",
-    texto_longo: "texto_longo",
-  };
-  return mapping[backendType] || "texto_longo";
-};
-
-function normalizePublicQuestions(rawQuestions: RawQuestion[]): Question[] {
-  return rawQuestions.map((q) => ({
-    id: q.id,
-    text: q.text,
-    type: mapBackendTypeToFrontend(q.type),
-    required: q.required,
-    options: q.options.map((opt: string): QuestionOption => ({ text: opt })),
-    order: q.order,
-    conditional_logic: q.conditional_logic ?? q.conditionalLogic ?? null,
-  }));
-}
-
-// Helper para obter o texto de uma opção (string ou objeto)
+// Helper para obter texto da opção (string ou objeto)
 const getOptionText = (opt: string | QuestionOption): string =>
   typeof opt === "string" ? opt : opt.text;
 
@@ -88,16 +49,12 @@ export default function SurveySession() {
   const [submitAnswersBatch, { isLoading: isSubmitting }] =
     useSubmitAnswersBatchMutation();
 
-  // Normalização e hook condicional ANTES de qualquer retorno
-  const rawQuestions: RawQuestion[] = (survey?.questions ??
-    []) as RawQuestion[];
-  const normalizedQuestions = normalizePublicQuestions(rawQuestions);
+  const normalizedQuestions = normalizeQuestions(survey?.questions ?? []);
   const visibleQuestions = useConditionalLogic(normalizedQuestions, answers);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressAppliedRef = useRef(false);
 
-  // Redireciona se não houver token
   useEffect(() => {
     if (!token && slug) {
       navigate(`/s/${slug}`);
@@ -116,7 +73,6 @@ export default function SurveySession() {
     }
   }, [progressError, slug, navigate]);
 
-  // Sincroniza com o progresso do backend apenas se não houver dados locais
   useEffect(() => {
     if (
       !progressAppliedRef.current &&
@@ -135,7 +91,6 @@ export default function SurveySession() {
     }
   }, [progress, answers]);
 
-  // Persiste respostas no localStorage
   useEffect(() => {
     if (slug && Object.keys(answers).length > 0) {
       localStorage.setItem(`survey-${slug}-answers`, JSON.stringify(answers));
@@ -175,7 +130,7 @@ export default function SurveySession() {
     }
   }, [progressError, slug, navigate]);
 
-  if (!survey || !token)
+  if (!survey || !token) {
     return (
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
@@ -187,6 +142,7 @@ export default function SurveySession() {
         ))}
       </div>
     );
+  }
 
   const currentQuestion = visibleQuestions[currentIndex] ?? null;
   const currentAnswer = currentQuestion
@@ -212,7 +168,10 @@ export default function SurveySession() {
 
   const handleFinish = async () => {
     const allAnswers: AnswerPayload[] = Object.entries(answers).map(
-      ([qId, value]) => ({ questionId: Number(qId), value }),
+      ([qId, value]) => ({
+        questionId: Number(qId),
+        value,
+      }),
     );
 
     if (allAnswers.length === 0) {
@@ -237,7 +196,6 @@ export default function SurveySession() {
       const demographics = JSON.parse(
         demographicsStr,
       ) as CompleteSessionPayload;
-      // Garante que locationId seja número
       demographics.locationId = Number(demographics.locationId);
 
       await completeSession({ token: token!, body: demographics }).unwrap();

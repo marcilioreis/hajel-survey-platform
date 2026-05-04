@@ -8,13 +8,11 @@ import {
 import { useConditionalLogic } from "../surveys/useConditionalLogic";
 import type {
   DemographicData,
-  Question,
   QuestionOption,
-  BackendQuestion,
+  AnswersMap,
 } from "./surveys.types";
 import Skeleton from "../../components/common/Skeleton";
-
-type AnswersMap = Record<number, string | string[]>;
+import { normalizeQuestions } from "../../utils/normalizers";
 
 const loadSavedAnswers = (surveyId: string): AnswersMap => {
   try {
@@ -25,31 +23,7 @@ const loadSavedAnswers = (surveyId: string): AnswersMap => {
   }
 };
 
-// Mapeamento de tipos do backend para o frontend
-const mapBackendTypeToFrontend = (backendType: string): Question["type"] => {
-  const mapping: Record<string, Question["type"]> = {
-    unica_escolha: "unica_escolha",
-    multipla_escolha: "multipla_escolha",
-    texto_longo: "texto_longo",
-  };
-  return mapping[backendType] || "texto_longo";
-};
-
-const normalizeQuestions = (
-  backendQuestions: BackendQuestion[],
-): Question[] => {
-  return backendQuestions.map((q) => ({
-    id: q.id,
-    text: q.text,
-    type: mapBackendTypeToFrontend(q.type),
-    required: q.required,
-    options: q.options,
-    order: q.order,
-    conditional_logic: q.conditional_logic ?? null,
-  }));
-};
-
-// Helper para obter texto da opção (compatível com string ou QuestionOption)
+// Helper para obter texto da opção (string ou objeto)
 const getOptionText = (opt: string | QuestionOption): string =>
   typeof opt === "string" ? opt : opt.text;
 
@@ -76,7 +50,6 @@ export default function SurveyExecution() {
     locationId: "",
   });
 
-  // Normalização e hook condicional antes de qualquer retorno
   const normalizedQuestions = normalizeQuestions(survey?.questions ?? []);
   const visibleQuestions = useConditionalLogic(normalizedQuestions, answers);
 
@@ -86,7 +59,7 @@ export default function SurveyExecution() {
     }
   }, [answers, id]);
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
@@ -98,13 +71,15 @@ export default function SurveyExecution() {
         ))}
       </div>
     );
+  }
 
-  if (!survey)
+  if (!survey) {
     return (
       <div className="p-4 text-center text-red-600">
         Pesquisa não encontrada.
       </div>
     );
+  }
 
   const currentQuestion = visibleQuestions[currentIndex] ?? null;
   const currentAnswer = currentQuestion

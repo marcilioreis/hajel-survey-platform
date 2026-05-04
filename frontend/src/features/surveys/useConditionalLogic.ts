@@ -1,7 +1,9 @@
 import { useMemo } from "react";
-import type { Question, ConditionalLogic } from "../surveys/surveys.types";
-
-type AnswersMap = Record<number, string | string[]>;
+import type {
+  Question,
+  ConditionalLogic,
+  AnswersMap,
+} from "../surveys/surveys.types";
 
 function evaluateCondition(
   condition: ConditionalLogic["conditions"][0],

@@ -4,6 +4,12 @@ import { useGetSurveyByIdQuery, useDeleteSurveyMutation } from "./surveysApi";
 import { useAppDispatch } from "../../app/hooks";
 import { api } from "../../lib/api";
 import Skeleton from "../../components/common/Skeleton";
+import { parseBackendDate } from "../../utils/date";
+import type { QuestionOption } from "./surveys.types";
+
+// Helper local (idêntico ao usado em SurveySession/Execution)
+const getOptionText = (opt: string | QuestionOption): string =>
+  typeof opt === "string" ? opt : opt.text;
 
 export default function SurveyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -15,9 +21,7 @@ export default function SurveyDetail() {
   const confirmDelete = () => {
     toast.custom(
       (t) => (
-        <div
-          className={`max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-opacity-5`}
-        >
+        <div className="max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-opacity-5">
           <div className="p-4">
             <p className="text-sm font-medium text-gray-900">
               Tem certeza que deseja excluir esta pesquisa?
@@ -45,7 +49,7 @@ export default function SurveyDetail() {
         </div>
       ),
       {
-        duration: Infinity, // Keeps the dialog visible until user takes action
+        duration: 5000,
       },
     );
   };
@@ -54,21 +58,17 @@ export default function SurveyDetail() {
     if (!id) return;
     try {
       await deleteSurvey(id).unwrap();
-      console.log("Survey deleted successfully");
-      // Invalida todas as queries que dependem de qualquer tag 'Survey'
+      // Invalida as tags para forçar recarga da lista
       dispatch(api.util.invalidateTags(["Survey"]));
-      // Aguarda um tick para garantir que as queries sejam canceladas
       await new Promise((resolve) => setTimeout(resolve, 0));
       toast.success("Pesquisa excluída com sucesso.");
-      // navigate("/surveys");
-      window.location.href = "/surveys";
+      navigate("/surveys");
     } catch {
       toast.error("Erro ao excluir pesquisa.");
     }
   };
 
   const handleStartCollection = () => {
-    // Na Fase 3 implementaremos a execução
     navigate(`/surveys/${id}/execute`);
   };
 
@@ -106,10 +106,11 @@ export default function SurveyDetail() {
           <p className="text-gray-600 p-2">{survey.description}</p>
         )}
         <p className="text-sm text-gray-400 mt-2">
-          Início em: {new Date(survey.start_date).toLocaleDateString()}
+          Início em: {parseBackendDate(survey.start_date).toLocaleDateString()}
         </p>
         <p className="text-sm text-gray-400 mt-2">
-          Encerramento em: {new Date(survey.end_date).toLocaleDateString()}
+          Encerramento em:{" "}
+          {parseBackendDate(survey.end_date).toLocaleDateString()}
         </p>
       </div>
 
@@ -122,10 +123,10 @@ export default function SurveyDetail() {
             <li key={q.id} className="text-gray-700">
               <span className="font-medium">{q.text}</span>
               {q.required && <span className="text-red-500 ml-1">*</span>}
-              {q.type !== "text" && q.options.length > 0 && (
+              {q.type !== "texto_longo" && q.options.length > 0 && (
                 <ul className="ml-6 mt-1 list-disc text-sm text-gray-500">
                   {q.options.map((opt, idx) => (
-                    <li key={idx}>{opt}</li>
+                    <li key={idx}>{getOptionText(opt)}</li>
                   ))}
                 </ul>
               )}

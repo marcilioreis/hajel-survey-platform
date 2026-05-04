@@ -34,6 +34,18 @@ export interface BackendQuestion {
   conditional_logic?: ConditionalLogic | null;
 }
 
+// NOVO: tipo unificado para perguntas brutas vindas do backend
+export interface RawQuestion {
+  id: number;
+  text: string;
+  type: string; // string original do backend
+  required: boolean;
+  order: number;
+  options: (string | QuestionOption)[]; // aceita ambos os formatos
+  conditional_logic?: ConditionalLogic | null;
+  conditionalLogic?: ConditionalLogic | null; // camelCase vindo do backend público
+}
+
 // ============ Tipos de Pesquisas ============
 export interface BackendSurvey {
   id: number;
@@ -78,6 +90,7 @@ export interface CreateQuestionPayload {
   required: boolean;
   options: string[];
   order?: number;
+  conditional_logic?: ConditionalLogic | null;
 }
 
 export interface UpdateQuestionPayload extends Partial<CreateQuestionPayload> {
@@ -97,6 +110,8 @@ export interface SurveyPayload {
 }
 
 // ============ Respostas ============
+export type AnswersMap = Record<number, string | string[]>;
+
 export interface AnswerPayload {
   questionId: number;
   value: string | string[];
