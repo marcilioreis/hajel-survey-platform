@@ -28,6 +28,8 @@ interface RegisterRequest {
 interface SessionResponse {
   user: BetterAuthUser;
   session: { token: string; expiresAt?: string };
+  permissions?: string[];
+  roles?: string[];
 }
 
 // Type guard para verificar se o objeto tem 'user'

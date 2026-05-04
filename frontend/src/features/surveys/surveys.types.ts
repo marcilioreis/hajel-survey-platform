@@ -34,16 +34,15 @@ export interface BackendQuestion {
   conditional_logic?: ConditionalLogic | null;
 }
 
-// NOVO: tipo unificado para perguntas brutas vindas do backend
 export interface RawQuestion {
   id: number;
   text: string;
-  type: string; // string original do backend
+  type: string;
   required: boolean;
   order: number;
-  options: (string | QuestionOption)[]; // aceita ambos os formatos
+  options: (string | QuestionOption)[];
   conditional_logic?: ConditionalLogic | null;
-  conditionalLogic?: ConditionalLogic | null; // camelCase vindo do backend público
+  conditionalLogic?: ConditionalLogic | null;
 }
 
 // ============ Tipos de Pesquisas ============
@@ -69,17 +68,17 @@ export interface Survey {
   id: number;
   title: string;
   description?: string;
-  created_by: string;
+  createdBy: string;
   public: boolean;
   slug: string;
   startDate: string;
   endDate: string;
   active: boolean;
-  custom_style: unknown | null;
+  customStyle: unknown | null;
   createdAt: string;
   questions: Question[];
   locations?: Location[];
-  responses_count: number;
+  responsesCount: number;
   status: string;
 }
 
@@ -187,4 +186,40 @@ export interface ExportStatus {
   id: number;
   status: "processando" | "concluido" | "falha";
   downloadLink?: string;
+}
+
+// ============ Administração (RBAC) ============
+// Representação de uma role associada a um usuário (vinda do backend)
+export interface UserRole {
+  roleId: number;
+  roleName: string;
+}
+
+// Usuário administrativo (como retornado pelo backend)
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  active: boolean;
+  role: string; // role principal (ex.: 'admin')
+  roles: UserRole[]; // lista de roles associadas
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Representação de uma role (usada nas telas de gerenciamento de roles)
+export interface AdminRole {
+  id: number;
+  name: string;
+  description?: string | null;
+  permissions?: AdminPermission[];
+  usersCount?: number;
+}
+
+// Permissão
+export interface AdminPermission {
+  id: number;
+  code: string;
+  description?: string | null;
 }

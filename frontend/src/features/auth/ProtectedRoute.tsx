@@ -30,7 +30,12 @@ export default function ProtectedRoute() {
 
   useEffect(() => {
     if (isSuccess && sessionData && isSessionResponse(sessionData)) {
-      dispatch(setCredentials({ user: sessionData.user }));
+      dispatch(
+        setCredentials({
+          user: sessionData.user,
+          permissions: sessionData.permissions,
+        }),
+      );
     } else if (error) {
       dispatch(setLoading(false));
     }

@@ -1,13 +1,21 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { logout } from "../../features/auth/authSlice";
 import { authClient } from "../../lib/auth";
+import { useGetCurrentUserQuery } from "../../features/auth/authApi";
 import logo from "../../assets/logo.png";
 
 export default function Header() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const { data: sessionData } = useGetCurrentUserQuery();
+
+  // Verifica se o usuário tem permissão de administrador.
+  // Ajuste conforme sua lógica de RBAC: pode ser uma role 'admin' ou permissão 'admin:access'
+  const isAdmin =
+    sessionData?.roles?.includes("admin") ||
+    sessionData?.permissions?.includes("admin:access");
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -24,6 +32,15 @@ export default function Header() {
             <span className="text-sm text-gray-600 hidden sm:inline">
               Olá, {user.name?.split(" ")[0]}
             </span>
+          )}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-100"
+              title="Administração"
+            >
+              ⚙️
+            </Link>
           )}
           <button
             onClick={handleLogout}

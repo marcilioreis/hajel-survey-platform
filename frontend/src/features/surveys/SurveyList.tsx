@@ -46,7 +46,7 @@ export default function SurveyList() {
         comparison = a.title.localeCompare(b.title);
       } else if (sortBy === "responsesCount") {
         comparison =
-          (Number(a.responses_count) || 0) - (Number(b.responses_count) || 0);
+          (Number(a.responsesCount) || 0) - (Number(b.responsesCount) || 0);
       }
       return sortOrder === "asc" ? comparison : -comparison;
     });
@@ -172,20 +172,24 @@ export default function SurveyList() {
                       ? "bg-green-100 text-green-800"
                       : survey.status === "rascunho"
                         ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 text-gray-800"
+                        : survey.status === "encerrada"
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-red-100 text-red-800"
                   }`}
                 >
                   {survey.status === "ativa"
                     ? "Ativa"
                     : survey.status === "rascunho"
                       ? "Rascunho"
-                      : "Encerrada"}
+                      : survey.status === "encerrada"
+                        ? "Encerrada"
+                        : "Inativa"}
                 </span>
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 {survey.questions.length} pergunta(s)
-                {survey.responses_count !== undefined &&
-                  ` • ${survey.responses_count} resposta(s)`}
+                {survey.responsesCount !== undefined &&
+                  ` • ${survey.responsesCount} resposta(s)`}
               </p>
               <p className="text-xs text-gray-400 mt-2">
                 Início em: {new Date(survey.startDate).toLocaleDateString()}
