@@ -162,6 +162,13 @@ export const exportRequestSchema = z.object({
 
 // ================== Admin ==================
 
+export const createUserAdminSchema = z.object({
+  email: z.email('Email inválido'),
+  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  roleIds: z.array(z.number().int().positive()).optional(), // roles RBAC
+});
+
 export const updateUserAdminSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.email().optional(),

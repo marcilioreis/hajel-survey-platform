@@ -8,6 +8,7 @@ import { loadPermissions } from '../../shared/middleware/loadPermissions.js';
 import { authorize } from '../../shared/middleware/rbac.js';
 import { validateBody } from '../../shared/middleware/validate.js';
 import {
+  createUserAdminSchema,
   updateUserAdminSchema,
   createRoleSchema,
   updateRoleSchema,
@@ -35,6 +36,12 @@ router.use(authenticate, loadPermissions);
 // -- Usuários --
 router.get('/users', authorize('user:manage'), controller.listUsers);
 router.get('/users/:id', authorize('user:manage'), controller.getUser);
+router.post(
+  '/users',
+  authorize('user:manage'),
+  validateBody(createUserAdminSchema),
+  controller.createUser
+);
 router.put(
   '/users/:id',
   authorize('user:manage'),

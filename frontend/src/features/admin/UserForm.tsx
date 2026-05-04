@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useUpdateUserMutation, useGetRolesQuery } from "./adminApi";
+import {
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useGetRolesQuery,
+} from "./adminApi";
 import { toast } from "sonner";
 import type { AdminUser } from "../surveys/surveys.types";
 
@@ -14,10 +18,12 @@ export default function UserForm({ initialUser }: UserFormProps) {
   const isEditing = Boolean(initialUser);
 
   const { data: allRoles = [] } = useGetRolesQuery();
+  const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
 
   const [name, setName] = useState(() => initialUser?.name ?? "");
   const [email, setEmail] = useState(() => initialUser?.email ?? "");
+  const [password, setPassword] = useState("");
   const [active, setActive] = useState(() => initialUser?.active ?? true);
   const [selectedRoles, setSelectedRoles] = useState<number[]>(
     () => initialUser?.roles?.map((r) => r.roleId) ?? [],
@@ -37,20 +43,36 @@ export default function UserForm({ initialUser }: UserFormProps) {
       toast.error("Preencha nome e e-mail.");
       return;
     }
+    if (!isEditing && !password) {
+      toast.error("Informe uma senha para o novo usuário.");
+      return;
+    }
+
     try {
-      await updateUser({
-        id: id!,
-        body: {
+      if (isEditing) {
+        await updateUser({
+          id: id!,
+          body: {
+            name: name.trim(),
+            email: email.trim(),
+            active,
+            roles: selectedRoles,
+          },
+        }).unwrap();
+        toast.success("Usuário atualizado.");
+      } else {
+        await createUser({
           name: name.trim(),
           email: email.trim(),
+          password,
           active,
-          roles: selectedRoles,
-        },
-      }).unwrap();
-      toast.success("Usuário atualizado.");
+          roleIds: selectedRoles,
+        }).unwrap();
+        toast.success("Usuário criado com sucesso.");
+      }
       navigate("/admin/users");
     } catch {
-      toast.error("Erro ao atualizar usuário.");
+      toast.error("Erro ao salvar usuário.");
     }
   };
 
@@ -87,6 +109,21 @@ export default function UserForm({ initialUser }: UserFormProps) {
             className="w-full p-3 border rounded-lg"
           />
         </div>
+        {!isEditing && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Senha
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required={!isEditing}
+              className="w-full p-3 border rounded-lg"
+              placeholder="Mínimo 8 caracteres"
+            />
+          </div>
+        )}
 
         <label className="flex items-center gap-2">
           <input
@@ -129,10 +166,10 @@ export default function UserForm({ initialUser }: UserFormProps) {
           </button>
           <button
             type="submit"
-            disabled={isUpdating}
+            disabled={isCreating || isUpdating}
             className="flex-1 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
           >
-            {isUpdating ? "Salvando..." : "Salvar"}
+            {isCreating || isUpdating ? "Salvando..." : "Salvar"}
           </button>
         </div>
       </form>

@@ -16,6 +16,23 @@ export const adminApi = api.injectEndpoints({
       query: (id) => `/admin/users/${id}`,
       providesTags: (_result, _error, id) => [{ type: "AdminUser", id }],
     }),
+    createUser: builder.mutation<
+      AdminUser,
+      {
+        email: string;
+        password: string;
+        name: string;
+        active: boolean;
+        roleIds: number[];
+      }
+    >({
+      query: (body) => ({
+        url: "/admin/users",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminUser"],
+    }),
     updateUser: builder.mutation<
       AdminUser,
       {
@@ -94,6 +111,7 @@ export const adminApi = api.injectEndpoints({
 export const {
   useGetUsersQuery,
   useGetUserByIdQuery,
+  useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetRolesQuery,

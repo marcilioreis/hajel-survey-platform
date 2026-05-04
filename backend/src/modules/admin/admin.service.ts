@@ -8,6 +8,7 @@ import {
   permissions,
 } from '../../shared/db/schema/index.js';
 import { auditLogs } from '../../shared/db/schema/audit.js';
+import { auth } from '../../shared/auth/auth.js';
 
 // ========== USUÁRIOS ==========
 export const getAllUsers = async () => {
@@ -58,6 +59,53 @@ export const getUserById = async (userId: string) => {
     .where(eq(userRoles.userId, userId));
 
   return { ...u, roles: userRoleRows };
+};
+
+export const createUser = async (data: {
+  email: string;
+  password: string;
+  name: string;
+  roleIds?: number[];
+  createdByAdminId: string;
+  ip?: string;
+}) => {
+  const response = await auth.api.signUpEmail({
+    body: {
+      email: data.email,
+      password: data.password,
+      name: data.name,
+    },
+    asResponse: false,
+  });
+
+  // O `response` é um objeto com ao menos a propriedade `user` (e `token` ou `null`)
+  // Extrai o usuário de forma segura ignorando a ambiguidade de `token`
+  const user = (response as { user: { id: string; email: string; name: string } }).user;
+
+  // Se foram enviados roleIds, associa ao usuário recém-criado
+  if (data.roleIds && data.roleIds.length > 0) {
+    const inserts = data.roleIds.map((roleId) => ({
+      userId: user.id,
+      roleId,
+    }));
+    await db.insert(userRoles).values(inserts);
+  }
+
+  // Registra no log de auditoria
+  await db.insert(auditLogs).values({
+    userId: data.createdByAdminId, // string (UUID) → OK
+    action: 'user.create',
+    entityType: 'user',
+    details: {
+      createdUserId: user.id, // guarda o UUID do novo usuário nos detalhes
+      email: user.email,
+      name: user.name,
+    },
+    ip: data.ip || '127.0.0.1', // IP passado pelo controller ou fallback
+  });
+
+  // Retorna o usuário com suas roles (já incluídas, se houve)
+  return getUserById(user.id);
 };
 
 export const updateUser = async (

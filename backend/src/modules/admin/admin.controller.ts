@@ -34,6 +34,35 @@ export const getUser = async (req: Request, res: Response) => {
   }
 };
 
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    const { email, password, name, roleIds } = req.body;
+    const createdByAdminId = req.user!.id;
+
+    const newUser = await adminService.createUser({
+      email,
+      password,
+      name,
+      roleIds,
+      createdByAdminId,
+      ip: req.ip,
+    });
+
+    res.status(201).json(newUser);
+  } catch (error: unknown) {
+    console.error('Erro ao criar usuário:', error);
+    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+    // Trata erros específicos do Better Auth (ex: email duplicado)
+    if (
+      message.toLowerCase().includes('already exists') ||
+      message.toLowerCase().includes('unique')
+    ) {
+      return res.status(409).json({ error: 'Email já está em uso' });
+    }
+    res.status(500).json({ error: 'Falha ao criar usuário' });
+  }
+};
+
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const id = getStringParam(req.params.id);
