@@ -4,7 +4,7 @@ import Queue from 'bull';
 export interface ExportJobData {
   exportId: number;
   surveyId: number;
-  format: 'csv' | 'xlsx' | 'json';
+  format: 'csv' | 'xlsx' | 'json' | 'pdf';
   userId: string;
   filters?: {
     startDate?: string;

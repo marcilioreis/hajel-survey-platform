@@ -5,6 +5,8 @@ import {
 } from "../surveys/surveysApi";
 import { toast } from "sonner";
 
+type ExportFormat = "csv" | "pdf" | "xlsx"; // formatos suportados
+
 interface ExportButtonProps {
   surveyId: string;
 }
@@ -14,33 +16,10 @@ export default function ExportButton({ surveyId }: ExportButtonProps) {
     useRequestExportMutation();
   const [triggerStatus] = useLazyGetExportStatusQuery();
   const [exportId, setExportId] = useState<string | null>(null);
+  const [format, setFormat] = useState<ExportFormat>("csv");
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const errorCountRef = useRef(0);
-
-  const downloadFile = async (url: string) => {
-    try {
-      const token = localStorage.getItem("auth-token");
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000"}${url}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
-      );
-      if (!response.ok) throw new Error("Falha no download");
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `resultados_${surveyId}.csv`; // nome padrão; pode vir do header Content-Disposition
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(blobUrl);
-      toast.success("Download iniciado.");
-    } catch {
-      toast.error("Erro ao baixar o arquivo.");
-    }
-  };
 
   const stopPolling = (msg?: string) => {
     if (intervalRef.current) {
@@ -61,18 +40,10 @@ export default function ExportButton({ surveyId }: ExportButtonProps) {
         errorCountRef.current = 0;
 
         if (status.status === "concluido") {
-          clearInterval(intervalRef.current!);
-          intervalRef.current = null;
-          setExportId(null);
+          stopPolling();
           toast.success("Exportação concluída!");
-          // Corrige a URL relativa para a rota completa
           if (status.downloadLink) {
-            // Se o backend retornar apenas "/api/exports/24/download", substituímos para "/api/surveys/exports/24/download"
-            const correctedUrl = status.downloadLink.replace(
-              "/api/exports/",
-              "/api/surveys/exports/",
-            );
-            downloadFile(correctedUrl);
+            window.open(status.downloadLink, "_blank");
           }
         } else if (status.status === "falha") {
           stopPolling("Falha na exportação.");
@@ -94,7 +65,7 @@ export default function ExportButton({ surveyId }: ExportButtonProps) {
 
   const handleExport = async () => {
     try {
-      const result = await requestExport({ surveyId }).unwrap();
+      const result = await requestExport({ surveyId, format }).unwrap();
       setExportId(result.exportId);
       startPolling(result.exportId);
       toast.info("Exportação iniciada. Aguarde...");
@@ -104,16 +75,29 @@ export default function ExportButton({ surveyId }: ExportButtonProps) {
   };
 
   return (
-    <button
-      onClick={handleExport}
-      disabled={isRequesting || !!exportId}
-      className="py-2 px-4 bg-green-600 text-white rounded-lg disabled:opacity-50"
-    >
-      {exportId
-        ? "Processando..."
-        : isRequesting
-          ? "Iniciando..."
-          : "Exportar (Excel/PDF)"}
-    </button>
+    <div className="flex items-center gap-2">
+      <select
+        value={format}
+        onChange={(e) => setFormat(e.target.value as ExportFormat)}
+        disabled={isRequesting || !!exportId}
+        className="h-10 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white disabled:opacity-50"
+      >
+        <option value="csv">CSV</option>
+        <option value="pdf">PDF</option>
+        <option value="xlsx">Excel (XLSX)</option>
+      </select>
+
+      <button
+        onClick={handleExport}
+        disabled={isRequesting || !!exportId}
+        className="py-2 px-4 bg-green-600 text-white rounded-lg disabled:opacity-50 whitespace-nowrap"
+      >
+        {exportId
+          ? "Processando..."
+          : isRequesting
+            ? "Iniciando..."
+            : "Exportar"}
+      </button>
+    </div>
   );
 }

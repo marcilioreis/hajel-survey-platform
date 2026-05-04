@@ -1,31 +1,42 @@
+// ============ Tipos de Perguntas e Opções ============
 export interface QuestionOption {
-  id?: string; // opcional na criação
+  id?: string;
   text: string;
   order?: number;
 }
 
-// Tipo Question do frontend (usado no estado do formulário)
+export interface ConditionalLogic {
+  action: "skip" | "show";
+  conditions: {
+    questionId: number;
+    operator: "equals" | "not_equals" | "contains" | "not_contains";
+    value: string | string[];
+  }[];
+}
+
 export interface Question {
-  id?: number; // opcional para novas perguntas
+  id?: number;
   text: string;
-  type: "texto_longo" | "unica_escolha" | "multipla_escolha"; // frontend usa 'texto_longo'
+  type: "texto_longo" | "unica_escolha" | "multipla_escolha";
   required: boolean;
   options: QuestionOption[];
   order?: number;
+  conditional_logic?: ConditionalLogic | null;
 }
 
 export interface BackendQuestion {
   id: number;
   text: string;
-  type: string; // 'unica_escolha', 'multipla_escolha', 'texto_longo'
+  type: string;
   required: boolean;
+  options: QuestionOption[];
   order: number;
-  options: string[]; // sempre strings no backend
-  conditional_logic?: unknown;
+  conditional_logic?: ConditionalLogic | null;
 }
 
+// ============ Tipos de Pesquisas ============
 export interface BackendSurvey {
-  id: number; // ou string, dependendo
+  id: number;
   title: string;
   description?: string;
   created_by: string;
@@ -43,7 +54,7 @@ export interface BackendSurvey {
 }
 
 export interface Survey {
-  id: number; // ou string, dependendo
+  id: number;
   title: string;
   description?: string;
   created_by: string;
@@ -60,32 +71,17 @@ export interface Survey {
   status: string;
 }
 
-// Tipo para uma pergunta no payload de criação (como o backend espera)
-export interface CreateQuestionRequest {
+// ============ Payloads ============
+export interface CreateQuestionPayload {
   text: string;
-  type: string; // ou o union type do backend: 'unica_escolha' | 'multipla_escolha' | 'text'
+  type: "unica_escolha" | "multipla_escolha" | "texto_longo";
   required: boolean;
-  options: string[]; // ← array de strings
+  options: string[];
   order?: number;
 }
 
-export interface CreateSurveyRequest {
-  title: string;
-  description?: string;
-  questions: CreateQuestionRequest[];
-}
-
-export interface UpdateSurveyRequest {
-  id: string | number; // dependendo do backend
-  title?: string;
-  description?: string;
-  questions?: CreateQuestionRequest[];
-}
-
-// Payload para criação/atualização da pesquisa
-export interface SurveyLocationPayload {
-  id: number;
-  order: number;
+export interface UpdateQuestionPayload extends Partial<CreateQuestionPayload> {
+  _dummy?: never;
 }
 
 export interface SurveyPayload {
@@ -95,46 +91,21 @@ export interface SurveyPayload {
   active: boolean;
   slug?: string;
   startDate?: string;
-  endDate: string; // ISO string
+  endDate: string;
   customStyle?: Record<string, unknown> | null;
-  locations?: SurveyLocationPayload[];
+  locations?: { id: number; order: number }[];
 }
 
-export interface SurveyLocationItem {
-  name: string;
-  order: number;
-}
-
-// Payload para criação de pergunta (única)
-export interface CreateQuestionPayload {
-  text: string;
-  type: "unica_escolha" | "multipla_escolha" | "texto_longo"; // backend espera 'texto'
-  required: boolean;
-  options: string[];
-  order?: number;
-}
-
-// Payload para atualização de pergunta
-export interface UpdateQuestionPayload extends Partial<CreateQuestionPayload> {
-  _dummy?: never; // apenas para evitar o aviso
-}
-
-// Resposta de uma única pergunta
-export interface Answer {
-  questionId: number;
-  value: string | string[]; // string para texto/única escolha, array para múltipla escolha
-}
-
+// ============ Respostas ============
 export interface AnswerPayload {
   questionId: number;
   value: string | string[];
 }
 
-// Payload para envio das respostas
 export interface SubmitResponsePayload {
   surveyId: number;
-  answers: Answer[];
-  respondentIdentifier?: string; // opcional: email, código etc.
+  answers: AnswerPayload[];
+  respondentIdentifier?: string;
 }
 
 export interface DemographicData {
@@ -146,6 +117,7 @@ export interface DemographicData {
   locationId: string;
 }
 
+// ============ Localizações ============
 export interface Location {
   id: number;
   name: string;
@@ -169,6 +141,7 @@ export interface LocationPayload {
   notes?: string;
 }
 
+// ============ Relatórios ============
 export interface QuestionResult {
   questionId: number;
   questionText: string;
@@ -182,7 +155,6 @@ export interface QuestionResult {
   }[];
 }
 
-// Resposta completa do endpoint
 export type SurveyResults = QuestionResult[];
 
 export interface OpenResponse {

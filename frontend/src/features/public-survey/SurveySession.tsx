@@ -13,8 +13,52 @@ import type {
 } from "./publicSurvey.types";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import Skeleton from "../../components/common/Skeleton";
+import { useConditionalLogic } from "../surveys/useConditionalLogic";
+import type {
+  Question,
+  QuestionOption,
+  ConditionalLogic,
+} from "../surveys/surveys.types";
 
 type AnswersMap = Record<number, string | string[]>;
+
+// Tipo auxiliar para perguntas brutas (antes da normalização)
+interface RawQuestion {
+  id: number;
+  text: string;
+  type: string;
+  required: boolean;
+  order: number;
+  options: string[];
+  conditional_logic?: ConditionalLogic | null;
+  conditionalLogic?: ConditionalLogic | null; // chave alternativa do backend público
+}
+
+// Mapeamento de tipos do backend para o frontend
+const mapBackendTypeToFrontend = (backendType: string): Question["type"] => {
+  const mapping: Record<string, Question["type"]> = {
+    unica_escolha: "unica_escolha",
+    multipla_escolha: "multipla_escolha",
+    texto_longo: "texto_longo",
+  };
+  return mapping[backendType] || "texto_longo";
+};
+
+function normalizePublicQuestions(rawQuestions: RawQuestion[]): Question[] {
+  return rawQuestions.map((q) => ({
+    id: q.id,
+    text: q.text,
+    type: mapBackendTypeToFrontend(q.type),
+    required: q.required,
+    options: q.options.map((opt: string): QuestionOption => ({ text: opt })),
+    order: q.order,
+    conditional_logic: q.conditional_logic ?? q.conditionalLogic ?? null,
+  }));
+}
+
+// Helper para obter o texto de uma opção (string ou objeto)
+const getOptionText = (opt: string | QuestionOption): string =>
+  typeof opt === "string" ? opt : opt.text;
 
 export default function SurveySession() {
   const { slug } = useParams<{ slug: string }>();
@@ -23,20 +67,42 @@ export default function SurveySession() {
 
   const token = slug ? localStorage.getItem(`survey-token-${slug}`) : null;
 
-  // Redireciona se não houver token
-  useEffect(() => {
-    if (!token && slug) {
-      toast.error(
-        "Sessão não encontrada, expirada ou inválida. Inicie novamente.",
-      );
-      navigate(`/s/${slug}`);
+  const [answers, setAnswers] = useState<AnswersMap>(() => {
+    if (slug) {
+      const saved = localStorage.getItem(`survey-${slug}-answers`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return {};
+        }
+      }
     }
-  }, [token, slug, navigate]);
+    return {};
+  });
 
   const { data: survey } = useGetPublicSurveyQuery(slug!, { skip: !slug });
   const { data: progress, error: progressError } = useGetProgressQuery(token!, {
     skip: !token,
   });
+  const [submitAnswersBatch, { isLoading: isSubmitting }] =
+    useSubmitAnswersBatchMutation();
+
+  // Normalização e hook condicional ANTES de qualquer retorno
+  const rawQuestions: RawQuestion[] = (survey?.questions ??
+    []) as RawQuestion[];
+  const normalizedQuestions = normalizePublicQuestions(rawQuestions);
+  const visibleQuestions = useConditionalLogic(normalizedQuestions, answers);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const progressAppliedRef = useRef(false);
+
+  // Redireciona se não houver token
+  useEffect(() => {
+    if (!token && slug) {
+      navigate(`/s/${slug}`);
+    }
+  }, [token, slug, navigate]);
 
   useEffect(() => {
     if (
@@ -49,29 +115,6 @@ export default function SurveySession() {
       navigate(`/s/${slug}`);
     }
   }, [progressError, slug, navigate]);
-
-  const [submitAnswersBatch, { isLoading: isSubmitting }] =
-    useSubmitAnswersBatchMutation();
-
-  // Estado inicial: tenta carregar do localStorage
-  const [answers, setAnswers] = useState<AnswersMap>(() => {
-    if (slug) {
-      const saved = localStorage.getItem(`survey-${slug}-answers`);
-
-      console.log("Loaded from localStorage :>> ", saved);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          return {};
-        }
-      }
-    }
-    return {};
-  });
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const progressAppliedRef = useRef(false);
 
   // Sincroniza com o progresso do backend apenas se não houver dados locais
   useEffect(() => {
@@ -86,7 +129,6 @@ export default function SurveySession() {
           acc[ans.questionId] = ans.value;
           return acc;
         }, {} as AnswersMap);
-        // Agendamento para próximo ciclo elimina o aviso
         queueMicrotask(() => setAnswers(mapped));
       }
       progressAppliedRef.current = true;
@@ -102,14 +144,10 @@ export default function SurveySession() {
 
   function isSessionExpiredError(error: unknown): boolean {
     if (!error) return false;
-
-    // Trata FetchBaseQueryError (erro de rede/HTTP)
     const fetchError = error as FetchBaseQueryError;
     if (fetchError && "status" in fetchError) {
       const status = fetchError.status;
       if (status === 409 || status === 400) return true;
-
-      // Se tiver dados, verifica a mensagem
       const data = fetchError.data as { error?: string } | undefined;
       const message = data?.error ?? "";
       if (
@@ -119,14 +157,11 @@ export default function SurveySession() {
         return true;
       }
     }
-
-    // Trata SerializedError (erro inesperado, ex.: exceção na query)
     const serializedError = error as { message?: string };
     if (serializedError?.message) {
       const msg = serializedError.message.toLowerCase();
       if (msg.includes("finalizada") || msg.includes("abandonada")) return true;
     }
-
     return false;
   }
 
@@ -135,6 +170,7 @@ export default function SurveySession() {
       toast.error("Sessão expirada ou já finalizada.");
       localStorage.removeItem(`survey-token-${slug}`);
       localStorage.removeItem(`survey-${slug}-answers`);
+      localStorage.removeItem(`survey-${slug}-demographics`);
       navigate(`/s/${slug}`);
     }
   }, [progressError, slug, navigate]);
@@ -152,19 +188,18 @@ export default function SurveySession() {
       </div>
     );
 
-  const questions = survey.questions;
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion = visibleQuestions[currentIndex] ?? null;
   const currentAnswer = currentQuestion
-    ? answers[currentQuestion.id]
+    ? (answers[currentQuestion.id!] ?? undefined)
     : undefined;
 
   const handleAnswerChange = (value: string | string[]) => {
     if (!currentQuestion) return;
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id!]: value }));
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < visibleQuestions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     }
   };
@@ -187,10 +222,8 @@ export default function SurveySession() {
 
     try {
       await submitAnswersBatch({ token: token!, body: allAnswers }).unwrap();
-      // Limpa localStorage das respostas
       localStorage.removeItem(`survey-${slug}-answers`);
 
-      // Recupera dados demográficos salvos
       const demographicsStr = localStorage.getItem(
         `survey-${slug}-demographics`,
       );
@@ -204,8 +237,9 @@ export default function SurveySession() {
       const demographics = JSON.parse(
         demographicsStr,
       ) as CompleteSessionPayload;
+      // Garante que locationId seja número
+      demographics.locationId = Number(demographics.locationId);
 
-      // Finaliza a sessão
       await completeSession({ token: token!, body: demographics }).unwrap();
       localStorage.removeItem(`survey-token-${slug}`);
       localStorage.removeItem(`survey-${slug}-demographics`);
@@ -225,8 +259,11 @@ export default function SurveySession() {
     }
   };
 
-  const isLast = currentIndex === questions.length - 1;
-  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
+  const isLast = currentIndex === visibleQuestions.length - 1;
+  const progressPercent =
+    visibleQuestions.length > 0
+      ? ((currentIndex + 1) / visibleQuestions.length) * 100
+      : 0;
 
   const renderQuestionInput = () => {
     if (!currentQuestion) return null;
@@ -240,31 +277,35 @@ export default function SurveySession() {
             onChange={(e) => handleAnswerChange(e.target.value)}
             placeholder="Digite sua resposta..."
             className="w-full p-3 border border-gray-300 rounded-lg text-base"
-            rows={q.type === "texto_longo" ? 6 : 3}
+            rows={6}
           />
         );
 
       case "unica_escolha":
         return (
           <div className="space-y-3">
-            {q.options.map((opt, idx) => (
-              <label
-                key={idx}
-                className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
-              >
-                <input
-                  type="radio"
-                  name={`q-${q.id}`}
-                  value={opt}
-                  checked={
-                    Array.isArray(currentAnswer) && currentAnswer.includes(opt)
-                  }
-                  onChange={(e) => handleAnswerChange([e.target.value])}
-                  className="w-5 h-5 text-blue-600"
-                />
-                <span className="text-base">{opt}</span>
-              </label>
-            ))}
+            {q.options.map((opt, idx) => {
+              const optionText = getOptionText(opt);
+              return (
+                <label
+                  key={idx}
+                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+                >
+                  <input
+                    type="radio"
+                    name={`q-${q.id}`}
+                    value={optionText}
+                    checked={
+                      Array.isArray(currentAnswer) &&
+                      currentAnswer.includes(optionText)
+                    }
+                    onChange={(e) => handleAnswerChange([e.target.value])}
+                    className="w-5 h-5 text-blue-600"
+                  />
+                  <span className="text-base">{optionText}</span>
+                </label>
+              );
+            })}
           </div>
         );
 
@@ -272,8 +313,10 @@ export default function SurveySession() {
         return (
           <div className="space-y-3">
             {q.options.map((opt, idx) => {
+              const optionText = getOptionText(opt);
               const isChecked =
-                Array.isArray(currentAnswer) && currentAnswer.includes(opt);
+                Array.isArray(currentAnswer) &&
+                currentAnswer.includes(optionText);
               return (
                 <label
                   key={idx}
@@ -281,23 +324,23 @@ export default function SurveySession() {
                 >
                   <input
                     type="checkbox"
-                    value={opt}
+                    value={optionText}
                     checked={isChecked}
                     onChange={(e) => {
                       const arr = Array.isArray(currentAnswer)
                         ? [...currentAnswer]
                         : [];
                       if (e.target.checked) {
-                        arr.push(opt);
+                        arr.push(optionText);
                       } else {
-                        const index = arr.indexOf(opt);
+                        const index = arr.indexOf(optionText);
                         if (index > -1) arr.splice(index, 1);
                       }
                       handleAnswerChange(arr);
                     }}
                     className="w-5 h-5 text-blue-600 rounded"
                   />
-                  <span className="text-base">{opt}</span>
+                  <span className="text-base">{optionText}</span>
                 </label>
               );
             })}
@@ -314,7 +357,7 @@ export default function SurveySession() {
       <div className="bg-white p-4 shadow-sm">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>
-            Pergunta {currentIndex + 1} de {questions.length}
+            Pergunta {currentIndex + 1} de {visibleQuestions.length}
           </span>
           <span>{Math.round(progressPercent)}%</span>
         </div>

@@ -1,15 +1,17 @@
-import fs from 'fs/promises';
-import path from 'path';
 import { json2csv } from 'json-2-csv';
+import path from 'path';
+import fs from 'fs/promises';
 import { Job } from 'bull';
 import { exportQueue } from './export.queue.js';
 import * as reportsService from '../../modules/surveys/reports.service.js';
 import type { ExportFilters } from '../../modules/surveys/reports.service.js';
 import * as resultsService from '../../modules/surveys/results.service.js';
+import { generatePdf, generateXlsx } from '../../modules/surveys/export-helpers.js';
+
 interface ExportJobData {
   exportId: number;
   surveyId: number;
-  format: 'csv' | 'xlsx' | 'json';
+  format: 'csv' | 'xlsx' | 'json' | 'pdf';
   userId: string;
   filters?: {
     startDate?: string;
@@ -21,11 +23,12 @@ interface ExportJobData {
 export const startExportWorker = () => {
   exportQueue.process(async (job: Job<ExportJobData>) => {
     const { exportId, surveyId, format, filters: rawFilters } = job.data;
+
     console.info(`📤 Job ${exportId} iniciado`);
 
     try {
-      // Atualiza status para 'processando'
       console.info(`🔄 Atualizando status para 'processando'...`);
+
       await reportsService.updateExportStatus(exportId, 'processando');
       console.info(`✅ Status atualizado`);
 
@@ -50,32 +53,42 @@ export const startExportWorker = () => {
       }
 
       let fileContent: Buffer | string;
-      let mimeType: string;
+      // let mimeType: string;
       let extension: string;
 
-      if (format === 'csv') {
-        fileContent = json2csv(data);
-        mimeType = 'text/csv';
-        extension = 'csv';
-      } else if (format === 'json') {
-        fileContent = JSON.stringify(data, null, 2);
-        mimeType = 'application/json';
-        extension = 'json';
-      } else {
-        // xlsx - precisaria de uma lib como 'xlsx'
-        throw new Error('Formato XLSX não implementado ainda');
+      switch (format) {
+        case 'csv':
+          fileContent = json2csv(data);
+          extension = 'csv';
+          break;
+        case 'json':
+          fileContent = JSON.stringify(data, null, 2);
+          extension = 'json';
+          break;
+        case 'pdf':
+          fileContent = await generatePdf(data);
+          extension = 'pdf';
+          break;
+        case 'xlsx':
+          fileContent = await generateXlsx(data);
+          extension = 'xlsx';
+          break;
+        default:
+          throw new Error(`Formato não suportado: ${format}`);
       }
 
       // Salva o arquivo em disco (ou S3)
       const fileName = `export_${exportId}_${Date.now()}.${extension}`;
-      console.info(`💾 Salvando arquivo ${fileName}...`);
       const filePath = path.join(process.cwd(), 'exports', fileName);
+      console.info(`💾 Salvando arquivo ${fileName}...`);
+
       await fs.mkdir(path.dirname(filePath), { recursive: true });
       await fs.writeFile(filePath, fileContent);
 
       // Atualiza o registro de exportação com o link
       const downloadLink = `/api/surveys/exports/${exportId}/download`;
       console.info(`📝 Finalizando exportação no banco...`);
+
       await reportsService.completeExport(
         exportId,
         fileName,

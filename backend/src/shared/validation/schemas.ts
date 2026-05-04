@@ -150,7 +150,7 @@ export const authenticatedResponsesSchema = z.object({
 
 // ================== EXPORTS ==================
 export const exportRequestSchema = z.object({
-  format: z.enum(['csv', 'xlsx', 'json']).optional().default('csv'),
+  format: z.enum(['csv', 'xlsx', 'json', 'pdf']).optional().default('csv'),
   filters: z
     .object({
       startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),

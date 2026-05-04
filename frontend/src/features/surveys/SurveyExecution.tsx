@@ -5,7 +5,13 @@ import {
   useGetSurveyByIdQuery,
   useSubmitResponsesMutation,
 } from "./surveysApi";
-import type { DemographicData } from "./surveys.types";
+import { useConditionalLogic } from "../surveys/useConditionalLogic";
+import type {
+  DemographicData,
+  Question,
+  QuestionOption,
+  BackendQuestion,
+} from "./surveys.types";
 import Skeleton from "../../components/common/Skeleton";
 
 type AnswersMap = Record<number, string | string[]>;
@@ -19,6 +25,34 @@ const loadSavedAnswers = (surveyId: string): AnswersMap => {
   }
 };
 
+// Mapeamento de tipos do backend para o frontend
+const mapBackendTypeToFrontend = (backendType: string): Question["type"] => {
+  const mapping: Record<string, Question["type"]> = {
+    unica_escolha: "unica_escolha",
+    multipla_escolha: "multipla_escolha",
+    texto_longo: "texto_longo",
+  };
+  return mapping[backendType] || "texto_longo";
+};
+
+const normalizeQuestions = (
+  backendQuestions: BackendQuestion[],
+): Question[] => {
+  return backendQuestions.map((q) => ({
+    id: q.id,
+    text: q.text,
+    type: mapBackendTypeToFrontend(q.type),
+    required: q.required,
+    options: q.options,
+    order: q.order,
+    conditional_logic: q.conditional_logic ?? null,
+  }));
+};
+
+// Helper para obter texto da opção (compatível com string ou QuestionOption)
+const getOptionText = (opt: string | QuestionOption): string =>
+  typeof opt === "string" ? opt : opt.text;
+
 export default function SurveyExecution() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -26,7 +60,6 @@ export default function SurveyExecution() {
   const [submitResponses, { isLoading: isSubmitting }] =
     useSubmitResponsesMutation();
 
-  // Começa com a etapa de dados demográficos
   const [step, setStep] = useState<"demographics" | "questions">(
     "demographics",
   );
@@ -43,14 +76,16 @@ export default function SurveyExecution() {
     locationId: "",
   });
 
-  // Persistência local das respostas (permanece igual)
+  // Normalização e hook condicional antes de qualquer retorno
+  const normalizedQuestions = normalizeQuestions(survey?.questions ?? []);
+  const visibleQuestions = useConditionalLogic(normalizedQuestions, answers);
+
   useEffect(() => {
     if (id && Object.keys(answers).length > 0) {
       localStorage.setItem(`survey-${id}-answers`, JSON.stringify(answers));
     }
   }, [answers, id]);
 
-  // Tratamento de carregamento e pesquisa não encontrada
   if (isLoading)
     return (
       <div className="space-y-4">
@@ -63,6 +98,7 @@ export default function SurveyExecution() {
         ))}
       </div>
     );
+
   if (!survey)
     return (
       <div className="p-4 text-center text-red-600">
@@ -70,20 +106,18 @@ export default function SurveyExecution() {
       </div>
     );
 
-  const questions = survey.questions;
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion = visibleQuestions[currentIndex] ?? null;
   const currentAnswer = currentQuestion
-    ? answers[currentQuestion.id]
+    ? (answers[currentQuestion.id!] ?? undefined)
     : undefined;
 
-  // Handlers das perguntas
   const handleAnswerChange = (value: string | string[]) => {
     if (!currentQuestion) return;
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id!]: value }));
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < visibleQuestions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     }
   };
@@ -95,21 +129,19 @@ export default function SurveyExecution() {
   };
 
   const handleFinishQuestions = () => {
-    const unansweredRequired = questions.filter(
-      (q) => q.required && !answers[q.id],
+    const unansweredRequired = visibleQuestions.filter(
+      (q) => q.required && !answers[q.id!],
     );
     if (unansweredRequired.length > 0) {
       toast.error(
         `Há ${unansweredRequired.length} pergunta(s) obrigatória(s) sem resposta.`,
       );
-      const firstUnanswered = questions.findIndex(
-        (q) => q.required && !answers[q.id],
+      const firstUnanswered = visibleQuestions.findIndex(
+        (q) => q.required && !answers[q.id!],
       );
       if (firstUnanswered !== -1) setCurrentIndex(firstUnanswered);
       return;
     }
-    // Não há etapa de demographics depois, já estamos no final
-    // Envia diretamente
     handleComplete();
   };
 
@@ -158,13 +190,11 @@ export default function SurveyExecution() {
     }
   };
 
-  // Renderização dos inputs de pergunta
   const renderQuestionInput = () => {
     if (!currentQuestion) return null;
     const q = currentQuestion;
 
     switch (q.type) {
-      case "texto_curto":
       case "texto_longo":
         return (
           <textarea
@@ -179,24 +209,66 @@ export default function SurveyExecution() {
       case "unica_escolha":
         return (
           <div className="space-y-3">
-            {q.options.map((opt, idx) => (
-              <label
-                key={idx}
-                className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
-              >
-                <input
-                  type="radio"
-                  name={`q-${q.id}`}
-                  value={opt}
-                  checked={
-                    Array.isArray(currentAnswer) && currentAnswer.includes(opt)
-                  }
-                  onChange={(e) => handleAnswerChange([e.target.value])}
-                  className="w-5 h-5 text-blue-600"
-                />
-                <span className="text-base">{opt}</span>
-              </label>
-            ))}
+            {q.options.map((opt, idx) => {
+              const optionText = getOptionText(opt);
+              return (
+                <label
+                  key={idx}
+                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+                >
+                  <input
+                    type="radio"
+                    name={`q-${q.id}`}
+                    value={optionText}
+                    checked={
+                      Array.isArray(currentAnswer) &&
+                      currentAnswer.includes(optionText)
+                    }
+                    onChange={(e) => handleAnswerChange([e.target.value])}
+                    className="w-5 h-5 text-blue-600"
+                  />
+                  <span className="text-base">{optionText}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+
+      case "multipla_escolha":
+        return (
+          <div className="space-y-3">
+            {q.options.map((opt, idx) => {
+              const optionText = getOptionText(opt);
+              const isChecked =
+                Array.isArray(currentAnswer) &&
+                currentAnswer.includes(optionText);
+              return (
+                <label
+                  key={idx}
+                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+                >
+                  <input
+                    type="checkbox"
+                    value={optionText}
+                    checked={isChecked}
+                    onChange={(e) => {
+                      const arr = Array.isArray(currentAnswer)
+                        ? [...currentAnswer]
+                        : [];
+                      if (e.target.checked) {
+                        arr.push(optionText);
+                      } else {
+                        const index = arr.indexOf(optionText);
+                        if (index > -1) arr.splice(index, 1);
+                      }
+                      handleAnswerChange(arr);
+                    }}
+                    className="w-5 h-5 text-blue-600 rounded"
+                  />
+                  <span className="text-base">{optionText}</span>
+                </label>
+              );
+            })}
           </div>
         );
 
@@ -205,12 +277,9 @@ export default function SurveyExecution() {
     }
   };
 
-  // ══════════════════════════════════════════════
-  // Etapa DEMOGRAPHICS (primeira)
-  // ══════════════════════════════════════════════
+  // Etapa DEMOGRAPHICS
   if (step === "demographics") {
     const locations = survey.locations || [];
-
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <form
@@ -218,7 +287,7 @@ export default function SurveyExecution() {
           className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm space-y-4"
         >
           <h2 className="text-xl font-bold mb-4">Dados do Respondente</h2>
-
+          {/* campos de demographics (mantidos do arquivo original) */}
           <select
             value={demographics.ageRange}
             onChange={(e) =>
@@ -335,18 +404,19 @@ export default function SurveyExecution() {
     );
   }
 
-  // ══════════════════════════════════════════════
-  // Etapa QUESTIONS (segunda)
-  // ══════════════════════════════════════════════
-  const isLast = currentIndex === questions.length - 1;
-  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
+  // Etapa QUESTIONS
+  const isLast = currentIndex === visibleQuestions.length - 1;
+  const progressPercent =
+    visibleQuestions.length > 0
+      ? ((currentIndex + 1) / visibleQuestions.length) * 100
+      : 0;
 
   return (
     <div className="bg-gray-50 flex flex-col">
       <div className="bg-white p-4 shadow-sm">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>
-            Pergunta {currentIndex + 1} de {questions.length}
+            Pergunta {currentIndex + 1} de {visibleQuestions.length}
           </span>
           <span>{Math.round(progressPercent)}%</span>
         </div>

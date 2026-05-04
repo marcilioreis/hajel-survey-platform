@@ -3,7 +3,6 @@ import type {
   Survey,
   BackendSurvey,
   SurveyPayload,
-  SurveyLocationPayload,
   Location,
   CreateQuestionPayload,
   BackendQuestion,
@@ -135,7 +134,7 @@ export const surveysApi = api.injectEndpoints({
     }),
     updateSurveyLocations: builder.mutation<
       void,
-      { surveyId: number; locations: SurveyLocationPayload[] }
+      { surveyId: number; locations: LocationPayload[] }
     >({
       query: ({ surveyId, locations }) => ({
         url: `/surveys/${surveyId}/locations`,
@@ -186,12 +185,12 @@ export const surveysApi = api.injectEndpoints({
     }),
     requestExport: builder.mutation<
       ExportRequestResponse,
-      { surveyId: string; format?: "csv" | "pdf" }
+      { surveyId: string; format?: "csv" | "pdf" | "xlsx" }
     >({
       query: ({ surveyId, format = "csv" }) => ({
         url: `/surveys/${surveyId}/exports`,
         method: "POST",
-        body: { format }, // 👈 envia o formato (padrão 'csv')
+        body: { format },
       }),
     }),
     getExportStatus: builder.query<ExportStatus, string>({

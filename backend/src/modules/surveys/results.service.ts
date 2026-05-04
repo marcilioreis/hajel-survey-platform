@@ -1,4 +1,3 @@
-// src/modules/surveys/results.service.ts
 import { eq, and, inArray, gte, lte, count } from 'drizzle-orm';
 import { db } from '../../shared/db/index.js';
 import { questions } from '../../shared/db/schema/surveys.js';
@@ -21,7 +20,7 @@ export interface ExportFilters {
   locationIds?: number[];
 }
 
-interface ExportRow {
+export interface ExportRow {
   pergunta: string;
   opcao: string;
   quantidade: number;

@@ -11,7 +11,7 @@ export interface ExportFilters {
 export const createExportRequest = async (
   surveyId: number,
   userId: string,
-  format: 'csv' | 'xlsx' | 'json',
+  format: 'csv' | 'xlsx' | 'json' | 'pdf',
   filters?: ExportFilters
 ) => {
   const [exportRecord] = await db
