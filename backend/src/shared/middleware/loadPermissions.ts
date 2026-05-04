@@ -1,4 +1,3 @@
-// src/shared/middleware/loadPermissions.ts
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../db/index.js';
 import {

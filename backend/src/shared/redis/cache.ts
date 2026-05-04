@@ -1,4 +1,3 @@
-// src/shared/redis/cache.ts
 import { redis } from './index.js';
 
 export async function cacheGet<T>(key: string): Promise<T | null> {

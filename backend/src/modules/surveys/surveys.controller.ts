@@ -1,4 +1,3 @@
-// src/modules/surveys/surveys.controller.ts
 import { Request, Response } from 'express';
 import * as surveyService from './surveys.service.js';
 import { hasPermission } from '../../shared/middleware/rbac.js';

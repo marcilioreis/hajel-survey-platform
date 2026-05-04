@@ -1,4 +1,3 @@
-// src/shared/queue/export.queue.ts
 import Queue from 'bull';
 
 export interface ExportJobData {
@@ -10,7 +9,6 @@ export interface ExportJobData {
     startDate?: string;
     endDate?: string;
     locationIds?: number[];
-    // outros filtros
   };
 }
 

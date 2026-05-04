@@ -1,4 +1,3 @@
-// src/shared/middleware/validate.ts
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError, ZodIssue } from 'zod';
 

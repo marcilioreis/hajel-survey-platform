@@ -1,4 +1,3 @@
-// src/types/express.d.ts
 import { User, Session } from 'better-auth';
 
 declare global {

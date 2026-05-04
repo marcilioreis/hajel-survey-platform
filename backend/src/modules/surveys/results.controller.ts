@@ -1,4 +1,3 @@
-// src/modules/surveys/results.controller.ts
 import { Request, Response } from 'express';
 import * as resultsService from './results.service.js';
 import * as surveyService from './surveys.service.js';
@@ -19,7 +18,7 @@ export const getSurveyResults = async (req: Request, res: Response) => {
 
     const canViewAggregated = hasPermission(req, 'response:view_aggregated');
     const isOwner = survey.createdBy === userId;
-    const isAdmin = req.isAdmin; // já disponível
+    const isAdmin = req.isAdmin;
 
     if (!canViewAggregated && !isOwner && !isAdmin) {
       return res.status(403).json({ error: 'Forbidden' });
