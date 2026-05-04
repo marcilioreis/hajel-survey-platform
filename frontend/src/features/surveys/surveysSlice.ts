@@ -3,7 +3,7 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 
 interface SurveysState {
   searchTerm: string;
-  statusFilter: "all" | "rascunho" | "ativa" | "expirada";
+  statusFilter: "all" | "rascunho" | "ativa" | "encerrada" | "inativa";
   sortBy: "createdAt" | "title" | "responsesCount";
   sortOrder: "asc" | "desc";
 }

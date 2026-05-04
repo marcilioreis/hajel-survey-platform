@@ -26,5 +26,5 @@ export type SurveyEnriched = {
     order: number;
   }>;
   responsesCount: number;
-  status: 'ativa' | 'rascunho' | 'expirada' | 'inativa';
+  status: 'rascunho' | 'ativa' | 'encerrada' | 'inativa';
 };

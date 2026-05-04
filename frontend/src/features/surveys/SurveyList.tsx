@@ -109,8 +109,10 @@ export default function SurveyList() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
               >
                 <option value="all">Todos</option>
-                <option value="active">Ativa</option>
-                <option value="ended">Encerrada</option>
+                <option value="rascunho">Rascunho</option>
+                <option value="ativa">Ativa</option>
+                <option value="encerrada">Encerrada</option>
+                <option value="inativa">Inativa</option>
               </select>
             </div>
             <div>
