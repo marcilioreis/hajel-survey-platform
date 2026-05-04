@@ -1,5 +1,14 @@
-// src/shared/middleware/rbac.ts
 import { Request, Response, NextFunction } from 'express';
+import { db } from '../db/index.js';
+import {
+  user,
+  userRoles,
+  roles,
+  rolePermissions,
+  permissions,
+  userPermissions,
+} from '../db/schema/index.js';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * Verifica se o usuário possui uma determinada permissão.
@@ -60,3 +69,51 @@ export const authorize = (required: string | string[] | { any?: string[]; all?: 
     next();
   };
 };
+
+/**
+ * Retorna os nomes das roles vinculadas ao usuário.
+ */
+export async function getUserRoleNames(userId: string): Promise<string[]> {
+  const result = await db
+    .select({ name: roles.name })
+    .from(userRoles)
+    .innerJoin(roles, eq(userRoles.roleId, roles.id))
+    .where(eq(userRoles.userId, userId));
+
+  return result.map((r) => r.name);
+}
+
+/**
+ * Retorna um Set com os códigos de todas as permissões do usuário
+ * (diretas e herdadas de roles). Admin implícito tem todas.
+ */
+export async function getUserPermissionSet(userId: string): Promise<Set<string>> {
+  // Verifica se é admin pelo campo role (fallback rápido)
+  const [userRecord] = await db.select({ role: user.role }).from(user).where(eq(user.id, userId));
+
+  if (userRecord?.role === 'admin') {
+    // Retorna um Set com todas as permissões cadastradas
+    const allPerms = await db.select({ code: permissions.code }).from(permissions);
+    return new Set(allPerms.map((p) => p.code));
+  }
+
+  // Permissões diretas (granted = true)
+  const directPerms = await db
+    .select({ code: permissions.code })
+    .from(userPermissions)
+    .innerJoin(permissions, eq(userPermissions.permissionId, permissions.id))
+    .where(and(eq(userPermissions.userId, userId), eq(userPermissions.granted, true)));
+
+  // Permissões herdadas de roles
+  const rolePerms = await db
+    .select({ code: permissions.code })
+    .from(userRoles)
+    .innerJoin(rolePermissions, eq(userRoles.roleId, rolePermissions.roleId))
+    .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+    .where(eq(userRoles.userId, userId));
+
+  const set = new Set<string>();
+  for (const p of directPerms) set.add(p.code);
+  for (const p of rolePerms) set.add(p.code);
+  return set;
+}

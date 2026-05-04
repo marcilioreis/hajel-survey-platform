@@ -5,7 +5,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
-import { toNodeHandler } from 'better-auth/node';
+import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
 import { RedisStore } from 'rate-limit-redis';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger.js';
@@ -16,8 +16,10 @@ import publicRoutes from './modules/responses/public.routes.js';
 import { createApolloServer } from './graphql/apollo.js';
 import { redis } from './shared/redis/index.js';
 import { authenticate } from './shared/auth/middleware.js';
+import { getUserPermissionSet, getUserRoleNames } from './shared/middleware/rbac.js';
 import { loadPermissions } from './shared/middleware/loadPermissions.js';
 import geographyRoutes from './modules/geography/geography.routes.js';
+import adminRoutes from './modules/admin/admin.routes.js';
 
 // ---- Rate limiter com prefixo ÚNICO no Redis ----
 const apiLimiter = rateLimit({
@@ -74,6 +76,35 @@ try {
   // Rota de teste
   app.get('/api/auth/test', (req, res) => res.json({ ok: true }));
 
+  // Rota personalizada que retorna sessão + permissões
+  app.get('/api/auth/get-session', async (req, res) => {
+    try {
+      const headers = fromNodeHeaders(req.headers);
+      // Obtém a sessão atual (pode ser nula se não autenticado)
+      const session = await auth.api.getSession({ headers });
+
+      if (!session) {
+        return res.json(null);
+      }
+
+      // Busca permissões e roles em paralelo (para performance)
+      const [permissionsSet, roleNames] = await Promise.all([
+        getUserPermissionSet(session.user.id),
+        getUserRoleNames(session.user.id),
+      ]);
+
+      res.json({
+        user: session.user,
+        session: session.session,
+        permissions: Array.from(permissionsSet),
+        roles: roleNames,
+      });
+    } catch (error) {
+      console.error('Erro ao obter sessão enriquecida:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // 1. Autenticação (Better Auth) com rate limit específico
   app.all('/api/auth/{*splat}', toNodeHandler(auth));
 
@@ -84,6 +115,7 @@ try {
   app.use('/api/surveys', authenticate, loadPermissions, apiLimiter, surveyRoutes);
   app.use('/api/locations', authenticate, loadPermissions, apiLimiter, locationRoutes);
   app.use('/api/geography', geographyRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // 4. Rotas públicas com publicLimiter (aplicado dentro do próprio arquivo de rotas)
   app.use('/', publicRoutes); // o publicLimiter é aplicado dentro de publicRoutes

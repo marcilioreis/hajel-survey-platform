@@ -4,6 +4,7 @@ import 'better-auth';
 declare module 'better-auth' {
   interface User {
     role?: string | null;
-    id: string; // <-- garante que id é reconhecido
+    id: string;
+    active?: boolean;
   }
 }

@@ -3,6 +3,8 @@ import { Request, Response } from 'express';
 import * as surveyService from './surveys.service.js';
 import { hasPermission } from '../../shared/middleware/rbac.js';
 import * as locationsService from '../locations/locations.service.js';
+import { db } from '../../shared/db/index.js';
+import { auditLogs } from '../../shared/db/schema/audit.js';
 
 const getNumericId = (param: string | string[]): number => {
   const id = Array.isArray(param) ? param[0] : param;
@@ -41,6 +43,15 @@ export const createSurvey = async (req: Request, res: Response) => {
 
     const enriched = await surveyService.findByIdEnriched(survey.id);
     res.status(201).json(enriched);
+
+    await db.insert(auditLogs).values({
+      userId: req.user!.id,
+      action: 'survey.create',
+      entityType: 'survey',
+      entityId: survey.id,
+      details: { title: survey.title },
+      ip: req.ip,
+    });
   } catch (error: unknown) {
     console.error('Create survey error:', error);
     const message = error instanceof Error ? error.message : 'Erro desconhecido';

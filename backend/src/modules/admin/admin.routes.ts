@@ -1,10 +1,20 @@
-// import { Router } from 'express';
-// import { authenticate } from '../../shared/auth/middleware.js';
 // import { db } from '../../shared/db/index.js';
 // import { roles, permissions, userRoles, rolePermissions } from '../../shared/db/schema/index.js';
 // import { eq } from 'drizzle-orm';
 
-// const router = Router();
+import { Router } from 'express';
+import { authenticate } from '../../shared/auth/middleware.js';
+import { loadPermissions } from '../../shared/middleware/loadPermissions.js';
+import { authorize } from '../../shared/middleware/rbac.js';
+import { validateBody } from '../../shared/middleware/validate.js';
+import {
+  updateUserAdminSchema,
+  createRoleSchema,
+  updateRoleSchema,
+} from '../../shared/validation/schemas.js';
+import * as controller from './admin.controller.js';
+
+const router = Router();
 
 // router.post('/setup/seed', authenticate, async (req, res) => {
 //   // Verifica se o usuário é admin (apenas para execução inicial)
@@ -19,4 +29,38 @@
 //   res.json({ success: true, message: 'Seed executado com sucesso' });
 // });
 
-// export default router;
+// Aplica autenticação e carregamento de permissões a todas as rotas
+router.use(authenticate, loadPermissions);
+
+// -- Usuários --
+router.get('/users', authorize('user:manage'), controller.listUsers);
+router.get('/users/:id', authorize('user:manage'), controller.getUser);
+router.put(
+  '/users/:id',
+  authorize('user:manage'),
+  validateBody(updateUserAdminSchema),
+  controller.updateUser
+);
+
+// -- Roles --
+router.get('/roles', authorize('role:manage'), controller.listRoles);
+router.post(
+  '/roles',
+  authorize('role:manage'),
+  validateBody(createRoleSchema),
+  controller.createRole
+);
+router.put(
+  '/roles/:id',
+  authorize('role:manage'),
+  validateBody(updateRoleSchema),
+  controller.updateRole
+);
+
+// -- Permissões --
+router.get('/permissions', authorize('role:manage'), controller.listPermissions); // pode ser user:manage também, escolha
+
+// -- Auditoria --
+router.get('/audit-logs', authorize('audit:view'), controller.listAuditLogs);
+
+export default router;

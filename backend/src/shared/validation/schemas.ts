@@ -159,3 +159,25 @@ export const exportRequestSchema = z.object({
     })
     .optional(),
 });
+
+// ================== Admin ==================
+
+export const updateUserAdminSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.email().optional(),
+  role: z.string().optional(), // campo fallback (opcional)
+  roleIds: z.array(z.number().int().positive()).optional(), // IDs das roles RBAC
+  active: z.boolean().optional(),
+});
+
+export const createRoleSchema = z.object({
+  name: z.string().min(1, 'Nome da role é obrigatório'),
+  description: z.string().optional(),
+  permissionIds: z.array(z.number().int().positive()).optional(), // opcional já criar com permissões
+});
+
+export const updateRoleSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  permissionIds: z.array(z.number().int().positive()).optional(),
+});
