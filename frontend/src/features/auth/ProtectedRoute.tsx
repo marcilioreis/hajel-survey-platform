@@ -34,8 +34,12 @@ export default function ProtectedRoute() {
         setCredentials({
           user: sessionData.user,
           permissions: sessionData.permissions,
+          roles: sessionData.roles,
         }),
       );
+    } else if (isSuccess && sessionData && !isSessionResponse(sessionData)) {
+      // sessão inválida inesperada
+      dispatch(setLoading(false));
     } else if (error) {
       dispatch(setLoading(false));
     }

@@ -26,7 +26,6 @@ export default function SurveyList() {
   const surveys = Array.isArray(surveysData) ? surveysData : [];
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filtragem e ordenação locais (pode ser delegada à API futuramente)
   const filteredSurveys = surveys
     .filter((s) => {
       if (statusFilter !== "all" && s.status !== statusFilter) return false;
@@ -75,11 +74,13 @@ export default function SurveyList() {
 
   return (
     <div className="space-y-4">
-      {/* Barra de pesquisa e filtros */}
       <div className="bg-white p-4 rounded-lg shadow-sm space-y-3">
         <div className="flex gap-2">
           <input
             type="text"
+            id="survey-search"
+            name="survey-search"
+            data-testid="survey-search"
             placeholder="Buscar pesquisa..."
             value={searchTerm}
             onChange={(e) => dispatch(setSearchTerm(e.target.value))}
@@ -87,6 +88,7 @@ export default function SurveyList() {
           />
           <button
             onClick={() => setShowFilters(!showFilters)}
+            data-testid="survey-toggle-filters"
             className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
           >
             ⚙️
@@ -96,10 +98,16 @@ export default function SurveyList() {
         {showFilters && (
           <div className="space-y-3 pt-2 border-t">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="survey-filter-status"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Status
               </label>
               <select
+                id="survey-filter-status"
+                name="survey-filter-status"
+                data-testid="survey-filter-status"
                 value={statusFilter}
                 onChange={(e) =>
                   dispatch(
@@ -116,11 +124,17 @@ export default function SurveyList() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="survey-filter-sort"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Ordenar por
               </label>
               <div className="flex gap-2">
                 <select
+                  id="survey-filter-sort"
+                  name="survey-filter-sort"
+                  data-testid="survey-filter-sort"
                   value={sortBy}
                   onChange={(e) =>
                     dispatch(setSortBy(e.target.value as typeof sortBy))
@@ -133,6 +147,7 @@ export default function SurveyList() {
                 </select>
                 <button
                   onClick={() => dispatch(toggleSortOrder())}
+                  data-testid="survey-toggle-order"
                   className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                 >
                   {sortOrder === "asc" ? "↑" : "↓"}
@@ -143,15 +158,14 @@ export default function SurveyList() {
         )}
       </div>
 
-      {/* Botão nova pesquisa */}
       <button
         onClick={() => navigate("/surveys/new")}
+        data-testid="survey-new"
         className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700"
       >
         + Nova Pesquisa
       </button>
 
-      {/* Lista de pesquisas */}
       {filteredSurveys.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           Nenhuma pesquisa encontrada.
@@ -162,7 +176,8 @@ export default function SurveyList() {
             <div
               key={survey.id}
               onClick={() => navigate(`/surveys/${survey.id}`)}
-              className="bg-white p-4 rounded-lg shadow-sm active:bg-gray-50"
+              data-testid={`survey-item-${survey.id}`}
+              className="bg-white p-4 rounded-lg shadow-sm active:bg-gray-50 cursor-pointer"
             >
               <div className="flex justify-between items-start">
                 <h3 className="font-medium text-gray-900">{survey.title}</h3>

@@ -31,28 +31,42 @@ export default function UserList() {
   return (
     <div className="p-4 pb-20">
       <div className="flex justify-between items-center mb-4">
-        <button onClick={() => navigate(-1)} className="text-blue-600">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-blue-600"
+          data-testid="user-back"
+        >
           ← Voltar
         </button>
         <h1 className="text-xl font-bold">Usuários</h1>
         <button
           onClick={() => navigate("/admin/users/new")}
+          data-testid="user-new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
           Novo Usuário
         </button>
       </div>
-      <input
-        type="text"
-        placeholder="Buscar por nome ou email..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full p-2 border rounded mb-4"
-      />
+      <div>
+        <label htmlFor="user-search" className="sr-only">
+          Buscar usuário
+        </label>
+        <input
+          id="user-search"
+          name="user-search"
+          data-testid="user-search"
+          type="text"
+          placeholder="Buscar por nome ou email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
+      </div>
       <div className="space-y-3">
         {filteredUsers?.map((user) => (
           <div
             key={user.id}
+            data-testid={`user-item-${user.id}`}
             className="bg-white p-4 rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between"
           >
             <div>
@@ -62,7 +76,7 @@ export default function UserList() {
                 {user.roles?.map((r) => (
                   <span
                     key={r.roleId}
-                    className={`text-xs  px-2 py-1 rounded-full ${
+                    className={`text-xs px-2 py-1 rounded-full ${
                       r.roleName === "admin"
                         ? "bg-blue-100 text-blue-800"
                         : r.roleName === "researcher"
@@ -82,6 +96,7 @@ export default function UserList() {
             <div className="flex gap-2 mt-2 sm:mt-0">
               <button
                 onClick={() => navigate(`/admin/users/${user.id}/edit`)}
+                data-testid={`user-edit-${user.id}`}
                 className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
               >
                 <svg
@@ -96,6 +111,7 @@ export default function UserList() {
               </button>
               <button
                 onClick={() => handleDelete(user.id)}
+                data-testid={`user-delete-${user.id}`}
                 className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
               >
                 <svg

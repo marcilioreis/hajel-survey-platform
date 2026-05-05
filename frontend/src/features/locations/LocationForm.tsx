@@ -103,6 +103,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     <form
       onSubmit={handleSubmit}
       className="p-4 pb-20 max-w-md mx-auto space-y-4"
+      data-testid="location-form"
     >
       <h1 className="text-xl font-bold">
         {isEditing ? "Editar Local" : "Novo Local"}
@@ -110,10 +111,16 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
       {/* Nome */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="location-name"
+          className="block text-sm font-medium text-gray-700"
+        >
           Nome do local *
         </label>
         <input
+          id="location-name"
+          name="location-name"
+          data-testid="location-name"
           type="text"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -125,10 +132,16 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
       {/* UF */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="location-state"
+          className="block text-sm font-medium text-gray-700"
+        >
           Estado *
         </label>
         <select
+          id="location-state"
+          name="location-state"
+          data-testid="location-state"
           value={form.state}
           onChange={(e) => {
             setForm({
@@ -152,10 +165,16 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
       {/* Município */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="location-city"
+          className="block text-sm font-medium text-gray-700"
+        >
           Município *
         </label>
         <select
+          id="location-city"
+          name="location-city"
+          data-testid="location-city"
           value={form.city}
           onChange={(e) => {
             setForm({ ...form, city: e.target.value, neighborhood: "" });
@@ -175,11 +194,17 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
       {/* Bairro */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="location-neighborhood"
+          className="block text-sm font-medium text-gray-700"
+        >
           Bairro
         </label>
         {neighborhoods.length > 0 ? (
           <select
+            id="location-neighborhood"
+            name="location-neighborhood"
+            data-testid="location-neighborhood"
             value={form.neighborhood}
             onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
             className="w-full p-3 border rounded-lg"
@@ -193,6 +218,9 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
           </select>
         ) : (
           <input
+            id="location-neighborhood"
+            name="location-neighborhood"
+            data-testid="location-neighborhood"
             type="text"
             value={form.neighborhood}
             onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
@@ -204,8 +232,16 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
       {/* CEP */}
       <div className="hidden">
-        <label className="block text-sm font-medium text-gray-700">CEP</label>
+        <label
+          htmlFor="location-cep"
+          className="block text-sm font-medium text-gray-700"
+        >
+          CEP
+        </label>
         <input
+          id="location-cep"
+          name="location-cep"
+          data-testid="location-cep"
           type="text"
           value={form.cep || ""}
           onChange={(e) => setForm({ ...form, cep: e.target.value })}
@@ -220,10 +256,16 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
       {/* Endereço */}
       <div className="hidden">
-        <label className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="location-address"
+          className="block text-sm font-medium text-gray-700"
+        >
           Endereço
         </label>
         <input
+          id="location-address"
+          name="location-address"
+          data-testid="location-address"
           type="text"
           value={form.address || ""}
           onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -234,10 +276,16 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
       {/* Observações */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="location-notes"
+          className="block text-sm font-medium text-gray-700"
+        >
           Observações
         </label>
         <textarea
+          id="location-notes"
+          name="location-notes"
+          data-testid="location-notes"
           value={form.notes || ""}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           rows={3}
@@ -250,12 +298,14 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
         <button
           type="button"
           onClick={() => navigate("/locations")}
+          data-testid="location-cancel"
           className="flex-1 py-3 border rounded-lg"
         >
           Cancelar
         </button>
         <button
           type="submit"
+          data-testid="location-submit"
           className="flex-1 py-3 bg-blue-600 text-white rounded-lg"
         >
           Salvar

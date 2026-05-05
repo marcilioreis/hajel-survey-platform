@@ -5,11 +5,7 @@ import { useAppDispatch } from "../../app/hooks";
 import { api } from "../../lib/api";
 import Skeleton from "../../components/common/Skeleton";
 import { parseBackendDate } from "../../utils/date";
-import type { QuestionOption } from "./surveys.types";
-
-// Helper local (idêntico ao usado em SurveySession/Execution)
-const getOptionText = (opt: string | QuestionOption): string =>
-  typeof opt === "string" ? opt : opt.text;
+import { getOptionText } from "../../utils/text";
 
 export default function SurveyDetail() {
   const { id } = useParams<{ id: string }>();

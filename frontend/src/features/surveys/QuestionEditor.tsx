@@ -99,6 +99,9 @@ export function QuestionEditor({
             <label key={opt.text} className="flex items-center gap-2">
               <input
                 type="checkbox"
+                id={`logic-value-${question.id}-${opt.text}`}
+                name={`logic-value-${question.id}`}
+                data-testid={`logic-value-${question.id}-${opt.text}`}
                 checked={selectedValues.includes(opt.text)}
                 onChange={() => toggleValue(opt.text)}
               />
@@ -119,7 +122,9 @@ export function QuestionEditor({
             <label key={opt.text} className="flex items-center gap-2">
               <input
                 type="radio"
-                name={`trigger-val-${question.id}`}
+                id={`logic-value-${question.id}-${opt.text}`}
+                name={`logic-value-${question.id}`}
+                data-testid={`logic-value-${question.id}-${opt.text}`}
                 value={opt.text}
                 checked={normalizedValue === opt.text}
                 onChange={() => handleValueChange(opt.text)}
@@ -134,6 +139,9 @@ export function QuestionEditor({
     return (
       <input
         type="text"
+        id={`logic-value-${question.id}`}
+        name={`logic-value-${question.id}`}
+        data-testid={`logic-value-${question.id}`}
         value={typeof rawValue === "string" ? rawValue : ""}
         onChange={(e) => handleValueChange(e.target.value)}
         placeholder="Valor esperado"
@@ -147,6 +155,9 @@ export function QuestionEditor({
       <div className="flex justify-between">
         <input
           type="text"
+          id={`question-text-${question.id}`}
+          name={`question-text-${question.id}`}
+          data-testid={`question-text-${question.id}`}
           value={question.text}
           onChange={(e) => onChange({ ...question, text: e.target.value })}
           placeholder="Pergunta"
@@ -155,6 +166,7 @@ export function QuestionEditor({
         <button
           type="button"
           onClick={onRemove}
+          data-testid={`question-remove-${question.id}`}
           className="ml-2 p-2 text-red-600 hover:bg-red-50 rounded"
           title="Remover pergunta"
         >
@@ -164,6 +176,9 @@ export function QuestionEditor({
 
       <div className="flex gap-4">
         <select
+          id={`question-type-${question.id}`}
+          name={`question-type-${question.id}`}
+          data-testid={`question-type-${question.id}`}
           value={question.type}
           onChange={(e) => {
             const newType = e.target.value as Question["type"];
@@ -183,6 +198,9 @@ export function QuestionEditor({
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
+            id={`question-required-${question.id}`}
+            name={`question-required-${question.id}`}
+            data-testid={`question-required-${question.id}`}
             checked={question.required}
             onChange={(e) =>
               onChange({ ...question, required: e.target.checked })
@@ -199,6 +217,9 @@ export function QuestionEditor({
             <div key={idx} className="flex gap-2">
               <input
                 type="text"
+                id={`question-option-${question.id}-${idx}`}
+                name={`question-option-${question.id}`}
+                data-testid={`question-option-${question.id}-${idx}`}
                 value={opt.text}
                 onChange={(e) => {
                   const updatedOptions = [...question.options];
@@ -219,6 +240,7 @@ export function QuestionEditor({
                   );
                   onChange({ ...question, options: updatedOptions });
                 }}
+                data-testid={`question-option-remove-${question.id}-${idx}`}
                 className="p-2 text-gray-600 hover:bg-gray-100 rounded"
               >
                 ✕
@@ -234,6 +256,7 @@ export function QuestionEditor({
                 options: [...question.options, newOption],
               });
             }}
+            data-testid={`question-option-add-${question.id}`}
             className="text-blue-600 text-sm font-medium"
           >
             + Adicionar opção
@@ -246,6 +269,7 @@ export function QuestionEditor({
           <button
             type="button"
             onClick={() => setLogicOpen(true)}
+            data-testid={`logic-add-${question.id}`}
             className="text-sm text-gray-500 hover:text-blue-600"
           >
             + Adicionar lógica condicional
@@ -259,6 +283,7 @@ export function QuestionEditor({
               <button
                 type="button"
                 onClick={removeLogic}
+                data-testid={`logic-remove-${question.id}`}
                 className="text-red-600 text-sm"
               >
                 Remover
@@ -268,6 +293,9 @@ export function QuestionEditor({
             <div>
               <label className="text-xs text-gray-500">Ação</label>
               <select
+                id={`logic-action-${question.id}`}
+                name={`logic-action-${question.id}`}
+                data-testid={`logic-action-${question.id}`}
                 value={logic?.action ?? "show"}
                 onChange={(e) =>
                   handleActionChange(
@@ -284,6 +312,9 @@ export function QuestionEditor({
             <div>
               <label className="text-xs text-gray-500">Pergunta gatilho</label>
               <select
+                id={`logic-trigger-${question.id}`}
+                name={`logic-trigger-${question.id}`}
+                data-testid={`logic-trigger-${question.id}`}
                 value={triggerQuestionId}
                 onChange={(e) => handleTriggerChange(Number(e.target.value))}
                 className="w-full p-2 border rounded text-sm"
@@ -304,6 +335,9 @@ export function QuestionEditor({
                 <div>
                   <label className="text-xs text-gray-500">Operador</label>
                   <select
+                    id={`logic-operator-${question.id}`}
+                    name={`logic-operator-${question.id}`}
+                    data-testid={`logic-operator-${question.id}`}
                     value={operator}
                     onChange={(e) => handleOperatorChange(e.target.value)}
                     className="w-full p-2 border rounded text-sm"

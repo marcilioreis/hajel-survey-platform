@@ -6,16 +6,20 @@ import BottomNav from "../../components/layout/BottomNav";
 
 export default function AdminRoute() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
-  const { data: sessionData } = useGetCurrentUserQuery();
+  const { data: sessionData, isLoading: isSessionLoading } =
+    useGetCurrentUserQuery();
 
   // Ainda carregando sessão
   if (isAuthenticated && !user) {
     return <div className="p-4 text-center">Verificando permissões...</div>;
   }
-
   // Não autenticado
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (isSessionLoading) {
+    return <div className="p-4 text-center">Carregando permissões...</div>;
   }
 
   // Verifica se o usuário tem permissão de administrador.

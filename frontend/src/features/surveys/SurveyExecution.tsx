@@ -6,13 +6,10 @@ import {
   useSubmitResponsesMutation,
 } from "./surveysApi";
 import { useConditionalLogic } from "../surveys/useConditionalLogic";
-import type {
-  DemographicData,
-  QuestionOption,
-  AnswersMap,
-} from "./surveys.types";
+import type { DemographicData, AnswersMap } from "./surveys.types";
 import Skeleton from "../../components/common/Skeleton";
 import { normalizeQuestions } from "../../utils/normalizers";
+import { getOptionText } from "../../utils/text";
 
 const loadSavedAnswers = (surveyId: string): AnswersMap => {
   try {
@@ -22,10 +19,6 @@ const loadSavedAnswers = (surveyId: string): AnswersMap => {
     return {};
   }
 };
-
-// Helper para obter texto da opção (string ou objeto)
-const getOptionText = (opt: string | QuestionOption): string =>
-  typeof opt === "string" ? opt : opt.text;
 
 export default function SurveyExecution() {
   const { id } = useParams<{ id: string }>();
@@ -173,6 +166,9 @@ export default function SurveyExecution() {
       case "texto_longo":
         return (
           <textarea
+            id={`answer-text-${q.id}`}
+            name={`answer-text-${q.id}`}
+            data-testid={`answer-text-${q.id}`}
             value={(currentAnswer as string) || ""}
             onChange={(e) => handleAnswerChange(e.target.value)}
             placeholder="Digite sua resposta..."
@@ -193,7 +189,9 @@ export default function SurveyExecution() {
                 >
                   <input
                     type="radio"
-                    name={`q-${q.id}`}
+                    id={`answer-radio-${q.id}-${idx}`}
+                    name={`answer-${q.id}`}
+                    data-testid={`answer-radio-${q.id}-${idx}`}
                     value={optionText}
                     checked={
                       Array.isArray(currentAnswer) &&
@@ -224,6 +222,9 @@ export default function SurveyExecution() {
                 >
                   <input
                     type="checkbox"
+                    id={`answer-check-${q.id}-${idx}`}
+                    name={`answer-${q.id}-${idx}`}
+                    data-testid={`answer-check-${q.id}-${idx}`}
                     value={optionText}
                     checked={isChecked}
                     onChange={(e) => {
@@ -260,108 +261,178 @@ export default function SurveyExecution() {
         <form
           onSubmit={(e) => e.preventDefault()}
           className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm space-y-4"
+          data-testid="execution-demographics-form"
         >
           <h2 className="text-xl font-bold mb-4">Dados do Respondente</h2>
-          {/* campos de demographics (mantidos do arquivo original) */}
-          <select
-            value={demographics.ageRange}
-            onChange={(e) =>
-              handleDemographicsChange("ageRange", e.target.value)
-            }
-            required
-            className="w-full p-3 border rounded-lg"
-          >
-            <option value="">Faixa etária</option>
-            <option value="16-24">16-24 anos</option>
-            <option value="25-34">25-34 anos</option>
-            <option value="35-44">35-44 anos</option>
-            <option value="45-54">45-54 anos</option>
-            <option value="55-65">55-65 anos</option>
-            <option value="65+">65+ anos</option>
-          </select>
 
-          <select
-            value={demographics.gender}
-            onChange={(e) => handleDemographicsChange("gender", e.target.value)}
-            required
-            className="w-full p-3 border rounded-lg"
-          >
-            <option value="">Gênero</option>
-            <option value="M">Masculino</option>
-            <option value="F">Feminino</option>
-            <option value="NB">Não-binário</option>
-            <option value="O">Outro</option>
-            <option value="PNR">Prefiro não responder</option>
-          </select>
-
-          <select
-            value={demographics.incomeRange}
-            onChange={(e) =>
-              handleDemographicsChange("incomeRange", e.target.value)
-            }
-            required
-            className="w-full p-3 border rounded-lg"
-          >
-            <option value="">Renda familiar</option>
-            <option value="<1 SM">Menos de 1 salário mínimo</option>
-            <option value="1-2 SM">1 a 2 salários mínimos</option>
-            <option value="2-3 SM">2 a 3 salários mínimos</option>
-            <option value="3-4 SM">3 a 4 salários mínimos</option>
-            <option value=">4 SM">Mais de 4 salários mínimos</option>
-          </select>
-
-          <select
-            value={demographics.education}
-            onChange={(e) =>
-              handleDemographicsChange("education", e.target.value)
-            }
-            required
-            className="w-full p-3 border rounded-lg"
-          >
-            <option value="">Escolaridade</option>
-            <option value="Não Alfabetizado">Não Alfabetizado</option>
-            <option value="Ensino Fundamental">Ensino Fundamental</option>
-            <option value="Ensino Médio">Ensino Médio</option>
-            <option value="Superior Incompleto">Superior Incompleto</option>
-            <option value="Superior Completo">Superior Completo</option>
-            <option value="Pós-graduação">Pós-graduação</option>
-            <option value="Doutorado">Doutorado</option>
-            <option value="Outro">Outro</option>
-          </select>
-
-          <input
-            type="text"
-            placeholder="Ocupação"
-            value={demographics.occupation}
-            onChange={(e) =>
-              handleDemographicsChange("occupation", e.target.value)
-            }
-            required
-            className="w-full p-3 border rounded-lg"
-          />
-
-          {locations.length > 0 && (
+          <div>
+            <label
+              htmlFor="demographics-age"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Faixa etária
+            </label>
             <select
-              value={demographics.locationId}
+              id="demographics-age"
+              name="demographics-age"
+              data-testid="demographics-age"
+              value={demographics.ageRange}
               onChange={(e) =>
-                handleDemographicsChange("locationId", e.target.value)
+                handleDemographicsChange("ageRange", e.target.value)
               }
               required
               className="w-full p-3 border rounded-lg"
             >
-              <option value="">Localização</option>
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
+              <option value="">Faixa etária</option>
+              <option value="16-24">16-24 anos</option>
+              <option value="25-34">25-34 anos</option>
+              <option value="35-44">35-44 anos</option>
+              <option value="45-54">45-54 anos</option>
+              <option value="55-65">55-65 anos</option>
+              <option value="65+">65+ anos</option>
             </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="demographics-gender"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Gênero
+            </label>
+            <select
+              id="demographics-gender"
+              name="demographics-gender"
+              data-testid="demographics-gender"
+              value={demographics.gender}
+              onChange={(e) =>
+                handleDemographicsChange("gender", e.target.value)
+              }
+              required
+              className="w-full p-3 border rounded-lg"
+            >
+              <option value="">Gênero</option>
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+              <option value="NB">Não-binário</option>
+              <option value="O">Outro</option>
+              <option value="PNR">Prefiro não responder</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="demographics-income"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Renda familiar
+            </label>
+            <select
+              id="demographics-income"
+              name="demographics-income"
+              data-testid="demographics-income"
+              value={demographics.incomeRange}
+              onChange={(e) =>
+                handleDemographicsChange("incomeRange", e.target.value)
+              }
+              required
+              className="w-full p-3 border rounded-lg"
+            >
+              <option value="">Renda familiar</option>
+              <option value="<1 SM">Menos de 1 salário mínimo</option>
+              <option value="1-2 SM">1 a 2 salários mínimos</option>
+              <option value="2-3 SM">2 a 3 salários mínimos</option>
+              <option value="3-4 SM">3 a 4 salários mínimos</option>
+              <option value=">4 SM">Mais de 4 salários mínimos</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="demographics-education"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Escolaridade
+            </label>
+            <select
+              id="demographics-education"
+              name="demographics-education"
+              data-testid="demographics-education"
+              value={demographics.education}
+              onChange={(e) =>
+                handleDemographicsChange("education", e.target.value)
+              }
+              required
+              className="w-full p-3 border rounded-lg"
+            >
+              <option value="">Escolaridade</option>
+              <option value="Não Alfabetizado">Não Alfabetizado</option>
+              <option value="Ensino Fundamental">Ensino Fundamental</option>
+              <option value="Ensino Médio">Ensino Médio</option>
+              <option value="Superior Incompleto">Superior Incompleto</option>
+              <option value="Superior Completo">Superior Completo</option>
+              <option value="Pós-graduação">Pós-graduação</option>
+              <option value="Doutorado">Doutorado</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="demographics-occupation"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Ocupação
+            </label>
+            <input
+              id="demographics-occupation"
+              name="demographics-occupation"
+              data-testid="demographics-occupation"
+              type="text"
+              placeholder="Ocupação"
+              value={demographics.occupation}
+              onChange={(e) =>
+                handleDemographicsChange("occupation", e.target.value)
+              }
+              required
+              className="w-full p-3 border rounded-lg"
+            />
+          </div>
+
+          {locations.length > 0 && (
+            <div>
+              <label
+                htmlFor="demographics-location"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Localização
+              </label>
+              <select
+                id="demographics-location"
+                name="demographics-location"
+                data-testid="demographics-location"
+                value={demographics.locationId}
+                onChange={(e) =>
+                  handleDemographicsChange("locationId", e.target.value)
+                }
+                required
+                className="w-full p-3 border rounded-lg"
+              >
+                <option value="">Localização</option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={() => navigate("/surveys")}
+              data-testid="demographics-cancel"
               className="w-1/3 py-3 border border-gray-300 rounded-lg text-gray-700"
             >
               Cancelar
@@ -369,6 +440,7 @@ export default function SurveyExecution() {
             <button
               type="button"
               onClick={handleAdvanceToQuestions}
+              data-testid="demographics-advance"
               className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium"
             >
               Avançar para as perguntas
@@ -418,6 +490,7 @@ export default function SurveyExecution() {
           type="button"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
+          data-testid="question-prev"
           className="px-4 py-2 text-blue-600 disabled:text-gray-400"
         >
           Anterior
@@ -427,6 +500,7 @@ export default function SurveyExecution() {
             type="button"
             onClick={handleFinishQuestions}
             disabled={isSubmitting}
+            data-testid="question-finish"
             className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50"
           >
             {isSubmitting ? "Enviando..." : "Finalizar pesquisa"}
@@ -435,6 +509,7 @@ export default function SurveyExecution() {
           <button
             type="button"
             onClick={handleNext}
+            data-testid="question-next"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg"
           >
             Próxima

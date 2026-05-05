@@ -1,5 +1,3 @@
-// src/lib/auth.types.ts
-
 export interface BetterAuthUser {
   id: string;
   email: string;
@@ -29,7 +27,6 @@ export interface BetterAuthResponse<T = BetterAuthUser> {
   };
 }
 
-// Tipo para erro da API
 export interface ApiError {
   status: number;
   data: string;

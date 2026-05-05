@@ -39,24 +39,51 @@ export default function Profile() {
   return (
     <div className="max-w-md mx-auto p-4 space-y-6">
       <h1 className="text-xl font-bold">Meu Perfil</h1>
-      <form onSubmit={handleUpdateProfile} className="space-y-4">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-3 border rounded-lg"
-          placeholder="Nome"
-        />
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 border rounded-lg"
-          placeholder="E‑mail"
-        />
+      <form
+        onSubmit={handleUpdateProfile}
+        className="space-y-4"
+        data-testid="profile-form"
+      >
+        <div>
+          <label
+            htmlFor="profile-name"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Nome
+          </label>
+          <input
+            id="profile-name"
+            name="profile-name"
+            data-testid="profile-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full p-3 border rounded-lg"
+            placeholder="Nome"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="profile-email"
+            className="block text-sm font-medium text-gray-700"
+          >
+            E‑mail
+          </label>
+          <input
+            id="profile-email"
+            name="profile-email"
+            data-testid="profile-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 border rounded-lg"
+            placeholder="E‑mail"
+          />
+        </div>
         <button
           type="submit"
           disabled={isUpdating}
+          data-testid="profile-update-submit"
           className="w-full py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
         >
           {isUpdating ? "Salvando..." : "Atualizar perfil"}
@@ -66,26 +93,53 @@ export default function Profile() {
       <hr />
 
       <h2 className="text-lg font-semibold">Alterar senha</h2>
-      <form onSubmit={handleChangePassword} className="space-y-4">
-        <input
-          type="password"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          className="w-full p-3 border rounded-lg"
-          placeholder="Senha atual"
-          required
-        />
-        <input
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full p-3 border rounded-lg"
-          placeholder="Nova senha"
-          required
-        />
+      <form
+        onSubmit={handleChangePassword}
+        className="space-y-4"
+        data-testid="change-password-form"
+      >
+        <div>
+          <label
+            htmlFor="profile-current-password"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Senha atual
+          </label>
+          <input
+            id="profile-current-password"
+            name="current-password"
+            data-testid="profile-current-password"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg"
+            placeholder="Senha atual"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="profile-new-password"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Nova senha
+          </label>
+          <input
+            id="profile-new-password"
+            name="new-password"
+            data-testid="profile-new-password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg"
+            placeholder="Nova senha"
+          />
+        </div>
         <button
           type="submit"
           disabled={isChanging}
+          data-testid="change-password-submit"
           className="w-full py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
         >
           {isChanging ? "Alterando..." : "Alterar senha"}

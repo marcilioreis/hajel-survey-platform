@@ -14,11 +14,12 @@ export const rtkQueryErrorLogger: Middleware = (api) => (next) => (action) => {
     const payload = action.payload;
     if (isFetchBaseQueryError(payload)) {
       const status = payload.status;
+
       if (status === 401) {
-        // já tratado no reauth; podemos ignorar ou colocar um toast opcional
         toast.error("Sessão expirada. Faça login novamente.");
         return next(action);
       }
+
       if (status === 403) {
         toast.error("Você não tem permissão para realizar esta ação.");
       } else if (status === 404) {

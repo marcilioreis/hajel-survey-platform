@@ -43,16 +43,22 @@ export default function Register() {
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
           Cadastrar
         </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          data-testid="register-form"
+        >
           <div>
             <label
-              htmlFor="name"
+              htmlFor="register-name"
               className="block text-sm font-medium text-gray-700"
             >
               Nome completo
             </label>
             <input
-              id="name"
+              id="register-name"
+              name="name"
+              data-testid="register-name"
               type="text"
               required
               value={name}
@@ -63,13 +69,15 @@ export default function Register() {
           </div>
           <div>
             <label
-              htmlFor="email"
+              htmlFor="register-email"
               className="block text-sm font-medium text-gray-700"
             >
               Email
             </label>
             <input
-              id="email"
+              id="register-email"
+              name="email"
+              data-testid="register-email"
               type="email"
               required
               value={email}
@@ -80,13 +88,15 @@ export default function Register() {
           </div>
           <div>
             <label
-              htmlFor="password"
+              htmlFor="register-password"
               className="block text-sm font-medium text-gray-700"
             >
               Senha
             </label>
             <input
-              id="password"
+              id="register-password"
+              name="password"
+              data-testid="register-password"
               type="password"
               required
               value={password}
@@ -97,13 +107,15 @@ export default function Register() {
           </div>
           <div>
             <label
-              htmlFor="confirmPassword"
+              htmlFor="register-confirm-password"
               className="block text-sm font-medium text-gray-700"
             >
               Confirmar senha
             </label>
             <input
-              id="confirmPassword"
+              id="register-confirm-password"
+              name="confirmPassword"
+              data-testid="register-confirm-password"
               type="password"
               required
               value={confirmPassword}
@@ -113,12 +125,16 @@ export default function Register() {
             />
           </div>
           {errorMsg && (
-            <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
+            <div
+              className="text-red-600 text-sm bg-red-50 p-2 rounded"
+              data-testid="register-error"
+            >
               {errorMsg}
             </div>
           )}
           <button
             type="submit"
+            data-testid="register-submit"
             disabled={isLoading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -130,6 +146,7 @@ export default function Register() {
           <Link
             to="/login"
             className="font-medium text-blue-600 hover:text-blue-500"
+            data-testid="register-login-link"
           >
             Faça login
           </Link>

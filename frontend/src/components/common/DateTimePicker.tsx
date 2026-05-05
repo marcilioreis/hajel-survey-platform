@@ -2,7 +2,6 @@
 import { DayPicker } from "react-day-picker";
 
 interface DateTimeRangePickerProps {
-  // As props agora refletem o intervalo de datas
   startValue: string;
   endValue: string;
   onStartChange: (isoString: string) => void;
@@ -19,15 +18,12 @@ export default function DateTimePicker({
   required,
   minDate,
 }: DateTimeRangePickerProps) {
-  // Extrai as datas do intervalo para o estado do DayPicker
   const fromDate = startValue ? new Date(startValue) : undefined;
   const toDate = endValue ? new Date(endValue) : undefined;
 
-  // Extrai os horários separadamente
   const startTimeValue = startValue ? startValue.slice(11, 16) : "00:00";
   const endTimeValue = endValue ? endValue.slice(11, 16) : "23:59";
 
-  // Função chamada ao selecionar um intervalo de datas no calendário
   const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
     if (!range?.from) {
       onStartChange("");
@@ -42,24 +38,20 @@ export default function DateTimePicker({
       return `${year}-${month}-${day}`;
     };
 
-    // Se tem data de início, cria o valor com o horário de início
     if (range.from) {
       const startDateStr = formatDate(range.from);
       onStartChange(`${startDateStr}T${startTimeValue}:00.000Z`);
     }
 
-    // Se tem data de fim, cria com horário de fim; senão, pode ser um único dia
     if (range.to) {
       const endDateStr = formatDate(range.to);
       onEndChange(`${endDateStr}T${endTimeValue}:00.000Z`);
     } else if (range.from) {
-      // Se só uma data foi selecionada (mesmo dia), usa o horário de término
       const endDateStr = formatDate(range.from);
       onEndChange(`${endDateStr}T${endTimeValue}:00.000Z`);
     }
   };
 
-  // Manipuladores de horário
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (fromDate) {
       const dateStr = fromDate.toISOString().slice(0, 10);
@@ -72,7 +64,6 @@ export default function DateTimePicker({
       const dateStr = toDate.toISOString().slice(0, 10);
       onEndChange(`${dateStr}T${e.target.value}:00.000Z`);
     } else if (fromDate) {
-      // Se ainda não tem data de fim, usa a data de início
       const dateStr = fromDate.toISOString().slice(0, 10);
       onEndChange(`${dateStr}T${e.target.value}:00.000Z`);
     }
@@ -83,6 +74,9 @@ export default function DateTimePicker({
       {required && (
         <input
           type="text"
+          id="datetimepicker-required"
+          name="datetimepicker-required"
+          data-testid="datetimepicker-required"
           value={startValue}
           required={required}
           onChange={() => {}}
@@ -91,25 +85,37 @@ export default function DateTimePicker({
         />
       )}
 
-      {/* Seletores de horário lado a lado */}
+      {/* Seletores de horário (ocultos) */}
       <div className="gap-4 hidden">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="datetimepicker-start-time"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Horário de início
           </label>
           <input
             type="time"
+            id="datetimepicker-start-time"
+            name="datetimepicker-start-time"
+            data-testid="datetimepicker-start-time"
             value={startTimeValue}
             onChange={handleStartTimeChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
           />
         </div>
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="datetimepicker-end-time"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Horário de término
           </label>
           <input
             type="time"
+            id="datetimepicker-end-time"
+            name="datetimepicker-end-time"
+            data-testid="datetimepicker-end-time"
             value={endTimeValue}
             onChange={handleEndTimeChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
@@ -117,13 +123,12 @@ export default function DateTimePicker({
         </div>
       </div>
 
-      {/* Calendário unificado em modo range */}
       <DayPicker
         mode="range"
         selected={{ from: fromDate, to: toDate }}
         onSelect={handleRangeSelect}
         disabled={minDate ? { before: minDate } : undefined}
-        numberOfMonths={1} // Mostra apenas 1 mês para manter a responsividade mobile
+        numberOfMonths={1}
         className="p-3 bg-white border rounded-lg"
         classNames={{
           root: "relative text-sm",

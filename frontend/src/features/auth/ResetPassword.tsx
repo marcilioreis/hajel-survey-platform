@@ -26,26 +26,53 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm space-y-4"
+        data-testid="reset-password-form"
+      >
         <h1 className="text-xl font-bold">Redefinir senha</h1>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Nova senha"
-          required
-          className="w-full p-3 border rounded-lg"
-        />
-        <input
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Confirme a nova senha"
-          required
-          className="w-full p-3 border rounded-lg"
-        />
+        <div>
+          <label
+            htmlFor="reset-password-new"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Nova senha
+          </label>
+          <input
+            id="reset-password-new"
+            name="password"
+            data-testid="reset-password-new"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Nova senha"
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="reset-password-confirm"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Confirme a nova senha
+          </label>
+          <input
+            id="reset-password-confirm"
+            name="confirmPassword"
+            data-testid="reset-password-confirm"
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="Confirme a nova senha"
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+        </div>
         <button
           type="submit"
+          data-testid="reset-password-submit"
           className="w-full py-3 bg-blue-600 text-white rounded-lg"
         >
           Redefinir

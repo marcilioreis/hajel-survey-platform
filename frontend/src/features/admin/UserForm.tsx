@@ -84,12 +84,19 @@ export default function UserForm({ initialUser }: UserFormProps) {
       <form
         onSubmit={handleSubmit}
         className="space-y-4 bg-white p-6 rounded-lg shadow-sm"
+        data-testid="user-form"
       >
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="user-name"
+            className="block text-sm font-medium text-gray-700"
+          >
             Nome
           </label>
           <input
+            id="user-name"
+            name="user-name"
+            data-testid="user-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -98,10 +105,16 @@ export default function UserForm({ initialUser }: UserFormProps) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="user-email"
+            className="block text-sm font-medium text-gray-700"
+          >
             E-mail
           </label>
           <input
+            id="user-email"
+            name="user-email"
+            data-testid="user-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -111,10 +124,16 @@ export default function UserForm({ initialUser }: UserFormProps) {
         </div>
         {!isEditing && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="user-password"
+              className="block text-sm font-medium text-gray-700"
+            >
               Senha
             </label>
             <input
+              id="user-password"
+              name="user-password"
+              data-testid="user-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -125,19 +144,25 @@ export default function UserForm({ initialUser }: UserFormProps) {
           </div>
         )}
 
-        <label className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <input
+            id="user-active"
+            name="user-active"
+            data-testid="user-active"
             type="checkbox"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
+            className="rounded"
           />
-          <span className="text-sm">Ativo</span>
-        </label>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Roles
+          <label htmlFor="user-active" className="text-sm">
+            Ativo
           </label>
+        </div>
+
+        <fieldset>
+          <legend className="block text-sm font-medium text-gray-700 mb-2">
+            Roles
+          </legend>
           {allRoles.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhuma role disponível.</p>
           ) : (
@@ -145,6 +170,9 @@ export default function UserForm({ initialUser }: UserFormProps) {
               {allRoles.map((role) => (
                 <label key={role.id} className="flex items-center gap-2">
                   <input
+                    id={`user-role-${role.id}`}
+                    name={`user-role-${role.id}`}
+                    data-testid={`user-role-${role.id}`}
                     type="checkbox"
                     checked={selectedRoles.includes(role.id)}
                     onChange={() => toggleRole(role.id)}
@@ -154,12 +182,13 @@ export default function UserForm({ initialUser }: UserFormProps) {
               ))}
             </div>
           )}
-        </div>
+        </fieldset>
 
         <div className="flex gap-3">
           <button
             type="button"
             onClick={() => navigate("/admin/users")}
+            data-testid="user-cancel"
             className="flex-1 py-3 border rounded-lg"
           >
             Cancelar
@@ -167,6 +196,7 @@ export default function UserForm({ initialUser }: UserFormProps) {
           <button
             type="submit"
             disabled={isCreating || isUpdating}
+            data-testid="user-submit"
             className="flex-1 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
           >
             {isCreating || isUpdating ? "Salvando..." : "Salvar"}

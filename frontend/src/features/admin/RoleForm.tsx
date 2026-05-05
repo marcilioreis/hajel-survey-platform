@@ -76,12 +76,19 @@ export default function RoleForm({ initialRole }: RoleFormProps) {
       <form
         onSubmit={handleSubmit}
         className="space-y-4 bg-white p-6 rounded-lg shadow-sm"
+        data-testid="role-form"
       >
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="role-name"
+            className="block text-sm font-medium text-gray-700"
+          >
             Nome
           </label>
           <input
+            id="role-name"
+            name="role-name"
+            data-testid="role-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -90,10 +97,16 @@ export default function RoleForm({ initialRole }: RoleFormProps) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="role-description"
+            className="block text-sm font-medium text-gray-700"
+          >
             Descrição
           </label>
           <textarea
+            id="role-description"
+            name="role-description"
+            data-testid="role-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
@@ -101,10 +114,10 @@ export default function RoleForm({ initialRole }: RoleFormProps) {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <fieldset>
+          <legend className="block text-sm font-medium text-gray-700 mb-2">
             Permissões
-          </label>
+          </legend>
           {allPermissions.length === 0 ? (
             <p className="text-sm text-gray-500">
               Nenhuma permissão cadastrada.
@@ -114,6 +127,9 @@ export default function RoleForm({ initialRole }: RoleFormProps) {
               {allPermissions.map((perm) => (
                 <label key={perm.id} className="flex items-center gap-2">
                   <input
+                    id={`role-perm-${perm.id}`}
+                    name={`role-perm-${perm.id}`}
+                    data-testid={`role-perm-${perm.id}`}
                     type="checkbox"
                     checked={selectedPermissions.includes(perm.id)}
                     onChange={() => togglePermission(perm.id)}
@@ -128,12 +144,13 @@ export default function RoleForm({ initialRole }: RoleFormProps) {
               ))}
             </div>
           )}
-        </div>
+        </fieldset>
 
         <div className="flex gap-3">
           <button
             type="button"
             onClick={() => navigate("/admin/roles")}
+            data-testid="role-cancel"
             className="flex-1 py-3 border rounded-lg"
           >
             Cancelar
@@ -141,6 +158,7 @@ export default function RoleForm({ initialRole }: RoleFormProps) {
           <button
             type="submit"
             disabled={isCreating || isUpdating}
+            data-testid="role-submit"
             className="flex-1 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
           >
             {isCreating || isUpdating ? "Salvando..." : "Salvar"}

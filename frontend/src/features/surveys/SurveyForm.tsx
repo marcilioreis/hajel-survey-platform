@@ -229,26 +229,55 @@ export default function SurveyForm({
   const isLoading = isCreating || isUpdating;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 pb-20">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 pb-20"
+      data-testid="survey-form"
+    >
       <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
-        <input
-          type="text"
-          placeholder="Título da pesquisa"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-base font-medium"
-        />
-        <textarea
-          placeholder="Descrição (opcional)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
-        />
+        <div>
+          <label
+            htmlFor="survey-title"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Título da pesquisa
+          </label>
+          <input
+            id="survey-title"
+            name="survey-title"
+            data-testid="survey-title"
+            type="text"
+            placeholder="Título da pesquisa"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-base font-medium"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="survey-description"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Descrição (opcional)
+          </label>
+          <textarea
+            id="survey-description"
+            name="survey-description"
+            data-testid="survey-description"
+            placeholder="Descrição (opcional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
+          />
+        </div>
         <div className="flex gap-2">
-          <label className="hidden items-center gap-2">
+          <label className="flex items-center gap-2">
             <input
+              id="survey-public"
+              name="survey-public"
+              data-testid="survey-public"
               type="checkbox"
               checked={isPublic}
               onChange={(e) => setIsPublic(e.target.checked)}
@@ -257,6 +286,9 @@ export default function SurveyForm({
           </label>
           <label className="flex items-center gap-2">
             <input
+              id="survey-active"
+              name="survey-active"
+              data-testid="survey-active"
               type="checkbox"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
@@ -266,9 +298,9 @@ export default function SurveyForm({
         </div>
         <div className="flex gap-8">
           <div className="w-1/2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <span className="block text-sm font-medium text-gray-700 mb-2">
               Período da pesquisa *
-            </label>
+            </span>
             <DateTimePicker
               startValue={startDate}
               endValue={endDate}
@@ -279,9 +311,9 @@ export default function SurveyForm({
             />
           </div>
           <div className="w-1/2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <span className="block text-sm font-medium text-gray-700 mb-2">
               Locais de coleta *
-            </label>
+            </span>
             {allLocations.length === 0 ? (
               <p className="text-sm text-gray-500">
                 Nenhum local cadastrado.{" "}
@@ -299,16 +331,25 @@ export default function SurveyForm({
                     <div key={loc.id} className="flex items-center gap-2">
                       <input
                         type="checkbox"
+                        id={`survey-location-${loc.id}`}
+                        name={`survey-location-${loc.id}`}
+                        data-testid={`survey-location-${loc.id}`}
                         checked={!!selected}
                         onChange={() => toggleLocation(loc.id)}
                         className="rounded w-8"
                       />
-                      <span className="flex-1 text-left text-sm">
+                      <label
+                        htmlFor={`survey-location-${loc.id}`}
+                        className="flex-1 text-left text-sm"
+                      >
                         {loc.name}
-                      </span>
+                      </label>
                       {selected ? (
                         <input
                           type="number"
+                          id={`survey-location-order-${loc.id}`}
+                          name={`survey-location-order-${loc.id}`}
+                          data-testid={`survey-location-order-${loc.id}`}
                           min="1"
                           value={selected.order}
                           onChange={(e) =>
@@ -353,6 +394,7 @@ export default function SurveyForm({
       <button
         type="button"
         onClick={addNewQuestion}
+        data-testid="survey-add-question"
         className="w-full py-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50"
       >
         + Adicionar Pergunta
@@ -362,6 +404,7 @@ export default function SurveyForm({
         <button
           type="button"
           onClick={() => navigate("/surveys")}
+          data-testid="survey-cancel"
           className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-700"
         >
           Cancelar
@@ -369,6 +412,7 @@ export default function SurveyForm({
         <button
           type="submit"
           disabled={isLoading}
+          data-testid="survey-submit"
           className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
         >
           {isLoading ? "Salvando..." : "Salvar Pesquisa"}

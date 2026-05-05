@@ -12,14 +12,11 @@ import type {
   AnswerPayload,
   CompleteSessionPayload,
 } from "./publicSurvey.types";
-import type { QuestionOption, AnswersMap } from "../surveys/surveys.types";
+import type { AnswersMap } from "../surveys/surveys.types";
 import Skeleton from "../../components/common/Skeleton";
 import { useConditionalLogic } from "../surveys/useConditionalLogic";
 import { normalizeQuestions } from "../../utils/normalizers";
-
-// Helper para obter texto da opção (string ou objeto)
-const getOptionText = (opt: string | QuestionOption): string =>
-  typeof opt === "string" ? opt : opt.text;
+import { getOptionText } from "../../utils/text";
 
 export default function SurveySession() {
   const { slug } = useParams<{ slug: string }>();
@@ -231,6 +228,9 @@ export default function SurveySession() {
       case "texto_longo":
         return (
           <textarea
+            id={`answer-text-${q.id}`}
+            name={`answer-text-${q.id}`}
+            data-testid={`answer-text-${q.id}`}
             value={(currentAnswer as string) || ""}
             onChange={(e) => handleAnswerChange(e.target.value)}
             placeholder="Digite sua resposta..."
@@ -251,7 +251,9 @@ export default function SurveySession() {
                 >
                   <input
                     type="radio"
-                    name={`q-${q.id}`}
+                    id={`answer-radio-${q.id}-${idx}`}
+                    name={`answer-${q.id}`}
+                    data-testid={`answer-radio-${q.id}-${idx}`}
                     value={optionText}
                     checked={
                       Array.isArray(currentAnswer) &&
@@ -282,6 +284,9 @@ export default function SurveySession() {
                 >
                   <input
                     type="checkbox"
+                    id={`answer-check-${q.id}-${idx}`}
+                    name={`answer-${q.id}-${idx}`}
+                    data-testid={`answer-check-${q.id}-${idx}`}
                     value={optionText}
                     checked={isChecked}
                     onChange={(e) => {
@@ -342,6 +347,7 @@ export default function SurveySession() {
           type="button"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
+          data-testid="question-prev"
           className="px-4 py-2 text-blue-600 disabled:text-gray-400"
         >
           Anterior
@@ -351,6 +357,7 @@ export default function SurveySession() {
             type="button"
             onClick={handleFinish}
             disabled={isSubmitting}
+            data-testid="question-finish"
             className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50"
           >
             {isSubmitting ? "Enviando..." : "Concluir respostas"}
@@ -359,6 +366,7 @@ export default function SurveySession() {
           <button
             type="button"
             onClick={handleNext}
+            data-testid="question-next"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg"
           >
             Próxima
