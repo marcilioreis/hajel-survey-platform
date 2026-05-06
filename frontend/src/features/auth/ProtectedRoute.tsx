@@ -6,7 +6,8 @@ import { useAppDispatch } from "../../app/hooks";
 import { setCredentials, setLoading } from "./authSlice";
 import Skeleton from "../../components/common/Skeleton";
 
-function isSessionResponse(obj: unknown): obj is {
+// Tipo esperado após normalização
+interface NormalizedSession {
   user: {
     id: string;
     email: string;
@@ -19,36 +20,74 @@ function isSessionResponse(obj: unknown): obj is {
   session: unknown;
   permissions?: string[];
   roles?: string[];
-} {
-  return (
-    typeof obj === "object" && obj !== null && "user" in obj && "session" in obj
-  );
+}
+
+function normalizeSessionResponse(data: unknown): NormalizedSession | null {
+  if (typeof data !== "object" || data === null) return null;
+
+  const obj = data as Record<string, unknown>;
+  // Aceita tanto { user, session } diretamente quanto { data: { user, session } }
+  const inner = obj.data ?? obj;
+  if (typeof inner !== "object" || inner === null) return null;
+
+  const { user, session, permissions, roles } = inner as Record<
+    string,
+    unknown
+  >;
+  if (
+    user &&
+    typeof user === "object" &&
+    "id" in user &&
+    "email" in user &&
+    "name" in user &&
+    "emailVerified" in user
+  ) {
+    return {
+      user: user as NormalizedSession["user"],
+      session,
+      permissions: Array.isArray(permissions)
+        ? (permissions as string[])
+        : undefined,
+      roles: Array.isArray(roles) ? (roles as string[]) : undefined,
+    };
+  }
+  return null;
 }
 
 export default function ProtectedRoute() {
   const dispatch = useAppDispatch();
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
-  const { data: sessionData, error, isSuccess } = useGetCurrentUserQuery();
+  const {
+    data: sessionData,
+    error,
+    isSuccess,
+    isLoading: isQueryLoading, // primeira carga da query
+  } = useGetCurrentUserQuery();
 
+  // Sincroniza o loading global com o loading da query
   useEffect(() => {
-    // 1. Sucesso absoluto: sessão válida
-    if (isSuccess && sessionData && isSessionResponse(sessionData)) {
-      dispatch(
-        setCredentials({
-          user: sessionData.user,
-          permissions: sessionData.permissions,
-          roles: sessionData.roles,
-        }),
-      );
-      return;
+    if (isQueryLoading) return; // ainda buscando, não faz nada
+
+    if (isSuccess && sessionData) {
+      const normalized = normalizeSessionResponse(sessionData);
+      if (normalized) {
+        dispatch(
+          setCredentials({
+            user: normalized.user,
+            permissions: normalized.permissions,
+            roles: normalized.roles,
+          }),
+        );
+        return;
+      }
     }
 
-    // 2. Qualquer outro cenário (erro, sucesso sem sessão): encerra carregamento
-    // O interceptor já tentou reautenticar internamente; se falhou, deslogamos.
+    // Chegou aqui: terminou de carregar mas não tem sessão válida
     dispatch(setLoading(false));
-  }, [isSuccess, sessionData, error, dispatch]);
+  }, [isSuccess, sessionData, error, isQueryLoading, dispatch]);
 
-  if (isLoading) {
+  // Enquanto a query estiver carregando OU o loading global estiver ativo, mostra esqueleto
+  if (isQueryLoading || isLoading) {
     return (
       <div className="space-y-4 p-4">
         {[...Array(5)].map((_, i) => (
@@ -62,6 +101,5 @@ export default function ProtectedRoute() {
     );
   }
 
-  // Se após a verificação o usuário não estiver autenticado, redireciona silenciosamente.
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 }

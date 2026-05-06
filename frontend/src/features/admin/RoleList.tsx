@@ -47,7 +47,7 @@ export default function RoleList() {
     <div className="p-4 pb-20 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Permissões</h1>
-        <Button onClick={() => navigate("/admin/roles/new")}>
+        <Button className="hidden" onClick={() => navigate("/admin/roles/new")}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Nova Permissão
         </Button>
