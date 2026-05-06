@@ -2,12 +2,33 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetUsersQuery, useDeleteUserMutation } from "./adminApi";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Pencil, Trash2, PlusCircle, Search, ArrowLeft } from "lucide-react";
 
 export default function UserList() {
   const { data: users, isLoading } = useGetUsersQuery();
   const [deleteUser] = useDeleteUserMutation();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filteredUsers = users?.filter(
     (u) =>
@@ -15,123 +36,134 @@ export default function UserList() {
       u.email.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir/desativar este usuário?"))
-      return;
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await deleteUser(id).unwrap();
+      await deleteUser(deleteId).unwrap();
       toast.success("Usuário desativado/excluído.");
     } catch {
       toast.error("Erro ao desativar usuário.");
+    } finally {
+      setDeleteId(null);
     }
   };
 
   if (isLoading) return <div className="p-4">Carregando usuários...</div>;
 
   return (
-    <div className="p-4 pb-20">
-      <div className="flex justify-between items-center mb-4">
-        <button
+    <div className="p-4 pb-20 space-y-4">
+      <div className="flex justify-between items-center">
+        <Button
+          variant="outline"
           onClick={() => navigate(-1)}
-          className="text-blue-600"
           data-testid="user-back"
         >
-          ← Voltar
-        </button>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
+        </Button>
         <h1 className="text-xl font-bold">Usuários</h1>
-        <button
+        <Button
           onClick={() => navigate("/admin/users/new")}
           data-testid="user-new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
+          <PlusCircle className="h-4 w-4 mr-2" />
           Novo Usuário
-        </button>
+        </Button>
       </div>
-      <div>
-        <label htmlFor="user-search" className="sr-only">
-          Buscar usuário
-        </label>
-        <input
-          id="user-search"
-          name="user-search"
-          data-testid="user-search"
-          type="text"
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
           placeholder="Buscar por nome ou email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
+          className="pl-9"
+          data-testid="user-search"
         />
       </div>
-      <div className="space-y-3">
-        {filteredUsers?.map((user) => (
-          <div
-            key={user.id}
-            data-testid={`user-item-${user.id}`}
-            className="bg-white p-4 rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between"
-          >
-            <div>
-              <p className="text-left font-medium">{user.name}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
-              <div className="flex gap-1 mt-1">
-                {user.roles?.map((r) => (
-                  <span
-                    key={r.roleId}
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      r.roleName === "admin"
-                        ? "bg-blue-100 text-blue-800"
-                        : r.roleName === "researcher"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {r.roleName === "admin"
-                      ? "Administrador"
-                      : r.roleName === "researcher"
-                        ? "Pesquisador"
-                        : "Visualizador"}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-2 mt-2 sm:mt-0">
-              <button
-                onClick={() => navigate(`/admin/users/${user.id}/edit`)}
-                data-testid={`user-edit-${user.id}`}
-                className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                </svg>
-                Editar
-              </button>
-              <button
-                onClick={() => handleDelete(user.id)}
-                data-testid={`user-delete-${user.id}`}
-                className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {user.active ? "Desativar" : "Excluir"}
-              </button>
-            </div>
-          </div>
-        ))}
+
+      <div className="rounded-lg border bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Permissões</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers?.map((user) => (
+              <TableRow key={user.id} data-testid={`user-item-${user.id}`}>
+                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1 flex-wrap">
+                    {user.roles?.map((r) => (
+                      <Badge
+                        key={r.roleId}
+                        variant={
+                          r.roleName === "admin"
+                            ? "default"
+                            : r.roleName === "researcher"
+                              ? "secondary"
+                              : "outline"
+                        }
+                      >
+                        {r.roleName === "admin"
+                          ? "Admin"
+                          : r.roleName === "researcher"
+                            ? "Pesquisador"
+                            : "Visualizador"}
+                      </Badge>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate(`/admin/users/${user.id}/edit`)}
+                      data-testid={`user-edit-${user.id}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteId(user.id)}
+                      data-testid={`user-delete-${user.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
+
+      <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir/desativar este usuário? Esta ação
+              não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

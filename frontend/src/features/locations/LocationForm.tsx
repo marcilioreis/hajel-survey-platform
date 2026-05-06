@@ -13,6 +13,17 @@ import {
   useGetNeighborhoodsQuery,
 } from "../geography/geographyApi";
 import type { Location, LocationPayload } from "../surveys/surveys.types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface LocationFormProps {
   initialLocation?: Location;
@@ -25,6 +36,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
 
   const [createLocation] = useCreateLocationMutation();
   const [updateLocation] = useUpdateLocationMutation();
+  const dispatch = useAppDispatch();
 
   const [form, setForm] = useState<LocationPayload>(() => ({
     name: initialLocation?.name ?? "",
@@ -37,7 +49,6 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     notes: initialLocation?.notes ?? "",
   }));
 
-  // Queries de geografia
   const { data: states = [] } = useGetStatesQuery();
   const { data: municipalities = [] } = useGetMunicipalitiesQuery(form.state, {
     skip: !form.state,
@@ -47,7 +58,6 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     { skip: !form.city || !form.state },
   );
   const [isCepLoading, setIsCepLoading] = useState(false);
-  const dispatch = useAppDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,216 +110,140 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-4 pb-20 max-w-md mx-auto space-y-4"
-      data-testid="location-form"
-    >
-      <h1 className="text-xl font-bold">
+    <form onSubmit={handleSubmit} className="p-4 max-w-md mx-auto space-y-4">
+      <h1 className="text-2xl font-bold">
         {isEditing ? "Editar Local" : "Novo Local"}
       </h1>
 
-      {/* Nome */}
-      <div>
-        <label
-          htmlFor="location-name"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Nome do local *
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="location-name">Nome do local *</Label>
+        <Input
           id="location-name"
-          name="location-name"
           data-testid="location-name"
-          type="text"
+          placeholder="Ex: Loja Centro"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
-          className="w-full p-3 border rounded-lg"
-          placeholder="Ex: Loja Centro"
         />
       </div>
 
-      {/* UF */}
-      <div>
-        <label
-          htmlFor="location-state"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Estado *
-        </label>
-        <select
-          id="location-state"
-          name="location-state"
-          data-testid="location-state"
+      <div className="space-y-2">
+        <Label htmlFor="location-state">Estado *</Label>
+        <Select
           value={form.state}
-          onChange={(e) => {
-            setForm({
-              ...form,
-              state: e.target.value,
-              city: "",
-              neighborhood: "",
-            });
-          }}
-          required
-          className="w-full p-3 border rounded-lg"
+          onValueChange={(value) =>
+            setForm({ ...form, state: value, city: "", neighborhood: "" })
+          }
         >
-          <option value="">Selecione</option>
-          {states.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Município */}
-      <div>
-        <label
-          htmlFor="location-city"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Município *
-        </label>
-        <select
-          id="location-city"
-          name="location-city"
-          data-testid="location-city"
-          value={form.city}
-          onChange={(e) => {
-            setForm({ ...form, city: e.target.value, neighborhood: "" });
-          }}
-          required
-          disabled={!form.state}
-          className="w-full p-3 border rounded-lg disabled:opacity-50"
-        >
-          <option value="">Selecione</option>
-          {municipalities.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Bairro */}
-      <div>
-        <label
-          htmlFor="location-neighborhood"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Bairro
-        </label>
-        {neighborhoods.length > 0 ? (
-          <select
-            id="location-neighborhood"
-            name="location-neighborhood"
-            data-testid="location-neighborhood"
-            value={form.neighborhood}
-            onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
-            className="w-full p-3 border rounded-lg"
-          >
-            <option value="">Selecione</option>
-            {neighborhoods.map((b) => (
-              <option key={b.name} value={b.name}>
-                {b.name}
-              </option>
+          <SelectTrigger id="location-state">
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            {states.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
             ))}
-          </select>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="location-city">Município *</Label>
+        <Select
+          value={form.city}
+          onValueChange={(value) =>
+            setForm({ ...form, city: value, neighborhood: "" })
+          }
+          disabled={!form.state}
+        >
+          <SelectTrigger id="location-city">
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            {municipalities.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="location-neighborhood">Bairro</Label>
+        {neighborhoods.length > 0 ? (
+          <Select
+            value={form.neighborhood}
+            onValueChange={(value) => setForm({ ...form, neighborhood: value })}
+          >
+            <SelectTrigger id="location-neighborhood">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              {neighborhoods.map((b) => (
+                <SelectItem key={b.name} value={b.name}>
+                  {b.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : (
-          <input
+          <Input
             id="location-neighborhood"
-            name="location-neighborhood"
             data-testid="location-neighborhood"
-            type="text"
+            placeholder="Digite o bairro"
             value={form.neighborhood}
             onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
-            placeholder="Digite o bairro"
-            className="w-full p-3 border rounded-lg"
           />
         )}
       </div>
 
-      {/* CEP */}
-      <div className="hidden">
-        <label
-          htmlFor="location-cep"
-          className="block text-sm font-medium text-gray-700"
-        >
-          CEP
-        </label>
-        <input
+      <div className="space-y-2 hidden">
+        <Label htmlFor="location-cep">CEP</Label>
+        <Input
           id="location-cep"
-          name="location-cep"
-          data-testid="location-cep"
-          type="text"
-          value={form.cep || ""}
+          placeholder="00000-000"
+          value={form.cep ?? ""}
           onChange={(e) => setForm({ ...form, cep: e.target.value })}
           onBlur={handleCepBlur}
-          placeholder="00000-000"
-          className="w-full p-3 border rounded-lg"
         />
         {isCepLoading && (
-          <span className="text-sm text-gray-500">Buscando CEP...</span>
+          <span className="text-sm text-muted-foreground">Buscando CEP...</span>
         )}
       </div>
 
-      {/* Endereço */}
-      <div className="hidden">
-        <label
-          htmlFor="location-address"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Endereço
-        </label>
-        <input
+      <div className="space-y-2 hidden">
+        <Label htmlFor="location-address">Endereço</Label>
+        <Input
           id="location-address"
-          name="location-address"
-          data-testid="location-address"
-          type="text"
-          value={form.address || ""}
-          onChange={(e) => setForm({ ...form, address: e.target.value })}
-          className="w-full p-3 border rounded-lg"
           placeholder="Rua, número"
+          value={form.address ?? ""}
+          onChange={(e) => setForm({ ...form, address: e.target.value })}
         />
       </div>
 
-      {/* Observações */}
-      <div>
-        <label
-          htmlFor="location-notes"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Observações
-        </label>
-        <textarea
+      <div className="space-y-2">
+        <Label htmlFor="location-notes">Observações</Label>
+        <Textarea
           id="location-notes"
-          name="location-notes"
           data-testid="location-notes"
-          value={form.notes || ""}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          rows={3}
-          className="w-full p-3 border rounded-lg"
           placeholder="Notas internas sobre este local"
+          rows={3}
+          value={form.notes ?? ""}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
         />
       </div>
 
       <div className="flex gap-3">
-        <button
+        <Button
+          variant="outline"
           type="button"
           onClick={() => navigate("/locations")}
-          data-testid="location-cancel"
-          className="flex-1 py-3 border rounded-lg"
         >
           Cancelar
-        </button>
-        <button
-          type="submit"
-          data-testid="location-submit"
-          className="flex-1 py-3 bg-blue-600 text-white rounded-lg"
-        >
-          Salvar
-        </button>
+        </Button>
+        <Button type="submit">Salvar</Button>
       </div>
     </form>
   );

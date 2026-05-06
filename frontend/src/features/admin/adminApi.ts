@@ -38,7 +38,7 @@ export const adminApi = api.injectEndpoints({
       {
         id: string;
         body: Partial<
-          Pick<AdminUser, "name" | "email" | "active"> & { roles: number[] }
+          Pick<AdminUser, "name" | "email" | "active"> & { roleIds: number[] }
         >;
       }
     >({

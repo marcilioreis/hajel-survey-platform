@@ -17,6 +17,8 @@ import Skeleton from "../../components/common/Skeleton";
 import { useConditionalLogic } from "../surveys/useConditionalLogic";
 import { normalizeQuestions } from "../../utils/normalizers";
 import { getOptionText } from "../../utils/text";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 export default function SurveySession() {
   const { slug } = useParams<{ slug: string }>();
@@ -129,13 +131,9 @@ export default function SurveySession() {
 
   if (!survey || !token) {
     return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-3 w-1/3" />
-          </div>
+      <div className="space-y-4 p-4">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-5 w-full" />
         ))}
       </div>
     );
@@ -234,7 +232,7 @@ export default function SurveySession() {
             value={(currentAnswer as string) || ""}
             onChange={(e) => handleAnswerChange(e.target.value)}
             placeholder="Digite sua resposta..."
-            className="w-full p-3 border border-gray-300 rounded-lg text-base"
+            className="flex-1 w-full p-3 border border-gray-300 rounded-lg text-base"
             rows={6}
           />
         );
@@ -324,12 +322,7 @@ export default function SurveySession() {
           </span>
           <span>{Math.round(progressPercent)}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full transition-all"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <Progress value={progressPercent} className="h-2" />
       </div>
 
       <div className="flex-1 p-4">
@@ -343,34 +336,30 @@ export default function SurveySession() {
       </div>
 
       <div className="bg-white p-4 border-t flex justify-between">
-        <button
-          type="button"
+        <Button
+          variant="outline"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
           data-testid="question-prev"
-          className="px-4 py-2 text-blue-600 disabled:text-gray-400"
         >
           Anterior
-        </button>
+        </Button>
         {isLast ? (
-          <button
-            type="button"
+          <Button
             onClick={handleFinish}
             disabled={isSubmitting}
             data-testid="question-finish"
-            className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50"
           >
             {isSubmitting ? "Enviando..." : "Concluir respostas"}
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
+          <Button
             onClick={handleNext}
+            disabled={currentIndex === visibleQuestions.length - 1}
             data-testid="question-next"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg"
           >
             Próxima
-          </button>
+          </Button>
         )}
       </div>
     </div>

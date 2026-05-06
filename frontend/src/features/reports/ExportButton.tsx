@@ -4,8 +4,16 @@ import {
   useLazyGetExportStatusQuery,
 } from "../surveys/surveysApi";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-type ExportFormat = "csv" | "pdf" | "xlsx"; // formatos suportados
+type ExportFormat = "csv" | "pdf" | "xlsx";
 
 interface ExportButtonProps {
   surveyId: string;
@@ -17,7 +25,6 @@ export default function ExportButton({ surveyId }: ExportButtonProps) {
   const [triggerStatus] = useLazyGetExportStatusQuery();
   const [exportId, setExportId] = useState<string | null>(null);
   const [format, setFormat] = useState<ExportFormat>("csv");
-
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const errorCountRef = useRef(0);
 
@@ -76,28 +83,33 @@ export default function ExportButton({ surveyId }: ExportButtonProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <select
+      <Select
         value={format}
-        onChange={(e) => setFormat(e.target.value as ExportFormat)}
+        onValueChange={(value) => setFormat(value as ExportFormat)}
         disabled={isRequesting || !!exportId}
-        className="h-10 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white disabled:opacity-50"
       >
-        <option value="csv">CSV</option>
-        <option value="pdf">PDF</option>
-        <option value="xlsx">Excel (XLSX)</option>
-      </select>
+        <SelectTrigger className="h-10 w-27.5">
+          <SelectValue placeholder="Formato" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="csv">CSV</SelectItem>
+          <SelectItem value="pdf">PDF</SelectItem>
+          <SelectItem value="xlsx">Excel</SelectItem>
+        </SelectContent>
+      </Select>
 
-      <button
+      <Button
         onClick={handleExport}
         disabled={isRequesting || !!exportId}
-        className="py-2 px-4 bg-green-600 text-white rounded-lg disabled:opacity-50 whitespace-nowrap"
+        variant="default"
+        size="sm"
       >
         {exportId
           ? "Processando..."
           : isRequesting
             ? "Iniciando..."
             : "Exportar"}
-      </button>
+      </Button>
     </div>
   );
 }

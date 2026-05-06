@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useLoginMutation } from "./authApi";
 import { useAppDispatch } from "../../app/hooks";
 import { setCredentials } from "./authSlice";
+import logo from "../../assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,7 +44,7 @@ export default function Login() {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <img src="/src/assets/logo.png" alt="Retrato" className="h-10" />
+            <img src={logo} alt="Retrato" className="h-10" />
           </div>
           <CardTitle className="text-2xl text-center">Entrar</CardTitle>
           <CardDescription className="text-center">

@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { useAppSelector } from "../../app/hooks";
-import { useUpdateUserMutation, useChangePasswordMutation } from "./authApi";
+import { useUpdateProfileMutation, useChangePasswordMutation } from "./authApi";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function Profile() {
   const user = useAppSelector((state) => state.auth.user);
-  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+  const [updateUser, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [changePassword, { isLoading: isChanging }] =
     useChangePasswordMutation();
 
@@ -38,113 +50,99 @@ export default function Profile() {
 
   return (
     <div className="max-w-md mx-auto p-4 space-y-6">
-      <h1 className="text-xl font-bold">Meu Perfil</h1>
-      <form
-        onSubmit={handleUpdateProfile}
-        className="space-y-4"
-        data-testid="profile-form"
-      >
-        <div>
-          <label
-            htmlFor="profile-name"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Nome
-          </label>
-          <input
-            id="profile-name"
-            name="profile-name"
-            data-testid="profile-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-3 border rounded-lg"
-            placeholder="Nome"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="profile-email"
-            className="block text-sm font-medium text-gray-700"
-          >
-            E‑mail
-          </label>
-          <input
-            id="profile-email"
-            name="profile-email"
-            data-testid="profile-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 border rounded-lg"
-            placeholder="E‑mail"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isUpdating}
-          data-testid="profile-update-submit"
-          className="w-full py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
-        >
-          {isUpdating ? "Salvando..." : "Atualizar perfil"}
-        </button>
-      </form>
+      <h1 className="text-2xl font-bold">Meu Perfil</h1>
 
-      <hr />
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações pessoais</CardTitle>
+          <CardDescription>Atualize seu nome e e‑mail.</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleUpdateProfile}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="profile-name">Nome</Label>
+              <Input
+                id="profile-name"
+                name="profile-name"
+                data-testid="profile-name"
+                type="text"
+                placeholder="Nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-email">E‑mail</Label>
+              <Input
+                id="profile-email"
+                name="profile-email"
+                data-testid="profile-email"
+                type="email"
+                placeholder="E‑mail"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button
+              type="submit"
+              disabled={isUpdating}
+              data-testid="profile-update-submit"
+            >
+              {isUpdating ? "Salvando..." : "Atualizar perfil"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
 
-      <h2 className="text-lg font-semibold">Alterar senha</h2>
-      <form
-        onSubmit={handleChangePassword}
-        className="space-y-4"
-        data-testid="change-password-form"
-      >
-        <div>
-          <label
-            htmlFor="profile-current-password"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Senha atual
-          </label>
-          <input
-            id="profile-current-password"
-            name="current-password"
-            data-testid="profile-current-password"
-            type="password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            required
-            className="w-full p-3 border rounded-lg"
-            placeholder="Senha atual"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="profile-new-password"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Nova senha
-          </label>
-          <input
-            id="profile-new-password"
-            name="new-password"
-            data-testid="profile-new-password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            className="w-full p-3 border rounded-lg"
-            placeholder="Nova senha"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isChanging}
-          data-testid="change-password-submit"
-          className="w-full py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
-        >
-          {isChanging ? "Alterando..." : "Alterar senha"}
-        </button>
-      </form>
+      <Separator />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Alterar senha</CardTitle>
+          <CardDescription>Recomendamos usar uma senha forte.</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleChangePassword}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="profile-current-password">Senha atual</Label>
+              <Input
+                id="profile-current-password"
+                name="current-password"
+                data-testid="profile-current-password"
+                type="password"
+                placeholder="Senha atual"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-new-password">Nova senha</Label>
+              <Input
+                id="profile-new-password"
+                name="new-password"
+                data-testid="profile-new-password"
+                type="password"
+                placeholder="Nova senha"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button
+              type="submit"
+              disabled={isChanging}
+              data-testid="change-password-submit"
+            >
+              {isChanging ? "Alterando..." : "Alterar senha"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }

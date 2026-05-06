@@ -2,6 +2,17 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { resetPassword } from "../../lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 export default function ResetPassword() {
   const { token } = useParams<{ token: string }>();
@@ -26,58 +37,55 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4"
-        data-testid="reset-password-form"
-      >
-        <h1 className="text-xl font-bold">Redefinir senha</h1>
-        <div>
-          <label
-            htmlFor="reset-password-new"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Nova senha
-          </label>
-          <input
-            id="reset-password-new"
-            name="password"
-            data-testid="reset-password-new"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Nova senha"
-            required
-            className="w-full p-3 border rounded-lg"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="reset-password-confirm"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Confirme a nova senha
-          </label>
-          <input
-            id="reset-password-confirm"
-            name="confirmPassword"
-            data-testid="reset-password-confirm"
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="Confirme a nova senha"
-            required
-            className="w-full p-3 border rounded-lg"
-          />
-        </div>
-        <button
-          type="submit"
-          data-testid="reset-password-submit"
-          className="w-full py-3 bg-blue-600 text-white rounded-lg"
-        >
-          Redefinir
-        </button>
-      </form>
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Redefinir senha</CardTitle>
+          <CardDescription>
+            Escolha uma nova senha para sua conta.
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-password-new">Nova senha</Label>
+              <Input
+                id="reset-password-new"
+                name="password"
+                data-testid="reset-password-new"
+                type="password"
+                placeholder="Nova senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reset-password-confirm">
+                Confirme a nova senha
+              </Label>
+              <Input
+                id="reset-password-confirm"
+                name="confirmPassword"
+                data-testid="reset-password-confirm"
+                type="password"
+                placeholder="Confirme a nova senha"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button
+              type="submit"
+              className="w-full"
+              data-testid="reset-password-submit"
+            >
+              Redefinir
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }

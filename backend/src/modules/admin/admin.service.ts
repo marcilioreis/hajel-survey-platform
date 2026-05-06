@@ -118,6 +118,11 @@ export const updateUser = async (
     active?: boolean;
   }
 ) => {
+  const existing = await getUserById(userId);
+  if (!existing) {
+    throw new Error('Usuário não encontrado');
+  }
+
   // Atualiza campos diretos
   if (data.name || data.email || data.role !== undefined || data.active !== undefined) {
     const updateData: any = {};

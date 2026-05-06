@@ -3,7 +3,20 @@ import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { logout } from "../../features/auth/authSlice";
 import { authClient } from "../../lib/auth";
 import { useGetCurrentUserQuery } from "../../features/auth/authApi";
-import logo from "../../assets/logo.png";
+import logo from "@/assets/logo.png";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Menu, User, LogOut, Settings } from "lucide-react";
+import { AppSidebar } from "./AppSidebar";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -11,8 +24,6 @@ export default function Header() {
   const user = useAppSelector((state) => state.auth.user);
   const { data: sessionData } = useGetCurrentUserQuery();
 
-  // Verifica se o usuário tem permissão de administrador.
-  // Ajuste conforme sua lógica de RBAC: pode ser uma role 'admin' ou permissão 'admin:access'
   const isAdmin =
     sessionData?.roles?.includes("admin") ||
     sessionData?.permissions?.includes("admin:access");
@@ -23,32 +34,70 @@ export default function Header() {
     navigate("/login");
   };
 
+  const userInitial = user?.name?.charAt(0).toUpperCase() ?? "U";
+
   return (
-    <header className="bg-white shadow-sm p-4 sticky top-0 z-10">
-      <div className="flex items-center justify-between">
-        <img src={logo} alt="Retrato Pesquisas" className="h-8 w-auto" />
+    <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="flex items-center justify-between md:justify-self-end px-4 h-14">
+        {/* Mobile: botão de menu abrindo Sheet com sidebar */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <AppSidebar />
+          </SheetContent>
+        </Sheet>
+
+        <div className="flex lg:hidden">
+          <img src={logo} alt="Retrato" className="h-10 w-auto" />
+        </div>
+
         <div className="flex items-center gap-2">
-          {user && (
-            <span className="text-sm text-gray-600 hidden sm:inline">
-              Olá, {user.name?.split(" ")[0]}
-            </span>
-          )}
           {isAdmin && (
             <Link
               to="/admin"
-              className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-100"
+              className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent"
               title="Administração"
             >
-              ⚙️
+              <Settings className="h-5 w-5" />
             </Link>
           )}
-          <button
-            onClick={handleLogout}
-            className="text-gray-600 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100"
-            title="Sair"
-          >
-            🚪
-          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.image ?? undefined} />
+                  <AvatarFallback>{userInitial}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user?.name ?? "Usuário"}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/profile")}>
+                <User className="mr-2 h-4 w-4" />
+                Perfil
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

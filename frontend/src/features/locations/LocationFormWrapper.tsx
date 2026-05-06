@@ -4,7 +4,14 @@ import LocationForm from "./LocationForm";
 
 export default function LocationFormWrapper() {
   const { id } = useParams<{ id: string }>();
-  const { data: locations, isLoading } = useGetLocationsQuery();
+  const isEditing = Boolean(id);
+  const { data: locations, isLoading } = useGetLocationsQuery(undefined, {
+    skip: !isEditing,
+  });
+
+  if (!isEditing) {
+    return <LocationForm />;
+  }
 
   if (isLoading) {
     return <div className="p-4 text-center">Carregando...</div>;
@@ -18,5 +25,5 @@ export default function LocationFormWrapper() {
     );
   }
 
-  return <LocationForm initialLocation={location} />;
+  return <LocationForm key={id} initialLocation={location} />;
 }

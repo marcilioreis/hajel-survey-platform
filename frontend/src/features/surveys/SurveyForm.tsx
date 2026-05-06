@@ -20,6 +20,12 @@ import DateTimePicker from "../../components/common/DateTimePicker";
 import { QuestionEditor } from "./QuestionEditor";
 import { mapFrontendTypeToBackend } from "../../utils/mapping";
 import { normalizeQuestions } from "../../utils/normalizers";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
 
 const denormalizeQuestion = (q: Question): CreateQuestionPayload => ({
   text: q.text.trim(),
@@ -229,78 +235,56 @@ export default function SurveyForm({
   const isLoading = isCreating || isUpdating;
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4 pb-20"
-      data-testid="survey-form"
-    >
-      <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
-        <div>
-          <label
-            htmlFor="survey-title"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Título da pesquisa
-          </label>
-          <input
+    <form onSubmit={handleSubmit} className="space-y-6 pb-20">
+      <div className="bg-card p-6 rounded-xl shadow-sm space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="survey-title">Título da pesquisa</Label>
+          <Input
             id="survey-title"
-            name="survey-title"
             data-testid="survey-title"
-            type="text"
             placeholder="Título da pesquisa"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-base font-medium"
           />
         </div>
-        <div>
-          <label
-            htmlFor="survey-description"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Descrição (opcional)
-          </label>
-          <textarea
+
+        <div className="space-y-2">
+          <Label htmlFor="survey-description">Descrição (opcional)</Label>
+          <Textarea
             id="survey-description"
-            name="survey-description"
             data-testid="survey-description"
             placeholder="Descrição (opcional)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={2}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
+            rows={3}
           />
         </div>
-        <div className="flex gap-2">
-          <label className="flex items-center gap-2">
-            <input
+
+        <div className="flex gap-6">
+          <div className="flex items-center space-x-2">
+            <Checkbox
               id="survey-public"
-              name="survey-public"
               data-testid="survey-public"
-              type="checkbox"
               checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
+              onCheckedChange={(checked) => setIsPublic(!!checked)}
             />
-            <span className="text-sm">Pesquisa pública</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input
+            <Label htmlFor="survey-public">Pesquisa pública</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
               id="survey-active"
-              name="survey-active"
               data-testid="survey-active"
-              type="checkbox"
               checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
+              onCheckedChange={(checked) => setIsActive(!!checked)}
             />
-            <span className="text-sm">Pesquisa ativa</span>
-          </label>
+            <Label htmlFor="survey-active">Pesquisa ativa</Label>
+          </div>
         </div>
-        <div className="flex gap-8">
-          <div className="w-1/2">
-            <span className="block text-sm font-medium text-gray-700 mb-2">
-              Período da pesquisa *
-            </span>
+
+        <div className="flex flex-col md:flex-row gap-8">
+          <div className="flex-1">
+            <Label className="mb-2">Período da pesquisa *</Label>
             <DateTimePicker
               startValue={startDate}
               endValue={endDate}
@@ -310,59 +294,45 @@ export default function SurveyForm({
               minDate={new Date()}
             />
           </div>
-          <div className="w-1/2">
-            <span className="block text-sm font-medium text-gray-700 mb-2">
-              Locais de coleta *
-            </span>
+          <div className="flex-1">
+            <Label className="mb-2">Locais de coleta *</Label>
             {allLocations.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Nenhum local cadastrado.{" "}
-                <Link to="/locations/new" className="text-blue-600">
+                <Link to="/locations/new" className="text-primary">
                   Cadastrar agora
                 </Link>
               </p>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-2">
+              <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
                 {allLocations.map((loc) => {
                   const selected = selectedLocations.find(
                     (l) => l.id === loc.id,
                   );
                   return (
                     <div key={loc.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         id={`survey-location-${loc.id}`}
-                        name={`survey-location-${loc.id}`}
-                        data-testid={`survey-location-${loc.id}`}
                         checked={!!selected}
-                        onChange={() => toggleLocation(loc.id)}
-                        className="rounded w-8"
+                        onCheckedChange={() => toggleLocation(loc.id)}
                       />
-                      <label
+                      <Label
                         htmlFor={`survey-location-${loc.id}`}
-                        className="flex-1 text-left text-sm"
+                        className="flex-1 text-sm"
                       >
                         {loc.name}
-                      </label>
-                      {selected ? (
-                        <input
+                      </Label>
+                      {selected && (
+                        <Input
                           type="number"
-                          id={`survey-location-order-${loc.id}`}
-                          name={`survey-location-order-${loc.id}`}
-                          data-testid={`survey-location-order-${loc.id}`}
                           min="1"
+                          className="w-16"
                           value={selected.order}
                           onChange={(e) =>
                             updateSelectedOrder(loc.id, Number(e.target.value))
                           }
-                          className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
                           placeholder="Ordem"
-                          title="Ordem de exibição"
                         />
-                      ) : (
-                        <div className="w-16 px-2 py-1">
-                          <span className="hidden"></span>
-                        </div>
                       )}
                     </div>
                   );
@@ -371,7 +341,7 @@ export default function SurveyForm({
             )}
             <Link
               to="/locations/new"
-              className="text-blue-600 text-sm mt-1 inline-block"
+              className="text-sm text-primary inline-block mt-2"
             >
               + Cadastrar novo local
             </Link>
@@ -379,7 +349,8 @@ export default function SurveyForm({
         </div>
       </div>
 
-      <div className="space-y-3">
+      {/* Editor de perguntas */}
+      <div className="space-y-4">
         {questions.map((q, idx) => (
           <QuestionEditor
             key={q.id != null ? String(q.id) : `new-${idx}`}
@@ -391,32 +362,27 @@ export default function SurveyForm({
         ))}
       </div>
 
-      <button
+      <Button
         type="button"
+        variant="outline"
+        className="w-full border-dashed"
         onClick={addNewQuestion}
-        data-testid="survey-add-question"
-        className="w-full py-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50"
       >
-        + Adicionar Pergunta
-      </button>
+        <Plus className="h-4 w-4 mr-2" />
+        Adicionar Pergunta
+      </Button>
 
       <div className="flex gap-3">
-        <button
+        <Button
+          variant="outline"
           type="button"
           onClick={() => navigate("/surveys")}
-          data-testid="survey-cancel"
-          className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-700"
         >
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isLoading}
-          data-testid="survey-submit"
-          className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
-        >
+        </Button>
+        <Button type="submit" disabled={isLoading}>
           {isLoading ? "Salvando..." : "Salvar Pesquisa"}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -10,6 +10,17 @@ import type { DemographicData, AnswersMap } from "./surveys.types";
 import Skeleton from "../../components/common/Skeleton";
 import { normalizeQuestions } from "../../utils/normalizers";
 import { getOptionText } from "../../utils/text";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const loadSavedAnswers = (surveyId: string): AnswersMap => {
   try {
@@ -54,13 +65,9 @@ export default function SurveyExecution() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-3 w-1/3" />
-          </div>
+      <div className="space-y-4 p-4">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-8 w-full" />
         ))}
       </div>
     );
@@ -165,15 +172,12 @@ export default function SurveyExecution() {
     switch (q.type) {
       case "texto_longo":
         return (
-          <textarea
+          <Input
             id={`answer-text-${q.id}`}
-            name={`answer-text-${q.id}`}
             data-testid={`answer-text-${q.id}`}
             value={(currentAnswer as string) || ""}
             onChange={(e) => handleAnswerChange(e.target.value)}
             placeholder="Digite sua resposta..."
-            className="w-full p-3 border border-gray-300 rounded-lg text-base"
-            rows={q.type === "texto_longo" ? 6 : 3}
           />
         );
 
@@ -185,7 +189,7 @@ export default function SurveyExecution() {
               return (
                 <label
                   key={idx}
-                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+                  className="flex items-center gap-3 p-3 border rounded-lg"
                 >
                   <input
                     type="radio"
@@ -218,7 +222,7 @@ export default function SurveyExecution() {
               return (
                 <label
                   key={idx}
-                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+                  className="flex items-center gap-3 p-3 border rounded-lg"
                 >
                   <input
                     type="checkbox"
@@ -257,196 +261,135 @@ export default function SurveyExecution() {
   if (step === "demographics") {
     const locations = survey.locations || [];
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <form
-          onSubmit={(e) => e.preventDefault()}
-          className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm space-y-4"
-          data-testid="execution-demographics-form"
-        >
-          <h2 className="text-xl font-bold mb-4">Dados do Respondente</h2>
-
+      <div className="max-w-md mx-auto p-4 space-y-6">
+        <h2 className="text-2xl font-bold">Dados do Respondente</h2>
+        <div className="space-y-4">
           <div>
-            <label
-              htmlFor="demographics-age"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Faixa etária
-            </label>
-            <select
-              id="demographics-age"
-              name="demographics-age"
-              data-testid="demographics-age"
+            <Label htmlFor="demographics-age">Faixa etária</Label>
+            <Select
               value={demographics.ageRange}
-              onChange={(e) =>
-                handleDemographicsChange("ageRange", e.target.value)
+              onValueChange={(value) =>
+                handleDemographicsChange("ageRange", value)
               }
-              required
-              className="w-full p-3 border rounded-lg"
             >
-              <option value="">Faixa etária</option>
-              <option value="16-24">16-24 anos</option>
-              <option value="25-34">25-34 anos</option>
-              <option value="35-44">35-44 anos</option>
-              <option value="45-54">45-54 anos</option>
-              <option value="55-65">55-65 anos</option>
-              <option value="65+">65+ anos</option>
-            </select>
+              <SelectTrigger id="demographics-age">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="16-24">16-24 anos</SelectItem>
+                <SelectItem value="25-34">25-34 anos</SelectItem>
+                <SelectItem value="35-44">35-44 anos</SelectItem>
+                <SelectItem value="45-54">45-54 anos</SelectItem>
+                <SelectItem value="55-65">55-65 anos</SelectItem>
+                <SelectItem value="65+">65+ anos</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
           <div>
-            <label
-              htmlFor="demographics-gender"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Gênero
-            </label>
-            <select
-              id="demographics-gender"
-              name="demographics-gender"
-              data-testid="demographics-gender"
+            <Label htmlFor="demographics-gender">Gênero</Label>
+            <Select
               value={demographics.gender}
-              onChange={(e) =>
-                handleDemographicsChange("gender", e.target.value)
+              onValueChange={(value) =>
+                handleDemographicsChange("gender", value)
               }
-              required
-              className="w-full p-3 border rounded-lg"
             >
-              <option value="">Gênero</option>
-              <option value="M">Masculino</option>
-              <option value="F">Feminino</option>
-              <option value="NB">Não-binário</option>
-              <option value="O">Outro</option>
-              <option value="PNR">Prefiro não responder</option>
-            </select>
+              <SelectTrigger id="demographics-gender">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="M">Masculino</SelectItem>
+                <SelectItem value="F">Feminino</SelectItem>
+                <SelectItem value="NB">Não-binário</SelectItem>
+                <SelectItem value="O">Outro</SelectItem>
+                <SelectItem value="PNR">Prefiro não responder</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
           <div>
-            <label
-              htmlFor="demographics-income"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Renda familiar
-            </label>
-            <select
-              id="demographics-income"
-              name="demographics-income"
-              data-testid="demographics-income"
+            <Label htmlFor="demographics-income">Renda familiar</Label>
+            <Select
               value={demographics.incomeRange}
-              onChange={(e) =>
-                handleDemographicsChange("incomeRange", e.target.value)
+              onValueChange={(value) =>
+                handleDemographicsChange("incomeRange", value)
               }
-              required
-              className="w-full p-3 border rounded-lg"
             >
-              <option value="">Renda familiar</option>
-              <option value="<1 SM">Menos de 1 salário mínimo</option>
-              <option value="1-2 SM">1 a 2 salários mínimos</option>
-              <option value="2-3 SM">2 a 3 salários mínimos</option>
-              <option value="3-4 SM">3 a 4 salários mínimos</option>
-              <option value=">4 SM">Mais de 4 salários mínimos</option>
-            </select>
+              <SelectTrigger id="demographics-income">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="<1 SM">Menos de 1 SM</SelectItem>
+                <SelectItem value="1-2 SM">1 a 2 SM</SelectItem>
+                <SelectItem value="2-3 SM">2 a 3 SM</SelectItem>
+                <SelectItem value="3-4 SM">3 a 4 SM</SelectItem>
+                <SelectItem value=">4 SM">Mais de 4 SM</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
           <div>
-            <label
-              htmlFor="demographics-education"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Escolaridade
-            </label>
-            <select
-              id="demographics-education"
-              name="demographics-education"
-              data-testid="demographics-education"
+            <Label htmlFor="demographics-education">Escolaridade</Label>
+            <Select
               value={demographics.education}
-              onChange={(e) =>
-                handleDemographicsChange("education", e.target.value)
+              onValueChange={(value) =>
+                handleDemographicsChange("education", value)
               }
-              required
-              className="w-full p-3 border rounded-lg"
             >
-              <option value="">Escolaridade</option>
-              <option value="Não Alfabetizado">Não Alfabetizado</option>
-              <option value="Ensino Fundamental">Ensino Fundamental</option>
-              <option value="Ensino Médio">Ensino Médio</option>
-              <option value="Superior Incompleto">Superior Incompleto</option>
-              <option value="Superior Completo">Superior Completo</option>
-              <option value="Pós-graduação">Pós-graduação</option>
-              <option value="Doutorado">Doutorado</option>
-              <option value="Outro">Outro</option>
-            </select>
+              <SelectTrigger id="demographics-education">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NA">Não alfabetizado</SelectItem>
+                <SelectItem value="ENSINO_FUNDAMENTAL">
+                  Ensino Fundamental
+                </SelectItem>
+                <SelectItem value="ENSINO_MEDIO">Ensino Médio</SelectItem>
+                <SelectItem value="ENSINO_SUPERIOR">Ensino Superior</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
           <div>
-            <label
-              htmlFor="demographics-occupation"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Ocupação
-            </label>
-            <input
+            <Label htmlFor="demographics-occupation">Ocupação</Label>
+            <Input
               id="demographics-occupation"
-              name="demographics-occupation"
               data-testid="demographics-occupation"
-              type="text"
               placeholder="Ocupação"
               value={demographics.occupation}
               onChange={(e) =>
                 handleDemographicsChange("occupation", e.target.value)
               }
               required
-              className="w-full p-3 border rounded-lg"
             />
           </div>
-
           {locations.length > 0 && (
             <div>
-              <label
-                htmlFor="demographics-location"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Localização
-              </label>
-              <select
-                id="demographics-location"
-                name="demographics-location"
-                data-testid="demographics-location"
+              <Label htmlFor="demographics-location">Localização</Label>
+              <Select
                 value={demographics.locationId}
-                onChange={(e) =>
-                  handleDemographicsChange("locationId", e.target.value)
+                onValueChange={(value) =>
+                  handleDemographicsChange("locationId", value)
                 }
-                required
-                className="w-full p-3 border rounded-lg"
               >
-                <option value="">Localização</option>
-                {locations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="demographics-location">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={String(loc.id)}>
+                      {loc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={() => navigate("/surveys")}
-              data-testid="demographics-cancel"
-              className="w-1/3 py-3 border border-gray-300 rounded-lg text-gray-700"
-            >
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => navigate("/surveys")}>
               Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleAdvanceToQuestions}
-              data-testid="demographics-advance"
-              className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium"
-            >
+            </Button>
+            <Button onClick={handleAdvanceToQuestions}>
               Avançar para as perguntas
-            </button>
+            </Button>
           </div>
-        </form>
+        </div>
       </div>
     );
   }
@@ -459,7 +402,7 @@ export default function SurveyExecution() {
       : 0;
 
   return (
-    <div className="bg-gray-50 flex flex-col">
+    <div className="flex flex-col">
       <div className="bg-white p-4 shadow-sm">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>
@@ -467,15 +410,9 @@ export default function SurveyExecution() {
           </span>
           <span>{Math.round(progressPercent)}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full transition-all"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <Progress value={progressPercent} className="h-2" />
       </div>
-
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-auto">
         <h2 className="text-xl font-medium mb-4">
           {currentQuestion.text}
           {currentQuestion.required && (
@@ -484,36 +421,20 @@ export default function SurveyExecution() {
         </h2>
         {renderQuestionInput()}
       </div>
-
       <div className="bg-white p-4 border-t flex justify-between">
-        <button
-          type="button"
+        <Button
+          variant="outline"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          data-testid="question-prev"
-          className="px-4 py-2 text-blue-600 disabled:text-gray-400"
         >
           Anterior
-        </button>
+        </Button>
         {isLast ? (
-          <button
-            type="button"
-            onClick={handleFinishQuestions}
-            disabled={isSubmitting}
-            data-testid="question-finish"
-            className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50"
-          >
+          <Button onClick={handleFinishQuestions} disabled={isSubmitting}>
             {isSubmitting ? "Enviando..." : "Finalizar pesquisa"}
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
-            onClick={handleNext}
-            data-testid="question-next"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg"
-          >
-            Próxima
-          </button>
+          <Button onClick={handleNext}>Próxima</Button>
         )}
       </div>
     </div>

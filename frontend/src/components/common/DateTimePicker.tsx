@@ -1,5 +1,5 @@
-// src/components/common/DateTimePicker.tsx
 import { DayPicker } from "react-day-picker";
+import { ptBR } from "react-day-picker/locale";
 
 interface DateTimeRangePickerProps {
   startValue: string;
@@ -125,6 +125,7 @@ export default function DateTimePicker({
 
       <DayPicker
         mode="range"
+        locale={ptBR}
         selected={{ from: fromDate, to: toDate }}
         onSelect={handleRangeSelect}
         disabled={minDate ? { before: minDate } : undefined}
@@ -133,8 +134,7 @@ export default function DateTimePicker({
         classNames={{
           root: "relative text-sm",
           months: "relative flex flex-wrap justify-center gap-8",
-          month_caption:
-            "flex items-center font-medium text-lg h-9 px-2 text-gray-800",
+          month_caption: "font-medium text-lg h-9",
           nav: "absolute inset-x-0 flex justify-between items-center h-9 gap-2",
           button_previous:
             "relative inline-flex items-center justify-center size-9 hover:bg-gray-100 rounded",
@@ -146,11 +146,11 @@ export default function DateTimePicker({
           weekday: "size-9 flex items-center justify-center text-gray-500",
           day: "inline-flex items-center justify-center text-gray-700 hover:bg-gray-200 hover:text-gray-900 size-9 font-normal aria-selected:opacity-100 cursor-pointer",
           today: "bg-gray-100 font-semibold",
-          range_start: "bg-blue-500 text-white rounded-l-full",
-          range_end: "bg-blue-500 text-white rounded-r-full",
-          range_middle: "bg-blue-200 text-blue-700",
+          range_start: "bg-gray-500 text-white rounded-l-full",
+          range_end: "bg-gray-500 text-white rounded-r-full",
+          range_middle: "bg-gray-200 text-gray-700",
           selected:
-            "text-white hover:bg-blue-500 hover:text-white focus:bg-blue-500 focus:text-white",
+            "text-white hover:bg-gray-500 hover:text-white focus:bg-gray-500 focus:text-white",
           outside: "text-gray-500 opacity-50",
           disabled: "text-gray-500 opacity-50 cursor-auto",
           hidden: "invisible",

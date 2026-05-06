@@ -5,6 +5,17 @@ import { useRegisterMutation } from "./authApi";
 import { useAppDispatch } from "../../app/hooks";
 import { setCredentials } from "./authSlice";
 import logo from "../../assets/logo.png";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -36,122 +47,101 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-sm bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-center mb-6">
-          <img src={logo} alt="Retrato" className="h-10" />
-        </div>
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Cadastrar
-        </h1>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-          data-testid="register-form"
-        >
-          <div>
-            <label
-              htmlFor="register-name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Nome completo
-            </label>
-            <input
-              id="register-name"
-              name="name"
-              data-testid="register-name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
-              placeholder="Seu nome"
-            />
+      <Card className="w-full max-w-sm">
+        <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-4">
+            <img src={logo} alt="Retrato" className="h-10" />
           </div>
-          <div>
-            <label
-              htmlFor="register-email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
-            <input
-              id="register-email"
-              name="email"
-              data-testid="register-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
-              placeholder="seu@email.com"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="register-password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Senha
-            </label>
-            <input
-              id="register-password"
-              name="password"
-              data-testid="register-password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
-              placeholder="********"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="register-confirm-password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Confirmar senha
-            </label>
-            <input
-              id="register-confirm-password"
-              name="confirmPassword"
-              data-testid="register-confirm-password"
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
-              placeholder="********"
-            />
-          </div>
-          {errorMsg && (
-            <div
-              className="text-red-600 text-sm bg-red-50 p-2 rounded"
-              data-testid="register-error"
-            >
-              {errorMsg}
+          <CardTitle className="text-2xl text-center">Cadastrar</CardTitle>
+          <CardDescription className="text-center">
+            Crie sua conta para começar
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="register-name">Nome completo</Label>
+              <Input
+                id="register-name"
+                name="name"
+                data-testid="register-name"
+                type="text"
+                placeholder="Seu nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
-          )}
-          <button
-            type="submit"
-            data-testid="register-submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Cadastrando..." : "Cadastrar"}
-          </button>
+            <div className="space-y-2">
+              <Label htmlFor="register-email">Email</Label>
+              <Input
+                id="register-email"
+                name="email"
+                data-testid="register-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-password">Senha</Label>
+              <Input
+                id="register-password"
+                name="password"
+                data-testid="register-password"
+                type="password"
+                placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-confirm-password">Confirmar senha</Label>
+              <Input
+                id="register-confirm-password"
+                name="confirmPassword"
+                data-testid="register-confirm-password"
+                type="password"
+                placeholder="********"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+            {errorMsg && (
+              <p
+                className="text-sm text-red-600 bg-red-50 p-2 rounded"
+                data-testid="register-error"
+              >
+                {errorMsg}
+              </p>
+            )}
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+              data-testid="register-submit"
+            >
+              {isLoading ? "Cadastrando..." : "Cadastrar"}
+            </Button>
+            <p className="text-sm text-center">
+              Já tem uma conta?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:underline"
+                data-testid="register-login-link"
+              >
+                Faça login
+              </Link>
+            </p>
+          </CardFooter>
         </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Já tem uma conta?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-blue-600 hover:text-blue-500"
-            data-testid="register-login-link"
-          >
-            Faça login
-          </Link>
-        </p>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useGetPublicSurveyQuery } from "./publicSurveyApi";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 export default function DemographicForm() {
   const { slug } = useParams<{ slug: string }>();
@@ -18,17 +28,14 @@ export default function DemographicForm() {
     locationId: "",
   });
 
-  // Redirecionamento seguro via useEffect
   useEffect(() => {
     if (!token || !survey) {
       navigate(`/s/${slug}`);
     }
   }, [token, survey, slug, navigate]);
 
-  // Agora o componente sempre retorna o mesmo JSX inicialmente,
-  // e o redirecionamento ocorre como efeito colateral após a montagem.
   if (!token || !survey) {
-    return null; // ou um loading spinner
+    return null;
   }
 
   const locations = survey.locations || [];
@@ -37,8 +44,6 @@ export default function DemographicForm() {
     if ("vibrate" in navigator) {
       // Vibrate for 30ms, pause for 50ms, vibrate for 30ms
       navigator.vibrate([30, 50, 30]);
-    } else {
-      console.log("Vibration API not supported");
     }
   };
 
@@ -49,177 +54,133 @@ export default function DemographicForm() {
       return;
     }
 
-    // Salva dados demográficos no localStorage
     localStorage.setItem(`survey-${slug}-demographics`, JSON.stringify(form));
     triggerVibration();
     navigate(`/s/${slug}/session`);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-muted/30 p-4">
       <form
         onSubmit={handleSubmit}
-        className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm space-y-4"
-        data-testid="demographics-form"
+        className="max-w-md mx-auto space-y-6 bg-card p-6 rounded-xl shadow-sm"
       >
-        <h2 className="text-xl font-bold mb-4">
-          Quase lá! Preencha seus dados
-        </h2>
+        <h2 className="text-2xl font-bold">Quase lá! Preencha seus dados</h2>
 
-        <div>
-          <label
-            htmlFor="demographics-age"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Faixa etária
-          </label>
-          <select
-            id="demographics-age"
-            name="demographics-age"
-            data-testid="demographics-age"
+        <div className="space-y-2">
+          <Label htmlFor="demographics-age">Faixa etária</Label>
+          <Select
             value={form.ageRange}
-            onChange={(e) => setForm({ ...form, ageRange: e.target.value })}
-            required
-            className="w-full p-3 border rounded-lg"
+            onValueChange={(value) => setForm({ ...form, ageRange: value })}
           >
-            <option value="">Faixa etária</option>
-            <option value="16-24">16-24 anos</option>
-            <option value="25-34">25-34 anos</option>
-            <option value="35-44">35-44 anos</option>
-            <option value="45-54">45-54 anos</option>
-            <option value="55-65">55-65 anos</option>
-            <option value="65+">65+ anos</option>
-          </select>
+            <SelectTrigger id="demographics-age">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="16-24">16-24 anos</SelectItem>
+              <SelectItem value="25-34">25-34 anos</SelectItem>
+              <SelectItem value="35-44">35-44 anos</SelectItem>
+              <SelectItem value="45-54">45-54 anos</SelectItem>
+              <SelectItem value="55-65">55-65 anos</SelectItem>
+              <SelectItem value="65+">65+ anos</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
-          <label
-            htmlFor="demographics-gender"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Gênero
-          </label>
-          <select
-            id="demographics-gender"
-            name="demographics-gender"
-            data-testid="demographics-gender"
+        <div className="space-y-2">
+          <Label htmlFor="demographics-gender">Gênero</Label>
+          <Select
             value={form.gender}
-            onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            required
-            className="w-full p-3 border rounded-lg"
+            onValueChange={(value) => setForm({ ...form, gender: value })}
           >
-            <option value="">Gênero</option>
-            <option value="M">Masculino</option>
-            <option value="F">Feminino</option>
-            <option value="NB">Não-binário</option>
-            <option value="O">Outro</option>
-            <option value="PNR">Prefiro não responder</option>
-          </select>
+            <SelectTrigger id="demographics-gender">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="M">Masculino</SelectItem>
+              <SelectItem value="F">Feminino</SelectItem>
+              <SelectItem value="NB">Não-binário</SelectItem>
+              <SelectItem value="O">Outro</SelectItem>
+              <SelectItem value="PNR">Prefiro não responder</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
-          <label
-            htmlFor="demographics-income"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Renda familiar
-          </label>
-          <select
-            id="demographics-income"
-            name="demographics-income"
-            data-testid="demographics-income"
+        <div className="space-y-2">
+          <Label htmlFor="demographics-income">Renda familiar</Label>
+          <Select
             value={form.incomeRange}
-            onChange={(e) => setForm({ ...form, incomeRange: e.target.value })}
-            required
-            className="w-full p-3 border rounded-lg"
+            onValueChange={(value) => setForm({ ...form, incomeRange: value })}
           >
-            <option value="">Renda familiar</option>
-            <option value="<1 SM">Menos de 1 salário mínimo</option>
-            <option value="1-2 SM">1 a 2 salários mínimos</option>
-            <option value="2-3 SM">2 a 3 salários mínimos</option>
-            <option value="3-4 SM">3 a 4 salários mínimos</option>
-            <option value=">4 SM">Mais de 4 salários mínimos</option>
-          </select>
+            <SelectTrigger id="demographics-income">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="<1 SM">Menos de 1 SM</SelectItem>
+              <SelectItem value="1-2 SM">1 a 2 SM</SelectItem>
+              <SelectItem value="2-3 SM">2 a 3 SM</SelectItem>
+              <SelectItem value="3-4 SM">3 a 4 SM</SelectItem>
+              <SelectItem value=">4 SM">Mais de 4 SM</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
-          <label
-            htmlFor="demographics-education"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Escolaridade
-          </label>
-          <select
-            id="demographics-education"
-            name="demographics-education"
-            data-testid="demographics-education"
+        <div className="space-y-2">
+          <Label htmlFor="demographics-education">Escolaridade</Label>
+          <Select
             value={form.education}
-            onChange={(e) => setForm({ ...form, education: e.target.value })}
-            required
-            className="w-full p-3 border rounded-lg"
+            onValueChange={(value) => setForm({ ...form, education: value })}
           >
-            <option value="">Escolaridade</option>
-            <option value="NA">Não alfabetizado</option>
-            <option value="ENSINO_FUNDAMENTAL">Ensino Fundamental</option>
-            <option value="ENSINO_MEDIO">Ensino Médio</option>
-            <option value="ENSINO_SUPERIOR">Ensino Superior</option>
-          </select>
+            <SelectTrigger id="demographics-education">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NA">Não alfabetizado</SelectItem>
+              <SelectItem value="ENSINO_FUNDAMENTAL">
+                Ensino Fundamental
+              </SelectItem>
+              <SelectItem value="ENSINO_MEDIO">Ensino Médio</SelectItem>
+              <SelectItem value="ENSINO_SUPERIOR">Ensino Superior</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
-          <label
-            htmlFor="demographics-occupation"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Ocupação
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="demographics-occupation">Ocupação</Label>
+          <Input
             id="demographics-occupation"
-            name="demographics-occupation"
             data-testid="demographics-occupation"
-            type="text"
             placeholder="Ocupação"
             value={form.occupation}
             onChange={(e) => setForm({ ...form, occupation: e.target.value })}
             required
-            className="w-full p-3 border rounded-lg"
           />
         </div>
 
-        <div>
-          <label
-            htmlFor="demographics-location"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Localização
-          </label>
-          <select
-            id="demographics-location"
-            name="demographics-location"
-            data-testid="demographics-location"
-            value={form.locationId}
-            onChange={(e) => setForm({ ...form, locationId: e.target.value })}
-            required
-            className="w-full p-3 border rounded-lg"
-          >
-            <option value="">Localização</option>
-            {locations.map((loc) => {
-              return (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              );
-            })}
-          </select>
-        </div>
+        {locations.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="demographics-location">Localização</Label>
+            <Select
+              value={form.locationId}
+              onValueChange={(value) => setForm({ ...form, locationId: value })}
+            >
+              <SelectTrigger id="demographics-location">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map((loc) => (
+                  <SelectItem key={loc.id} value={String(loc.id)}>
+                    {loc.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-        <button
-          type="submit"
-          data-testid="demographics-submit"
-          className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
-        >
+        <Button type="submit" className="w-full">
           Avançar para perguntas
-        </button>
+        </Button>
       </form>
     </div>
   );

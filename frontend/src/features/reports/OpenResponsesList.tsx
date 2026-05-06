@@ -1,3 +1,4 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { OpenResponse } from "../surveys/surveys.types";
 
 interface OpenResponsesListProps {
@@ -10,27 +11,28 @@ export default function OpenResponsesList({
   return (
     <div className="space-y-6 mt-6">
       {responses.map((question) => (
-        <div
-          key={question.questionId}
-          className="bg-white p-4 rounded-lg shadow-sm"
-        >
-          <h3 className="font-medium text-gray-900 mb-2">
-            {question.questionText}
-          </h3>
-          <p className="text-xs text-gray-500 mb-4">
-            {question.responses.length} resposta(s) • Pergunta espontanea
-          </p>
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {question.responses.map((resp, idx) => (
-              <div
-                key={idx}
-                className="p-2 bg-gray-50 rounded text-sm text-gray-700"
-              >
-                {resp}
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card key={question.questionId}>
+          <CardHeader>
+            <CardTitle className="text-base">{question.questionText}</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {question.responses.length} resposta(s) • Pergunta espontanea
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {question.responses.map((resp, idx) => (
+                <div key={idx} className="p-2 bg-muted rounded text-sm">
+                  {resp}
+                </div>
+              ))}
+              {question.responses.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma resposta registrada.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

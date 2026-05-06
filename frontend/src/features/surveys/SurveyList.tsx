@@ -8,7 +8,26 @@ import {
   setSortBy,
   toggleSortOrder,
 } from "./surveysSlice";
-import Skeleton from "../../components/common/Skeleton";
+import Skeleton from "@/components/common/Skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { PlusCircle, Search, Filter, ArrowUpDown } from "lucide-react";
 
 export default function SurveyList() {
   const navigate = useNavigate();
@@ -73,147 +92,146 @@ export default function SurveyList() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white p-4 rounded-lg shadow-sm space-y-3">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            id="survey-search"
-            name="survey-search"
-            data-testid="survey-search"
+    <div className="space-y-4 p-4">
+      {/* Barra de pesquisa e botão nova pesquisa */}
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
             placeholder="Buscar pesquisa..."
             value={searchTerm}
             onChange={(e) => dispatch(setSearchTerm(e.target.value))}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base"
+            className="pl-9"
+            data-testid="survey-search"
           />
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            data-testid="survey-toggle-filters"
-            className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-          >
-            ⚙️
-          </button>
         </div>
-
-        {showFilters && (
-          <div className="space-y-3 pt-2 border-t">
-            <div>
-              <label
-                htmlFor="survey-filter-status"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Status
-              </label>
-              <select
-                id="survey-filter-status"
-                name="survey-filter-status"
-                data-testid="survey-filter-status"
-                value={statusFilter}
-                onChange={(e) =>
-                  dispatch(
-                    setStatusFilter(e.target.value as typeof statusFilter),
-                  )
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
-              >
-                <option value="all">Todos</option>
-                <option value="rascunho">Rascunho</option>
-                <option value="ativa">Ativa</option>
-                <option value="encerrada">Encerrada</option>
-                <option value="inativa">Inativa</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="survey-filter-sort"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Ordenar por
-              </label>
-              <div className="flex gap-2">
-                <select
-                  id="survey-filter-sort"
-                  name="survey-filter-sort"
-                  data-testid="survey-filter-sort"
-                  value={sortBy}
-                  onChange={(e) =>
-                    dispatch(setSortBy(e.target.value as typeof sortBy))
-                  }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base"
-                >
-                  <option value="createdAt">Data</option>
-                  <option value="title">Título</option>
-                  <option value="responsesCount">Respostas</option>
-                </select>
-                <button
-                  onClick={() => dispatch(toggleSortOrder())}
-                  data-testid="survey-toggle-order"
-                  className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                >
-                  {sortOrder === "asc" ? "↑" : "↓"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowFilters(!showFilters)}
+          data-testid="survey-toggle-filters"
+        >
+          <Filter className="h-4 w-4" />
+        </Button>
+        <Button
+          onClick={() => navigate("/surveys/new")}
+          data-testid="survey-new"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Nova Pesquisa
+        </Button>
       </div>
 
-      <button
-        onClick={() => navigate("/surveys/new")}
-        data-testid="survey-new"
-        className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700"
-      >
-        + Nova Pesquisa
-      </button>
+      {/* Filtros */}
+      {showFilters && (
+        <div className="flex gap-4 items-center bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex-1">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                dispatch(setStatusFilter(value as typeof statusFilter))
+              }
+            >
+              <SelectTrigger data-testid="survey-filter-status">
+                <SelectValue placeholder="Todos os status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="rascunho">Rascunho</SelectItem>
+                <SelectItem value="ativa">Ativa</SelectItem>
+                <SelectItem value="encerrada">Encerrada</SelectItem>
+                <SelectItem value="inativa">Inativa</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1">
+            <Select
+              value={sortBy}
+              onValueChange={(value) =>
+                dispatch(setSortBy(value as typeof sortBy))
+              }
+            >
+              <SelectTrigger data-testid="survey-filter-sort">
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="createdAt">Data</SelectItem>
+                <SelectItem value="title">Título</SelectItem>
+                <SelectItem value="responsesCount">Respostas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => dispatch(toggleSortOrder())}
+            data-testid="survey-toggle-order"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
+      {/* Tabela */}
       {filteredSurveys.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           Nenhuma pesquisa encontrada.
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredSurveys.map((survey) => (
-            <div
-              key={survey.id}
-              onClick={() => navigate(`/surveys/${survey.id}`)}
-              data-testid={`survey-item-${survey.id}`}
-              className="bg-white p-4 rounded-lg shadow-sm active:bg-gray-50 cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <h3 className="font-medium text-gray-900">{survey.title}</h3>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    survey.status === "ativa"
-                      ? "bg-green-100 text-green-800"
-                      : survey.status === "rascunho"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : survey.status === "encerrada"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-red-100 text-red-800"
-                  }`}
+        <div className="rounded-lg border bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Título</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Perguntas</TableHead>
+                <TableHead>Respostas</TableHead>
+                <TableHead>Início</TableHead>
+                <TableHead>Fim</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredSurveys.map((survey) => (
+                <TableRow
+                  key={survey.id}
+                  onClick={() => navigate(`/surveys/${survey.id}`)}
+                  className="cursor-pointer hover:bg-muted/50"
+                  data-testid={`survey-item-${survey.id}`}
                 >
-                  {survey.status === "ativa"
-                    ? "Ativa"
-                    : survey.status === "rascunho"
-                      ? "Rascunho"
-                      : survey.status === "encerrada"
-                        ? "Encerrada"
-                        : "Inativa"}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mt-1">
-                {survey.questions.length} pergunta(s)
-                {survey.responsesCount !== undefined &&
-                  ` • ${survey.responsesCount} resposta(s)`}
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                Início em: {new Date(survey.startDate).toLocaleDateString()}
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                Encerramento em: {new Date(survey.endDate).toLocaleDateString()}
-              </p>
-            </div>
-          ))}
+                  <TableCell className="font-medium">{survey.title}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        survey.status === "ativa"
+                          ? "default"
+                          : survey.status === "rascunho"
+                            ? "secondary"
+                            : survey.status === "encerrada"
+                              ? "outline"
+                              : "destructive"
+                      }
+                    >
+                      {survey.status === "ativa"
+                        ? "Ativa"
+                        : survey.status === "rascunho"
+                          ? "Rascunho"
+                          : survey.status === "encerrada"
+                            ? "Encerrada"
+                            : "Inativa"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{survey.questions.length}</TableCell>
+                  <TableCell>{survey.responsesCount ?? 0}</TableCell>
+                  <TableCell className="text-xs">
+                    {new Date(survey.startDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {new Date(survey.endDate).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

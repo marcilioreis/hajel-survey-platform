@@ -1,8 +1,8 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAppSelector } from "../../app/hooks";
 import { useGetCurrentUserQuery } from "./authApi";
-import Header from "../../components/layout/Header";
-import BottomNav from "../../components/layout/BottomNav";
+import Header from "@/components/layout/Header";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 
 export default function AdminRoute() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
@@ -37,12 +37,17 @@ export default function AdminRoute() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
-      <main className="flex-1 p-4 pb-20">
-        <Outlet />
-      </main>
-      <BottomNav />
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar visível apenas em desktop */}
+      <div className="hidden md:block">
+        <AppSidebar />
+      </div>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

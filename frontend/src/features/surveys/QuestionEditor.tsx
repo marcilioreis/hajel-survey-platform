@@ -4,6 +4,19 @@ import type {
   ConditionalLogic,
   QuestionOption,
 } from "./surveys.types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Trash2, Plus } from "lucide-react";
 
 export function QuestionEditor({
   question,
@@ -44,14 +57,16 @@ export function QuestionEditor({
     updateLogic({ ...logic, conditions: [newCondition] });
   };
 
-  const handleTriggerChange = (qId: number) => {
-    if (!qId) {
+  const handleTriggerChange = (qId: string) => {
+    const numId = Number(qId);
+    // Se numId for 0 ou NaN, trata como remoção da lógica
+    if (!numId || isNaN(numId)) {
       updateLogic(null);
       setLogicOpen(false);
       return;
     }
     const newCondition: ConditionalLogic["conditions"][0] = {
-      questionId: qId,
+      questionId: numId,
       operator: "equals",
       value: "",
     };
@@ -61,9 +76,9 @@ export function QuestionEditor({
     });
   };
 
-  const handleActionChange = (action: ConditionalLogic["action"]) => {
+  const handleActionChange = (action: string) => {
     if (!logic) return;
-    updateLogic({ ...logic, action });
+    updateLogic({ ...logic, action: action as ConditionalLogic["action"] });
   };
 
   const handleValueChange = (val: string | string[]) => {
@@ -94,19 +109,18 @@ export function QuestionEditor({
         handleValueChange(newValues);
       };
       return (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {triggerQuestion.options.map((opt) => (
-            <label key={opt.text} className="flex items-center gap-2">
-              <input
-                type="checkbox"
+            <div key={opt.text} className="flex items-center space-x-2">
+              <Checkbox
                 id={`logic-value-${question.id}-${opt.text}`}
-                name={`logic-value-${question.id}`}
-                data-testid={`logic-value-${question.id}-${opt.text}`}
                 checked={selectedValues.includes(opt.text)}
-                onChange={() => toggleValue(opt.text)}
+                onCheckedChange={() => toggleValue(opt.text)}
               />
-              {opt.text}
-            </label>
+              <Label htmlFor={`logic-value-${question.id}-${opt.text}`}>
+                {opt.text}
+              </Label>
+            </div>
           ))}
         </div>
       );
@@ -117,108 +131,100 @@ export function QuestionEditor({
         ? (rawValue[0] ?? "")
         : rawValue;
       return (
-        <div className="space-y-1">
+        <RadioGroup value={normalizedValue} onValueChange={handleValueChange}>
           {triggerQuestion.options.map((opt) => (
-            <label key={opt.text} className="flex items-center gap-2">
-              <input
-                type="radio"
-                id={`logic-value-${question.id}-${opt.text}`}
-                name={`logic-value-${question.id}`}
-                data-testid={`logic-value-${question.id}-${opt.text}`}
+            <div key={opt.text} className="flex items-center space-x-2">
+              <RadioGroupItem
                 value={opt.text}
-                checked={normalizedValue === opt.text}
-                onChange={() => handleValueChange(opt.text)}
+                id={`logic-value-${question.id}-${opt.text}`}
               />
-              {opt.text}
-            </label>
+              <Label htmlFor={`logic-value-${question.id}-${opt.text}`}>
+                {opt.text}
+              </Label>
+            </div>
           ))}
-        </div>
+        </RadioGroup>
       );
     }
 
     return (
-      <input
+      <Input
         type="text"
-        id={`logic-value-${question.id}`}
-        name={`logic-value-${question.id}`}
-        data-testid={`logic-value-${question.id}`}
         value={typeof rawValue === "string" ? rawValue : ""}
         onChange={(e) => handleValueChange(e.target.value)}
         placeholder="Valor esperado"
-        className="w-full p-2 border rounded"
       />
     );
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-      <div className="flex justify-between">
-        <input
+    <div className="border rounded-lg p-4 space-y-4">
+      {/* Cabeçalho */}
+      <div className="flex items-start gap-2">
+        <Input
           type="text"
           id={`question-text-${question.id}`}
-          name={`question-text-${question.id}`}
           data-testid={`question-text-${question.id}`}
           value={question.text}
           onChange={(e) => onChange({ ...question, text: e.target.value })}
           placeholder="Pergunta"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base"
+          className="flex-1"
         />
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onRemove}
           data-testid={`question-remove-${question.id}`}
-          className="ml-2 p-2 text-red-600 hover:bg-red-50 rounded"
-          title="Remover pergunta"
         >
-          🗑️
-        </button>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
       </div>
 
-      <div className="flex gap-4">
-        <select
-          id={`question-type-${question.id}`}
-          name={`question-type-${question.id}`}
-          data-testid={`question-type-${question.id}`}
+      {/* Tipo e obrigatória */}
+      <div className="flex items-center gap-4">
+        <Select
           value={question.type}
-          onChange={(e) => {
-            const newType = e.target.value as Question["type"];
-            const newQuestion: Question = {
+          onValueChange={(value) => {
+            const newType = value as Question["type"];
+            onChange({
               ...question,
               type: newType,
               options: newType === "texto_longo" ? [] : question.options,
-            };
-            onChange(newQuestion);
+            });
           }}
-          className="px-3 py-2 border border-gray-300 rounded-md text-base"
         >
-          <option value="texto_longo">Espontânea</option>
-          <option value="unica_escolha">Induzida</option>
-        </select>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="texto_longo">Espontânea</SelectItem>
+            <SelectItem value="unica_escolha">Induzida</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
+        <div className="flex items-center space-x-2">
+          <Checkbox
             id={`question-required-${question.id}`}
-            name={`question-required-${question.id}`}
-            data-testid={`question-required-${question.id}`}
             checked={question.required}
-            onChange={(e) =>
-              onChange({ ...question, required: e.target.checked })
+            onCheckedChange={(checked) =>
+              onChange({ ...question, required: !!checked })
             }
           />
-          <span className="text-sm">Obrigatória</span>
-        </label>
+          <Label htmlFor={`question-required-${question.id}`}>
+            Obrigatória
+          </Label>
+        </div>
       </div>
 
+      {/* Opções */}
       {showOptions && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Opções</label>
+          <Label>Opções</Label>
           {question.options.map((opt, idx) => (
-            <div key={idx} className="flex gap-2">
-              <input
+            <div key={idx} className="flex items-center gap-2">
+              <Input
                 type="text"
                 id={`question-option-${question.id}-${idx}`}
-                name={`question-option-${question.id}`}
                 data-testid={`question-option-${question.id}-${idx}`}
                 value={opt.text}
                 onChange={(e) => {
@@ -230,25 +236,25 @@ export function QuestionEditor({
                   onChange({ ...question, options: updatedOptions });
                 }}
                 placeholder={`Opção ${idx + 1}`}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base"
+                className="flex-1"
               />
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   const updatedOptions = question.options.filter(
                     (_, i) => i !== idx,
                   );
                   onChange({ ...question, options: updatedOptions });
                 }}
-                data-testid={`question-option-remove-${question.id}-${idx}`}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded"
               >
-                ✕
-              </button>
+                <Trash2 className="h-4 w-4 text-muted-foreground" />
+              </Button>
             </div>
           ))}
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               const newOption: QuestionOption = { text: "" };
               onChange({
@@ -256,109 +262,96 @@ export function QuestionEditor({
                 options: [...question.options, newOption],
               });
             }}
-            data-testid={`question-option-add-${question.id}`}
-            className="text-blue-600 text-sm font-medium"
           >
-            + Adicionar opção
-          </button>
+            <Plus className="h-4 w-4 mr-1" />
+            Adicionar opção
+          </Button>
         </div>
       )}
 
-      <div className="border-t pt-2 mt-2">
+      {/* Lógica condicional */}
+      <div className="border-t pt-4 mt-2">
         {!logicOpen ? (
-          <button
-            type="button"
-            onClick={() => setLogicOpen(true)}
-            data-testid={`logic-add-${question.id}`}
-            className="text-sm text-gray-500 hover:text-blue-600"
-          >
+          <Button variant="link" size="sm" onClick={() => setLogicOpen(true)}>
             + Adicionar lógica condicional
-          </button>
+          </Button>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
-                Lógica condicional
-              </span>
-              <button
-                type="button"
-                onClick={removeLogic}
-                data-testid={`logic-remove-${question.id}`}
-                className="text-red-600 text-sm"
-              >
+              <Label className="font-medium">Lógica condicional</Label>
+              <Button variant="link" size="sm" onClick={removeLogic}>
                 Remover
-              </button>
+              </Button>
             </div>
 
-            <div>
-              <label className="text-xs text-gray-500">Ação</label>
-              <select
-                id={`logic-action-${question.id}`}
-                name={`logic-action-${question.id}`}
-                data-testid={`logic-action-${question.id}`}
-                value={logic?.action ?? "show"}
-                onChange={(e) =>
-                  handleActionChange(
-                    e.target.value as ConditionalLogic["action"],
-                  )
-                }
-                className="w-full p-2 border rounded text-sm"
-              >
-                <option value="show">Mostrar esta pergunta</option>
-                <option value="skip">Pular esta pergunta</option>
-              </select>
-            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Ação</Label>
+                <Select
+                  value={logic?.action ?? "show"}
+                  onValueChange={handleActionChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Ação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="show">Mostrar esta pergunta</SelectItem>
+                    <SelectItem value="skip">Pular esta pergunta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <label className="text-xs text-gray-500">Pergunta gatilho</label>
-              <select
-                id={`logic-trigger-${question.id}`}
-                name={`logic-trigger-${question.id}`}
-                data-testid={`logic-trigger-${question.id}`}
-                value={triggerQuestionId}
-                onChange={(e) => handleTriggerChange(Number(e.target.value))}
-                className="w-full p-2 border rounded text-sm"
-              >
-                <option value="">Selecione uma pergunta</option>
-                {allQuestions
-                  .filter((q) => q.id !== question.id)
-                  .map((q) => (
-                    <option key={q.id} value={q.id}>
-                      {q.text || `Pergunta ${q.order ?? q.id}`}
-                    </option>
-                  ))}
-              </select>
+              <div>
+                <Label className="text-xs">Pergunta gatilho</Label>
+                <Select
+                  value={triggerQuestionId ? String(triggerQuestionId) : ""}
+                  onValueChange={handleTriggerChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma pergunta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allQuestions
+                      .filter((q) => q.id !== question.id)
+                      .map((q) => (
+                        <SelectItem key={q.id} value={String(q.id)}>
+                          {q.text || `Pergunta ${q.order ?? q.id}`}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {triggerQuestion && (
               <>
                 <div>
-                  <label className="text-xs text-gray-500">Operador</label>
-                  <select
-                    id={`logic-operator-${question.id}`}
-                    name={`logic-operator-${question.id}`}
-                    data-testid={`logic-operator-${question.id}`}
-                    value={operator}
-                    onChange={(e) => handleOperatorChange(e.target.value)}
-                    className="w-full p-2 border rounded text-sm"
-                  >
-                    <option value="equals">Igual a</option>
-                    <option value="not_equals">Diferente de</option>
-                    {triggerQuestion.type !== "texto_longo" && (
-                      <>
-                        <option value="contains">Contém</option>
-                        <option value="not_contains">Não contém</option>
-                      </>
-                    )}
-                  </select>
+                  <Label className="text-xs">Operador</Label>
+                  <Select value={operator} onValueChange={handleOperatorChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="equals">Igual a</SelectItem>
+                      <SelectItem value="not_equals">Diferente de</SelectItem>
+                      {triggerQuestion.type !== "texto_longo" && (
+                        <>
+                          <SelectItem value="contains">Contém</SelectItem>
+                          <SelectItem value="not_contains">
+                            Não contém
+                          </SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="text-xs text-gray-500">
+                  <Label className="text-xs">
                     {triggerQuestion.type === "multipla_escolha"
                       ? "Valores (selecione um ou mais)"
                       : "Valor"}
-                  </label>
+                  </Label>
                   {renderValueInput()}
                 </div>
               </>

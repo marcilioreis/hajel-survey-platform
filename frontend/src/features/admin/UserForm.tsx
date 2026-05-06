@@ -7,6 +7,10 @@ import {
 } from "./adminApi";
 import { toast } from "sonner";
 import type { AdminUser } from "../surveys/surveys.types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface UserFormProps {
   initialUser?: AdminUser;
@@ -56,7 +60,7 @@ export default function UserForm({ initialUser }: UserFormProps) {
             name: name.trim(),
             email: email.trim(),
             active,
-            roles: selectedRoles,
+            roleIds: selectedRoles,
           },
         }).unwrap();
         toast.success("Usuário atualizado.");
@@ -78,129 +82,88 @@ export default function UserForm({ initialUser }: UserFormProps) {
 
   return (
     <div className="p-4 max-w-md mx-auto">
-      <h1 className="text-xl font-bold mb-4">
+      <h1 className="text-2xl font-bold mb-6">
         {isEditing ? "Editar Usuário" : "Novo Usuário"}
       </h1>
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 bg-white p-6 rounded-lg shadow-sm"
-        data-testid="user-form"
+        className="space-y-6 bg-card p-6 rounded-xl shadow-sm"
       >
-        <div>
-          <label
-            htmlFor="user-name"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Nome
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="user-name">Nome</Label>
+          <Input
             id="user-name"
-            name="user-name"
             data-testid="user-name"
-            type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg"
           />
         </div>
-        <div>
-          <label
-            htmlFor="user-email"
-            className="block text-sm font-medium text-gray-700"
-          >
-            E-mail
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="user-email">E-mail</Label>
+          <Input
             id="user-email"
-            name="user-email"
             data-testid="user-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg"
           />
         </div>
         {!isEditing && (
-          <div>
-            <label
-              htmlFor="user-password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Senha
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="user-password">Senha</Label>
+            <Input
               id="user-password"
-              name="user-password"
               data-testid="user-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required={!isEditing}
-              className="w-full p-3 border rounded-lg"
               placeholder="Mínimo 8 caracteres"
+              required
             />
           </div>
         )}
-
-        <div className="flex items-center gap-2">
-          <input
+        <div className="flex items-center space-x-2">
+          <Checkbox
             id="user-active"
-            name="user-active"
-            data-testid="user-active"
-            type="checkbox"
             checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-            className="rounded"
+            onCheckedChange={(checked) => setActive(!!checked)}
           />
-          <label htmlFor="user-active" className="text-sm">
-            Ativo
-          </label>
+          <Label htmlFor="user-active">Ativo</Label>
         </div>
-
         <fieldset>
-          <legend className="block text-sm font-medium text-gray-700 mb-2">
-            Roles
-          </legend>
+          <legend className="text-sm font-medium mb-2">Roles</legend>
           {allRoles.length === 0 ? (
-            <p className="text-sm text-gray-500">Nenhuma role disponível.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhuma permissão disponível.
+            </p>
           ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
               {allRoles.map((role) => (
-                <label key={role.id} className="flex items-center gap-2">
-                  <input
+                <div key={role.id} className="flex items-center space-x-2">
+                  <Checkbox
                     id={`user-role-${role.id}`}
-                    name={`user-role-${role.id}`}
-                    data-testid={`user-role-${role.id}`}
-                    type="checkbox"
                     checked={selectedRoles.includes(role.id)}
-                    onChange={() => toggleRole(role.id)}
+                    onCheckedChange={() => toggleRole(role.id)}
                   />
-                  <span className="text-sm">{role.name}</span>
-                </label>
+                  <Label htmlFor={`user-role-${role.id}`}>{role.name}</Label>
+                </div>
               ))}
             </div>
           )}
         </fieldset>
-
         <div className="flex gap-3">
-          <button
+          <Button
+            variant="outline"
             type="button"
             onClick={() => navigate("/admin/users")}
-            data-testid="user-cancel"
-            className="flex-1 py-3 border rounded-lg"
           >
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={isCreating || isUpdating}
-            data-testid="user-submit"
-            className="flex-1 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={isCreating || isUpdating}>
             {isCreating || isUpdating ? "Salvando..." : "Salvar"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

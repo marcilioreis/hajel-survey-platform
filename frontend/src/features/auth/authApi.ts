@@ -130,11 +130,14 @@ export const authApi = api.injectEndpoints({
     getCurrentUser: builder.query<SessionResponse, void>({
       query: () => "/auth/get-session",
     }),
-    updateUser: builder.mutation<User, Partial<Pick<User, "name" | "email">>>({
+    // Substitua o endpoint "updateUser" por "updateProfile"
+    updateProfile: builder.mutation<
+      User,
+      Partial<Pick<User, "name" | "email">>
+    >({
       queryFn: async (patch) => {
         try {
           const result = await authClient.updateUser(patch);
-          // Tenta acessar result.data primeiro; se não existir, usa o próprio result
           const responseData: unknown =
             (result as Record<string, unknown>).data ?? result;
           if (isUpdateUserResponse(responseData)) {
@@ -161,7 +164,6 @@ export const authApi = api.injectEndpoints({
         }
       },
     }),
-
     // Mutation changePassword (inalterada, apenas removi toast)
     changePassword: builder.mutation<
       void,
@@ -185,6 +187,6 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useGetCurrentUserQuery,
-  useUpdateUserMutation,
+  useUpdateProfileMutation,
   useChangePasswordMutation,
 } = authApi;

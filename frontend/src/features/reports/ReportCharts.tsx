@@ -6,24 +6,24 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  type RectangleProps,
 } from "recharts";
-import type { RectangleProps } from "recharts"; // import somente o tipo
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { QuestionResult } from "../surveys/surveys.types";
 
 interface ReportChartsProps {
   results: QuestionResult[];
 }
 
-// Geração dinâmica de cores por índice
+interface BarShapeProps extends RectangleProps {
+  index: number;
+}
+
+// Geração dinâmica de cores
 const getBarColor = (index: number) => {
   const hue = (index * 137.508) % 360;
   return `hsl(${hue}, 65%, 55%)`;
 };
-
-// Estendemos RectangleProps para incluir o índice
-interface BarShapeProps extends RectangleProps {
-  index: number;
-}
 
 const CustomBar = (props: BarShapeProps) => {
   const { x, y, width, height, index } = props;
@@ -45,34 +45,34 @@ export default function ReportCharts({ results }: ReportChartsProps) {
         }
 
         return (
-          <div
-            key={question.questionId}
-            className="bg-white p-4 rounded-lg shadow-sm"
-          >
-            <h3 className="font-medium text-gray-900 mb-2">
-              {question.questionText}
-            </h3>
-            <p className="text-xs text-gray-500 mb-4">
-              {question.totalResponses} resposta(s) •{" "}
-              {question.data.reduce((sum, row) => sum + row.count, 0)} total
-            </p>
-
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart
-                data={question.data}
-                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="option" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar
-                  dataKey="count"
-                  shape={(props: BarShapeProps) => <CustomBar {...props} />}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <Card key={question.questionId}>
+            <CardHeader>
+              <CardTitle className="text-base">
+                {question.questionText}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {question.totalResponses} resposta(s) •{" "}
+                {question.data.reduce((sum, row) => sum + row.count, 0)} total
+              </p>
+            </CardHeader>
+            <CardContent className="p-0 pt-2">
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart
+                  data={question.data}
+                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="option" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar
+                    dataKey="count"
+                    shape={(props: BarShapeProps) => <CustomBar {...props} />}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

@@ -1,11 +1,22 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useGetSurveyByIdQuery, useDeleteSurveyMutation } from "./surveysApi";
 import { useAppDispatch } from "../../app/hooks";
 import { api } from "../../lib/api";
-import Skeleton from "../../components/common/Skeleton";
 import { parseBackendDate } from "../../utils/date";
 import { getOptionText } from "../../utils/text";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function SurveyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -13,69 +24,30 @@ export default function SurveyDetail() {
   const { data: survey, isLoading } = useGetSurveyByIdQuery(id!);
   const [deleteSurvey, { isLoading: isDeleting }] = useDeleteSurveyMutation();
   const dispatch = useAppDispatch();
-
-  const confirmDelete = () => {
-    toast.custom(
-      (t) => (
-        <div className="max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-opacity-5">
-          <div className="p-4">
-            <p className="text-sm font-medium text-gray-900">
-              Tem certeza que deseja excluir esta pesquisa?
-            </p>
-          </div>
-          <div className="flex border-gray-200">
-            <button
-              type="button"
-              onClick={() => {
-                handleDelete();
-                toast.dismiss(t);
-              }}
-              className="w-full border border-transparent rounded-none rounded-r-lg p-2 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none"
-            >
-              Confirmar
-            </button>
-            <button
-              type="button"
-              onClick={() => toast.dismiss(t)}
-              className="w-full border border-transparent rounded-none p-2 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        duration: 5000,
-      },
-    );
-  };
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleDelete = async () => {
     if (!id) return;
     try {
       await deleteSurvey(id).unwrap();
-      // Invalida as tags para forçar recarga da lista
       dispatch(api.util.invalidateTags(["Survey"]));
       await new Promise((resolve) => setTimeout(resolve, 0));
       toast.success("Pesquisa excluída com sucesso.");
       navigate("/surveys");
     } catch {
       toast.error("Erro ao excluir pesquisa.");
+    } finally {
+      setShowDeleteDialog(false);
     }
-  };
-
-  const handleStartCollection = () => {
-    navigate(`/surveys/${id}/execute`);
   };
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 p-4">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-3 w-1/3" />
+            <div className="h-5 w-3/4 bg-gray-200 animate-pulse rounded" />
+            <div className="h-4 w-1/2 bg-gray-200 animate-pulse rounded" />
           </div>
         ))}
       </div>
@@ -84,84 +56,104 @@ export default function SurveyDetail() {
 
   if (!survey) return null;
 
-  const statusLabel = survey.active ? "Ativa" : "Encerrada";
-  const statusClass = survey.active
-    ? "bg-green-100 text-green-800"
-    : "bg-gray-100 text-gray-800";
-
   return (
-    <div className="space-y-4">
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>
-          {statusLabel}
-        </span>
-        <div className="flex justify-between items-start">
-          <h1 className="p-2 text-2xl w-full">{survey.title}</h1>
-        </div>
-        {survey.description && (
-          <p className="text-gray-600 p-2">{survey.description}</p>
-        )}
-        <p className="text-sm text-gray-400 mt-2">
-          Início em: {parseBackendDate(survey.start_date).toLocaleDateString()}
-        </p>
-        <p className="text-sm text-gray-400 mt-2">
-          Encerramento em:{" "}
-          {parseBackendDate(survey.end_date).toLocaleDateString()}
-        </p>
-      </div>
+    <div className="space-y-6 p-4 md:p-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl">{survey.title}</CardTitle>
+            <Badge variant={survey.active ? "default" : "secondary"}>
+              {survey.active ? "Ativa" : "Encerrada"}
+            </Badge>
+          </div>
+          {survey.description && (
+            <p className="text-muted-foreground">{survey.description}</p>
+          )}
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+          <div>
+            Início: {parseBackendDate(survey.start_date).toLocaleDateString()}
+          </div>
+          <div>
+            Fim: {parseBackendDate(survey.end_date).toLocaleDateString()}
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <h2 className="font-medium mb-3 p-2">
-          Perguntas ({survey.questions.length})
-        </h2>
-        <ol className="space-y-3 list-decimal list-inside text-left">
-          {survey.questions.map((q) => (
-            <li key={q.id} className="text-gray-700">
-              <span className="font-medium">{q.text}</span>
-              {q.required && <span className="text-red-500 ml-1">*</span>}
-              {q.type !== "texto_longo" && q.options.length > 0 && (
-                <ul className="ml-6 mt-1 list-disc text-sm text-gray-500">
-                  {q.options.map((opt, idx) => (
-                    <li key={idx}>{getOptionText(opt)}</li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ol>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Perguntas ({survey.questions.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="space-y-4 list-decimal list-inside text-left">
+            {survey.questions.map((q) => (
+              <li key={q.id} className="text-gray-700">
+                <span className="font-medium">{q.text}</span>
+                {q.required && <span className="text-red-500 ml-1">*</span>}
+                {q.type !== "texto_longo" && q.options.length > 0 && (
+                  <ul className="ml-6 mt-1 list-disc text-sm text-gray-500">
+                    {q.options.map((opt, idx) => (
+                      <li key={idx}>{getOptionText(opt)}</li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-col gap-2">
-        <button
-          onClick={() => navigate(`/surveys/${id}/edit`)}
-          className="py-3 bg-blue-600 text-white rounded-lg font-medium"
-        >
+        <Button onClick={() => navigate(`/surveys/${id}/edit`)}>
           Editar Pesquisa
-        </button>
+        </Button>
         {survey.status === "ativa" && (
-          <button
-            onClick={handleStartCollection}
-            className="py-3 bg-green-600 text-white rounded-lg font-medium"
+          <Button
+            variant="secondary"
+            onClick={() => navigate(`/surveys/${id}/execute`)}
           >
             Iniciar Coleta
-          </button>
+          </Button>
         )}
         {survey.responses_count > 0 && (
-          <button
+          <Button
+            variant="secondary"
             onClick={() => navigate(`/reports/${id}`)}
-            className="py-3 bg-purple-600 text-white rounded-lg font-medium"
           >
             Ver Resultados
-          </button>
+          </Button>
         )}
-        <button
-          onClick={confirmDelete}
+        <Button
+          variant="destructive"
+          onClick={() => setShowDeleteDialog(true)}
           disabled={isDeleting}
-          className="py-3 border border-red-300 text-red-600 rounded-lg font-medium"
         >
           {isDeleting ? "Excluindo..." : "Excluir Pesquisa"}
-        </button>
+        </Button>
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta pesquisa? Esta ação não pode
+              ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
