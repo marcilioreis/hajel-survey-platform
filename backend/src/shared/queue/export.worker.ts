@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { Job } from 'bull';
 import { exportQueue } from './export.queue.js';
+import { storage } from '../../shared/storage/storage.js';
 import * as reportsService from '../../modules/surveys/reports.service.js';
 import type { ExportFilters } from '../../modules/surveys/reports.service.js';
 import * as resultsService from '../../modules/surveys/results.service.js';
@@ -53,24 +54,28 @@ export const startExportWorker = () => {
       }
 
       let fileContent: Buffer | string;
-      // let mimeType: string;
+      let mimeType: string;
       let extension: string;
 
       switch (format) {
         case 'csv':
           fileContent = json2csv(data);
+          mimeType = 'text/csv';
           extension = 'csv';
           break;
         case 'json':
           fileContent = JSON.stringify(data, null, 2);
+          mimeType = 'application/json';
           extension = 'json';
           break;
         case 'pdf':
           fileContent = await generatePdf(data);
+          mimeType = 'application/pdf';
           extension = 'pdf';
           break;
         case 'xlsx':
           fileContent = await generateXlsx(data);
+          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
           extension = 'xlsx';
           break;
         default:
@@ -79,22 +84,17 @@ export const startExportWorker = () => {
 
       // Salva o arquivo em disco (ou S3)
       const fileName = `export_${exportId}_${Date.now()}.${extension}`;
-      const filePath = path.join(process.cwd(), 'exports', fileName);
       console.info(`💾 Salvando arquivo ${fileName}...`);
+      const downloadLink = await storage.save(fileName, fileContent, mimeType);
 
-      await fs.mkdir(path.dirname(filePath), { recursive: true });
-      await fs.writeFile(filePath, fileContent);
-
-      // Atualiza o registro de exportação com o link
-      const downloadLink = `/api/surveys/exports/${exportId}/download`;
       console.info(`📝 Finalizando exportação no banco...`);
-
       await reportsService.completeExport(
         exportId,
         fileName,
         Buffer.byteLength(fileContent),
         downloadLink
       );
+
       console.info(`✅ Exportação ${exportId} concluída`);
 
       return { success: true, fileName };

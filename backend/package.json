@@ -25,6 +25,8 @@
   "dependencies": {
     "@apollo/server": "^5.5.0",
     "@as-integrations/express5": "^1.1.2",
+    "@aws-sdk/client-s3": "^3.1043.0",
+    "@aws-sdk/s3-request-presigner": "^3.1043.0",
     "@better-auth/drizzle-adapter": "^1.6.5",
     "@graphql-tools/schema": "^10.0.32",
     "axios": "^1.15.2",
