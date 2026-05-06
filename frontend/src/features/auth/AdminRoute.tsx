@@ -5,25 +5,18 @@ import Header from "@/components/layout/Header";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 
 export default function AdminRoute() {
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const { data: sessionData, isLoading: isSessionLoading } =
     useGetCurrentUserQuery();
 
-  // Ainda carregando sessão
-  if (isAuthenticated && !user) {
+  if (isSessionLoading) {
     return <div className="p-4 text-center">Verificando permissões...</div>;
   }
-  // Não autenticado
-  if (!isAuthenticated || !user) {
+
+  if (!isAuthenticated || !sessionData?.user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (isSessionLoading) {
-    return <div className="p-4 text-center">Carregando permissões...</div>;
-  }
-
-  // Verifica se o usuário tem permissão de administrador.
-  // Ajuste conforme sua lógica de RBAC: pode ser uma role 'admin' ou permissão 'admin:access'
   const isAdmin =
     sessionData?.roles?.includes("admin") ||
     sessionData?.permissions?.includes("admin:access");

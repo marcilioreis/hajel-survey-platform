@@ -17,6 +17,8 @@ function isSessionResponse(obj: unknown): obj is {
     image?: string | null;
   };
   session: unknown;
+  permissions?: string[];
+  roles?: string[];
 } {
   return (
     typeof obj === "object" && obj !== null && "user" in obj && "session" in obj
@@ -29,6 +31,7 @@ export default function ProtectedRoute() {
   const { data: sessionData, error, isSuccess } = useGetCurrentUserQuery();
 
   useEffect(() => {
+    // 1. Sucesso absoluto: sessão válida
     if (isSuccess && sessionData && isSessionResponse(sessionData)) {
       dispatch(
         setCredentials({
@@ -37,17 +40,17 @@ export default function ProtectedRoute() {
           roles: sessionData.roles,
         }),
       );
-    } else if (isSuccess && sessionData && !isSessionResponse(sessionData)) {
-      // sessão inválida inesperada
-      dispatch(setLoading(false));
-    } else if (error) {
-      dispatch(setLoading(false));
+      return;
     }
+
+    // 2. Qualquer outro cenário (erro, sucesso sem sessão): encerra carregamento
+    // O interceptor já tentou reautenticar internamente; se falhou, deslogamos.
+    dispatch(setLoading(false));
   }, [isSuccess, sessionData, error, dispatch]);
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 p-4">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
             <Skeleton className="h-5 w-3/4" />
@@ -59,5 +62,6 @@ export default function ProtectedRoute() {
     );
   }
 
+  // Se após a verificação o usuário não estiver autenticado, redireciona silenciosamente.
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 }

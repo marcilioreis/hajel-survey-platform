@@ -16,7 +16,6 @@ export const rtkQueryErrorLogger: Middleware = (api) => (next) => (action) => {
       const status = payload.status;
 
       if (status === 401) {
-        toast.error("Sessão expirada. Faça login novamente.");
         return next(action);
       }
 
