@@ -147,7 +147,13 @@ export default function UserForm({ initialUser }: UserFormProps) {
                     checked={selectedRoles.includes(role.id)}
                     onCheckedChange={() => toggleRole(role.id)}
                   />
-                  <Label htmlFor={`user-role-${role.id}`}>{role.name}</Label>
+                  <Label htmlFor={`user-role-${role.id}`}>
+                    {role.name === "admin"
+                      ? "Admin"
+                      : role.name === "researcher"
+                        ? "Pesquisador"
+                        : "Visualizador"}
+                  </Label>
                 </div>
               ))}
             </div>

@@ -65,7 +65,13 @@ export default function RoleList() {
           <TableBody>
             {roles?.map((role) => (
               <TableRow key={role.id}>
-                <TableCell className="font-medium">{role.name}</TableCell>
+                <TableCell className="font-medium">
+                  {role.name === "admin"
+                    ? "Admin"
+                    : role.name === "researcher"
+                      ? "Pesquisador"
+                      : "Visualizador"}
+                </TableCell>
                 <TableCell>{role.permissions?.length ?? 0}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
