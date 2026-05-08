@@ -1,11 +1,12 @@
 // src/modules/surveys/reports.controller.ts
 import { Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs/promises';
 import * as reportsService from './reports.service.js';
 import * as surveyService from './surveys.service.js';
 import { exportQueue } from '../../shared/queue/export.queue.js';
 import { hasPermission } from '../../shared/middleware/rbac.js';
-import path from 'path';
-import fs from 'fs/promises';
+import { storage } from '../../shared/storage/storage.js';
 
 const getNumericId = (param: string | string[]): number => {
   const id = Array.isArray(param) ? param[0] : param;
@@ -86,19 +87,34 @@ export const downloadExport = async (req: Request, res: Response) => {
     const exportId = getNumericId(req.params.exportId);
     const exportRecord = await reportsService.getExportById(exportId);
     if (!exportRecord || exportRecord.status !== 'concluido') {
-      return res.status(404).json({ error: 'Exportação não está pronta ou não encontrada' });
+      return res.status(404).json({ error: 'Export não encontrado ou não está pronto' });
     }
 
-    // Se o arquivo estiver em disco (local), faça o pipe
-    const filePath = path.join(process.cwd(), 'exports', exportRecord.fileName!);
-    const stat = await fs.stat(filePath);
-    res.setHeader('Content-Type', exportRecord.format === 'csv' ? 'text/csv' : 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="${exportRecord.fileName}"`);
-    res.setHeader('Content-Length', stat.size);
-    const fileStream = await fs.open(filePath, 'r');
-    fileStream.createReadStream().pipe(res);
+    // --- Modo local (desenvolvimento) ---
+    if (process.env.STORAGE_DRIVER === 'local') {
+      const filePath = path.join(process.cwd(), 'exports', exportRecord.fileName!);
+      try {
+        const stat = await fs.stat(filePath);
+        res.setHeader(
+          'Content-Type',
+          exportRecord.format === 'csv' ? 'text/csv' : 'application/json'
+        );
+        res.setHeader('Content-Disposition', `attachment; filename="${exportRecord.fileName}"`);
+        res.setHeader('Content-Length', stat.size);
+        const fileStream = await fs.open(filePath, 'r');
+        fileStream.createReadStream().pipe(res);
+      } catch (err) {
+        console.error('Erro ao ler arquivo local:', err);
+        res.status(500).json({ error: 'Arquivo não encontrado no servidor' });
+      }
+      return;
+    }
+
+    // --- Modo S3 / MinIO / R2 ---
+    const signedUrl = await storage.getSignedDownloadUrl(exportRecord.fileName!, 3600);
+    res.redirect(signedUrl);
   } catch (error) {
     console.error('Download error:', error);
-    res.status(500).json({ error: 'Arquivo não encontrado' });
+    res.status(500).json({ error: 'Erro ao fazer download do arquivo' });
   }
 };

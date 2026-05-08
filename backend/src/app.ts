@@ -24,8 +24,8 @@ import adminRoutes from './modules/admin/admin.routes.js';
 // ---- Rate limiter com prefixo ÚNICO no Redis ----
 const apiLimiter = rateLimit({
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args),
-    prefix: 'rl:api:', // prefixo único
+    sendCommand: (...args: any[]) => redis.call(args[0], ...args.slice(1)),
+    prefix: 'rl:api:',
   }),
   windowMs: 15 * 60 * 1000,
   max: 300,

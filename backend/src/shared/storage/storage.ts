@@ -1,4 +1,3 @@
-// src/shared/storage/storage.ts
 import {
   S3Client,
   PutObjectCommand,
@@ -67,7 +66,6 @@ class S3Provider implements StorageProvider {
         ContentType: mimeType,
       })
     );
-    // Retorna a URL pública (assumindo bucket público; caso contrário, use getSignedDownloadUrl)
     return `${process.env.STORAGE_ENDPOINT?.replace('https://', 'https://')}/${this.bucket}/${fileName}`;
   }
 
