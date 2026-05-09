@@ -1,4 +1,5 @@
 import Queue from 'bull';
+import { redis } from '../redis/index.js';
 
 export interface ExportJobData {
   exportId: number;
@@ -13,5 +14,5 @@ export interface ExportJobData {
 }
 
 export const exportQueue = new Queue<ExportJobData>('survey-exports', {
-  redis: process.env.REDIS_URL || 'redis://localhost:6379',
+  redis: redis,
 });

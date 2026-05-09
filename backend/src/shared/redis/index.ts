@@ -6,39 +6,45 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const redisOptions: Record<string, any> = {
   // Essencial para o Bull e para evitar o MaxRetriesPerRequestError
   maxRetriesPerRequest: null,
-
+  // Força a conexão ao criar o cliente
+  lazyConnect: false,
+  // Estratégia de retry: tenta reconectar até 10 vezes, com um pequeno delay.
+  retryStrategy(times: number) {
+    if (times > 20) {
+      console.error(`❌ Redis: número máximo de tentativas de conexão excedido (${times}).`);
+      return undefined; // para de tentar reconectar após 20 tentativas
+    }
+    const delay = Math.min(times * 200, 5000);
+    console.warn(`🔄 Redis: tentando reconectar em ${delay}ms (tentativa ${times})`);
+    return delay;
+  },
   // Configuração de TLS. Se a URL for rediss://, ativa o TLS com uma configuração
   // que ignora a verificação de autoridade do certificado,
   // que é um workaround conhecido para a compatibilidade com o Upstash.
   tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
-
-  // Solução para o erro "Connection is closed":
-  // Faz o ioredis não esperar indefinidamente por comandos de bloqueio.
-  disconnectTimeout: 0,
-
   // Força a resolução de DNS para IPv6, que resolve problemas de conectividade
   // com o Upstash em certos ambientes de cloud (Render, Fly.io, etc.).
   family: 0,
-
+  // Solução para o erro "Connection is closed":
+  // Faz o ioredis não esperar indefinidamente por comandos de bloqueio.
+  connectTimeout: 10000,
+  disconnectTimeout: 0,
   // Mantém a conexão TCP ativa, evitando que firewalls ou proxies a derrubem.
   keepAlive: 5000,
-  connectTimeout: 10000,
-
-  // Estratégia de retry: tenta reconectar até 10 vezes, com um pequeno delay.
-  retryStrategy(times: number) {
-    if (times > 10) return undefined;
-    return Math.min(times * 200, 2000);
-  },
-
   // Habilita prontidão: o cliente só aceitará comandos quando a conexão estiver estabelecida.
   enableReadyCheck: true,
-
   // Reconecta automaticamente em erros de conexão (ECONNRESET, ECONNREFUSED, READONLY).
   reconnectOnError(err: Error) {
-    const targetErrors = ['READONLY', 'ECONNRESET', 'ECONNREFUSED'];
-    return targetErrors.some((msg) => err.message.includes(msg));
+    const targetErrors = ['READONLY', 'ECONNRESET', 'ECONNREFUSED', 'CLOSED'];
+    const shouldReconnect = targetErrors.some((msg) => err.message.includes(msg));
+    if (shouldReconnect) {
+      console.warn('🔄 Redis: reconectando devido a erro:', err.message);
+    }
+    return shouldReconnect;
   },
 };
 
-console.log(`🔌 Conectando ao Redis (${redisUrl.startsWith('rediss://') ? 'TLS' : 'não-TLS'})...`);
+console.info(
+  `🔌 [Redis] Conectando a ${redisUrl.startsWith('rediss://') ? 'Upstash' : 'Redis local'}...`
+);
 export const redis = new (Redis as any)(redisUrl, redisOptions);
