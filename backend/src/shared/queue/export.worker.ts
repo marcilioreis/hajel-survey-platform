@@ -114,7 +114,9 @@ export const startExportWorker = () => {
   worker.on('ready', () => {
     console.info('📦 BullMQ worker pronto e aguardando jobs');
   });
-
+  worker.on('error', (err) => {
+    console.error('❌ Erro no worker:', err);
+  });
   worker.on('failed', (job, err) => {
     console.error(`❌ Job ${job?.id} falhou:`, err.message);
   });

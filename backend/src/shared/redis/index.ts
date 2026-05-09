@@ -21,13 +21,13 @@ const redisOptions: Record<string, any> = {
     return delay;
   },
   // Habilita TLS automaticamente se a URL começa com rediss://
-  tls: redisUrl.startsWith('rediss://') ? {} : undefined,
+  tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
   // Força a resolução de DNS para IPv6, que resolve problemas de conectividade
   // com o Upstash em certos ambientes de cloud (Render, Fly.io, etc.).
   family: 0,
   // Solução para o erro "Connection is closed":
   // Faz o ioredis não esperar indefinidamente por comandos de bloqueio.
-  connectTimeout: 15000,
+  connectTimeout: 20000,
   disconnectTimeout: 0,
   // Mantém a conexão TCP ativa, evitando que firewalls ou proxies a derrubem.
   keepAlive: 5000,
