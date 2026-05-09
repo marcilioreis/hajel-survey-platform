@@ -43,7 +43,7 @@ export const requestExport = async (req: Request, res: Response) => {
       sanitizedFilters
     );
 
-    await exportQueue.add({
+    await exportQueue.add(`export-${exportRecord.id}`, {
       exportId: exportRecord.id,
       surveyId,
       format,

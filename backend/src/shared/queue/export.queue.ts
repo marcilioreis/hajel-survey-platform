@@ -1,18 +1,7 @@
-import Queue from 'bull';
+import { Queue } from 'bullmq';
 import { redis } from '../redis/index.js';
-
-export interface ExportJobData {
-  exportId: number;
-  surveyId: number;
-  format: 'csv' | 'xlsx' | 'json' | 'pdf';
-  userId: string;
-  filters?: {
-    startDate?: string;
-    endDate?: string;
-    locationIds?: number[];
-  };
-}
+import type { ExportJobData } from './export.worker.js';
 
 export const exportQueue = new Queue<ExportJobData>('survey-exports', {
-  redis: redis,
+  connection: redis,
 });
