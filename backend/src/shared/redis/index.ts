@@ -6,6 +6,8 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const redisOptions: Record<string, any> = {
   // Essencial para o Bull e para evitar o MaxRetriesPerRequestError
   maxRetriesPerRequest: null,
+  // Exigido pelo Bull em versões recentes ao reutilizar um cliente Redis
+  enableReadyCheck: false,
   // Força a conexão ao criar o cliente
   lazyConnect: false,
   // Estratégia de retry: tenta reconectar até 10 vezes, com um pequeno delay.
@@ -18,21 +20,17 @@ const redisOptions: Record<string, any> = {
     console.warn(`🔄 Redis: tentando reconectar em ${delay}ms (tentativa ${times})`);
     return delay;
   },
-  // Configuração de TLS. Se a URL for rediss://, ativa o TLS com uma configuração
-  // que ignora a verificação de autoridade do certificado,
-  // que é um workaround conhecido para a compatibilidade com o Upstash.
-  tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+  // Habilita TLS automaticamente se a URL começa com rediss://
+  tls: redisUrl.startsWith('rediss://') ? {} : undefined,
   // Força a resolução de DNS para IPv6, que resolve problemas de conectividade
   // com o Upstash em certos ambientes de cloud (Render, Fly.io, etc.).
   family: 0,
   // Solução para o erro "Connection is closed":
   // Faz o ioredis não esperar indefinidamente por comandos de bloqueio.
-  connectTimeout: 10000,
+  connectTimeout: 15000,
   disconnectTimeout: 0,
   // Mantém a conexão TCP ativa, evitando que firewalls ou proxies a derrubem.
   keepAlive: 5000,
-  // Habilita prontidão: o cliente só aceitará comandos quando a conexão estiver estabelecida.
-  enableReadyCheck: true,
   // Reconecta automaticamente em erros de conexão (ECONNRESET, ECONNREFUSED, READONLY).
   reconnectOnError(err: Error) {
     const targetErrors = ['READONLY', 'ECONNRESET', 'ECONNREFUSED', 'CLOSED'];
@@ -42,6 +40,7 @@ const redisOptions: Record<string, any> = {
     }
     return shouldReconnect;
   },
+  showFriendlyErrorStack: true,
 };
 
 console.info(
