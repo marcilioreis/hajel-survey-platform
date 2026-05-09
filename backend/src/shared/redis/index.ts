@@ -24,7 +24,7 @@ const redisOptions: Record<string, any> = {
   tls: redisUrl.startsWith('rediss://') ? {} : undefined,
   // Força a resolução de DNS para IPv6, que resolve problemas de conectividade
   // com o Upstash em certos ambientes de cloud (Render, Fly.io, etc.).
-  family: 0,
+  family: 6,
   // Solução para o erro "Connection is closed":
   // Faz o ioredis não esperar indefinidamente por comandos de bloqueio.
   connectTimeout: 15000,
@@ -40,7 +40,6 @@ const redisOptions: Record<string, any> = {
     }
     return shouldReconnect;
   },
-  showFriendlyErrorStack: true,
 };
 
 console.info(

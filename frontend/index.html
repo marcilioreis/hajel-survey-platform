@@ -6,6 +6,13 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.png" />
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (function () {
+      if (window.location.pathname !== '/' && !window.location.pathname.endsWith('.html')) {
+        history.replaceState(null, '', window.location.pathname + '.html');
+      }
+    })();
+  </script>
   <link href="/src/style.css" rel="stylesheet">
   <title>Retrato - Pesquisas de Opinião</title>
 </head>
