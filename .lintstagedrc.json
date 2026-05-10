@@ -6,9 +6,5 @@
     "frontend/src/**/*.{ts,tsx,js,jsx}": [
         "npm run --prefix frontend lint:fix",
         "npm run --prefix frontend format"
-    ],
-    "tests/**/*.ts": [
-        "npm run --prefix tests lint:fix",
-        "npm run --prefix tests format"
     ]
 }

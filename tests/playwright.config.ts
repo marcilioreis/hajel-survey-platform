@@ -1,79 +1,76 @@
-import { defineConfig, devices } from '@playwright/test';
-
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-import dotenv from 'dotenv';
+import { defineConfig } from '@playwright/test';
+import * as dotenv from 'dotenv';
 import path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+// Carrega variáveis do .env.test (se existir) para ficarem disponíveis em process.env
+dotenv.config({ path: path.resolve(__dirname, '.env.test') });
+
+export const STORAGE_STATE = path.join(__dirname, '.auth/user.json');
+
 export default defineConfig({
-  testDir: './e2e', //'./tests/e2e',
-  /* Run tests in files in parallel */
+  testDir: './specs',
+  timeout: 60000,
+  expect: { timeout: 10000 },
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: 'http://localhost:5173',
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    video: 'retain-on-failure',
   },
 
-  /* Configure projects for major browsers */
   projects: [
+    // Projeto de setup (autenticação) – será executado uma vez
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
     },
-
+    // Testes que dependem de login já realizado
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: 'authenticated',
+      testMatch: ['surveys.spec.ts', 'admin.spec.ts'],
+      dependencies: ['setup'],
+      use: {
+        storageState: STORAGE_STATE,  // reutiliza sessão
+      },
     },
-
+    // Testes que rodam sem autenticação
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: 'public',
+      testMatch: ['public-survey.spec.ts', 'auth.spec.ts'],
     },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run start',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    // Backend
+    {
+      command: 'cd ../backend && npm run dev',
+      url: 'http://localhost:3000/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+      env: {
+        DATABASE_URL: process.env.DATABASE_URL!,
+        REDIS_URL: process.env.REDIS_URL!,
+        BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET!,
+        BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+        NODE_ENV: 'test',
+      },
+    },
+    // Frontend
+    {
+      command: 'cd ../frontend && npm run dev',
+      url: 'http://localhost:5173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+      env: {
+        VITE_API_URL: 'http://localhost:3000',
+      },
+    },
+  ],
+
+  globalSetup: './global.setup.ts',
+  globalTeardown: './global.teardown.ts',
 });
