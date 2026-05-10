@@ -16,7 +16,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "db:push": "ts-node drizzle.config.ts",
-    "migrate": "drizzle-kit push:pg",
+    "migrate": "drizzle-kit push",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

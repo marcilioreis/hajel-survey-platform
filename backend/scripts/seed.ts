@@ -1,11 +1,12 @@
 // scripts/seed.ts
 import * as dotenv from 'dotenv';
-dotenv.config(); // carrega DATABASE_URL
+dotenv.config(); // carrega DATABASE_URL e outras variáveis
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../src/shared/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { auth } from '../src/shared/auth/auth';
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client, { schema });
@@ -39,18 +40,9 @@ async function seed() {
 
   // 2. Papéis
   const roleData = [
-    {
-      name: 'admin',
-      description: 'Administrador do sistema – acesso total',
-    },
-    {
-      name: 'researcher',
-      description: 'Pesquisador – pode criar e gerenciar suas pesquisas',
-    },
-    {
-      name: 'viewer',
-      description: 'Visualizador – apenas leitura de resultados agregados',
-    },
+    { name: 'admin', description: 'Administrador do sistema – acesso total' },
+    { name: 'researcher', description: 'Pesquisador – pode criar e gerenciar suas pesquisas' },
+    { name: 'viewer', description: 'Visualizador – apenas leitura de resultados agregados' },
   ];
 
   console.log('📌 Inserindo papéis...');
@@ -64,7 +56,6 @@ async function seed() {
   const getPermissionId = (code: string) =>
     insertedPermissions.find((p) => p.code === code)?.id;
 
-  // Função auxiliar para associar permissões a um papel
   async function assignPermissions(roleName: string, permissionCodes: string[]) {
     const role = insertedRoles.find((r) => r.name === roleName);
     if (!role) return;
@@ -104,25 +95,70 @@ async function seed() {
     'response:view_aggregated',
   ]);
 
-  // 4. Opcional: Atribuir papel admin a um usuário específico via argumento
-  const adminEmail = process.argv[2];
-  if (adminEmail) {
-    console.log(`👤 Atribuindo papel 'admin' ao usuário ${adminEmail}...`);
-    const [user] = await db
+  // 4. Garantir existência do administrador padrão
+  // Credenciais prioritárias: variáveis de ambiente; fallback para valores fixos
+  const adminEmail = process.env.ADMIN_EMAIL || '';
+  const adminName = process.env.ADMIN_NAME || '';
+  const adminPassword = process.env.ADMIN_PASSWORD || '';
+
+  async function ensureAdminUser(email: string, name: string, password: string) {
+    const [existingUser] = await db
       .select({ id: schema.user.id })
       .from(schema.user)
-      .where(eq(schema.user.email, adminEmail));
-    if (user) {
-      const adminRole = insertedRoles.find((r) => r.name === 'admin');
-      if (adminRole) {
-        await db
-          .insert(schema.userRoles)
-          .values({ userId: user.id, roleId: adminRole.id })
-          .onConflictDoNothing();
-        console.log(`✅ Usuário ${adminEmail} agora é admin.`);
-      }
+      .where(eq(schema.user.email, email));
+
+    let userId = existingUser?.id;
+
+    if (!userId) {
+      const response = await auth.api.signUpEmail({
+        body: { email, password, name },
+        asResponse: false,
+      });
+      const newUser = (response as { user: { id: string; email: string; name: string } }).user;
+      userId = newUser.id;
+      console.log(`✅  Usuário ${email} criado com sucesso.`);
     } else {
-      console.warn(`⚠️ Usuário com email ${adminEmail} não encontrado.`);
+      console.log(`ℹ️  Usuário ${email} já existe. Atualizando nome (se necessário)...`);
+      // Opcional: atualizar nome se diferente
+      await db.update(schema.user).set({ name }).where(eq(schema.user.id, userId));
+    }
+
+    const adminRole = insertedRoles.find((r) => r.name === 'admin');
+    if (!adminRole) throw new Error('Role admin não encontrada');
+
+    const [existingRole] = await db
+      .select()
+      .from(schema.userRoles)
+      .where(
+        and(
+          eq(schema.userRoles.userId, userId),
+          eq(schema.userRoles.roleId, adminRole.id)
+        )
+      );
+
+    if (!existingRole) {
+      await db.insert(schema.userRoles).values({ userId, roleId: adminRole.id });
+      console.log(`✅  Usuário ${email} agora é admin.`);
+    } else {
+      console.log(`ℹ️   Usuário ${email} já possui a role admin.`);
+    }
+  }
+
+  // Cria/promove o admin padrão (definido via env ou fallback)
+  await ensureAdminUser(adminEmail, adminName, adminPassword);
+
+  // 5. Argumento extra (opcional) para outro email (apenas promove se existir)
+  const extraAdminEmail = process.argv[2];
+  if (extraAdminEmail) {
+    // Sem nome/senha → só tenta promover
+    const [user] = await db
+      .select({ id: schema.user.id, name: schema.user.name })
+      .from(schema.user)
+      .where(eq(schema.user.email, extraAdminEmail));
+    if (user) {
+      await ensureAdminUser(extraAdminEmail, user.name, ''); // senha vazia não é usada
+    } else {
+      console.warn(`⚠️  Usuário ${extraAdminEmail} não encontrado. Apenas argumentos de email existentes são suportados para promoção.`);
     }
   }
 

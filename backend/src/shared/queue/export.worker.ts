@@ -100,7 +100,12 @@ export const startExportWorker = () => {
         return { success: true, fileName };
       } catch (error) {
         console.error(`Export job ${exportId} failed:`, error);
-        await reportsService.updateExportStatus(exportId, 'falha');
+        try {
+          await reportsService.updateExportStatus(exportId, 'falha');
+        } catch (updateError) {
+          console.error(`Failed to update export status for ${exportId}:`, updateError);
+          // Último recurso: marcar como 'falha' diretamente via SQL (se possível) ou logar
+        }
         throw error;
       }
     },

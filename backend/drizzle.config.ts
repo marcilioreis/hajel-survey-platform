@@ -4,9 +4,11 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Carrega explicitamente o arquivo .env da raiz do backend
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+// Só carrega .env se a variável ainda não existir (ex.: ambiente de CI/teste já a define)
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.resolve(__dirname, '.env') });
+}
 
-// Verificação de segurança (apenas para debug, pode remover depois)
 if (!process.env.DATABASE_URL) {
   throw new Error('❌ DATABASE_URL não está definida no .env');
 }

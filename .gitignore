@@ -16,6 +16,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+tests/.env.test
 
 # ================================
 # Logs e arquivos temporários
@@ -70,3 +71,4 @@ coverage/
 # ================================
 *.tsbuildinfo
 .cache/
+repomix-output-marcilioreis-hajel-survey-platform.md
