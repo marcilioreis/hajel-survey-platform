@@ -51,6 +51,7 @@ try {
       origin: [
         process.env.FRONTEND_URL || 'http://localhost:5173',
         'http://localhost:4173', // ✅ Vite preview
+        'http://127.0.0.1:41705', // ✅ Browser proxy
         'http://localhost:3000', // se precisar acessar via frontend local na porta 3000
         'https://studio.apollographql.com',
       ],

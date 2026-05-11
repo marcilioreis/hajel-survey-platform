@@ -41,6 +41,7 @@ export const auth = betterAuth({
     process.env.FRONTEND_URL || 'http://localhost:5173',
     process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     'http://localhost:4173', // ✅ Vite preview
+    'http://127.0.0.1:41705', // ✅ Browser proxy
   ],
   session: {
     expiresIn: 30 * 24 * 60 * 60, // 30 dias

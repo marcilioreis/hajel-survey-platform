@@ -1,0 +1,19 @@
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Chaves e credenciais comuns
+*.pem
+id_rsa*
+*-key.json
+service-account*.json
+
+# Dados sensíveis / exports locais
+exports/
+backups/
+**/fixtures/pii/
+
+# Dependências e artefatos enormes (menos ruído no contexto)
+node_modules/
+dist/
