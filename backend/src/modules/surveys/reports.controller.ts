@@ -1,4 +1,3 @@
-// src/modules/surveys/reports.controller.ts
 import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -68,13 +67,20 @@ export const getExportStatus = async (req: Request, res: Response) => {
     const exportId = getNumericId(req.params.exportId);
     const exportRecord = await reportsService.getExportById(exportId);
     if (!exportRecord) return res.status(404).json({ error: 'Exportação não encontrada' });
+
+    let downloadLink = null;
+    if (exportRecord.status === 'concluido') {
+      if (process.env.STORAGE_DRIVER === 'local') {
+        downloadLink = `/api/surveys/exports/${exportRecord.id}/download`;
+      } else {
+        downloadLink = await storage.getSignedDownloadUrl(exportRecord.fileName!, 1800); // 30 min
+      }
+    }
+
     res.json({
       id: exportRecord.id,
       status: exportRecord.status,
-      downloadLink:
-        exportRecord.status === 'concluido'
-          ? `/api/surveys/exports/${exportRecord.id}/download`
-          : null,
+      downloadLink,
     });
   } catch (error) {
     console.error('Get export status error:', error);
