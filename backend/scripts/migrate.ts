@@ -28,46 +28,48 @@ async function run() {
   console.log('🚀 Checking database migration state...');
 
   try {
-    // 1. Verificar se a tabela de migrações existe e está vazia
-    const tableExists = await sql`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'drizzle' 
-        AND table_name = '__drizzle_migrations'
-      );
+    // 1. Garantir que o schema e a tabela de migrações existam
+    await sql`CREATE SCHEMA IF NOT EXISTS drizzle`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
+        id SERIAL PRIMARY KEY,
+        hash text NOT NULL,
+        created_at bigint
+      )
     `;
 
-    if (tableExists[0].exists) {
-      const appliedMigrations = await sql`SELECT count(*) FROM drizzle.__drizzle_migrations`;
-      
-      // Se a tabela existe mas está vazia, e as tabelas principais já existem, vamos "sincronizar"
-      if (parseInt(appliedMigrations[0].count) === 0) {
-        const locationCatalogExists = await sql`
-          SELECT EXISTS (
-            SELECT FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name = 'location_catalog'
-          );
-        `;
+    // 2. Verificar se o histórico está vazio
+    const appliedCountResult = await sql`SELECT count(*) FROM drizzle.__drizzle_migrations`;
+    const appliedCount = parseInt(appliedCountResult[0].count);
 
-        if (locationCatalogExists[0].exists) {
-          console.log('⚠️ Database is out of sync (tables exist but migration history is empty).');
-          console.log('🔄 Synchronizing migration history...');
-          
+    if (appliedCount === 0) {
+      // Verificar se as tabelas principais já existem no schema public
+      const tableCheck = await sql`
+        SELECT count(*) FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name IN ('surveys', 'location_catalog', 'user')
+      `;
+      
+      if (parseInt(tableCheck[0].count) > 0) {
+        console.log('⚠️ Database tables exist but migration history is empty. Synchronizing...');
+        
+        if (fs.existsSync(journalPath)) {
           const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
           for (const entry of journal.entries) {
             await sql`
               INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
               VALUES (${entry.tag}, ${entry.when})
-              ON CONFLICT DO NOTHING
+              ON CONFLICT (hash) DO NOTHING
             `;
-            console.log(`✅ Marked ${entry.tag} as applied.`);
+            console.log(`✅ Synced: ${entry.tag}`);
           }
           console.log('✨ Synchronization complete!');
+        } else {
+          console.warn('⚠️ Journal file not found, skipping sync.');
         }
       }
     }
 
+    // 3. Executar as migrações pendentes normalmente
     console.log('📦 Running pending migrations...');
     await migrate(db, { migrationsFolder });
     console.log('✅ All migrations are up to date!');
