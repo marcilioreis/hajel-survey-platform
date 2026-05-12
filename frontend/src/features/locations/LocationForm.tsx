@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelectNeighborhood } from "./MultiSelectNeighborhood";
 
 interface LocationFormProps {
   initialLocation?: Location;
@@ -42,7 +43,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     name: initialLocation?.name ?? "",
     state: initialLocation?.state ?? "",
     city: initialLocation?.city ?? "",
-    neighborhood: initialLocation?.neighborhood ?? "",
+    neighborhood: initialLocation?.neighborhood ?? [],
     cep: initialLocation?.cep ?? "",
     address: initialLocation?.address ?? "",
     ibgeCode: initialLocation?.ibgeCode ?? "",
@@ -96,7 +97,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
         setForm((prev) => ({
           ...prev,
           address: data.logradouro || "",
-          neighborhood: data.bairro || prev.neighborhood,
+          neighborhood: data.bairro ? [data.bairro] : prev.neighborhood,
           city: data.localidade || prev.city,
           state: data.uf || prev.state,
           cep: data.cep || prev.cep,
@@ -132,7 +133,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
         <Select
           value={form.state}
           onValueChange={(value) =>
-            setForm({ ...form, state: value, city: "", neighborhood: "" })
+            setForm({ ...form, state: value, city: "", neighborhood: [] })
           }
         >
           <SelectTrigger id="location-state">
@@ -153,7 +154,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
         <Select
           value={form.city}
           onValueChange={(value) =>
-            setForm({ ...form, city: value, neighborhood: "" })
+            setForm({ ...form, city: value, neighborhood: [] })
           }
           disabled={!form.state}
         >
@@ -171,32 +172,12 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location-neighborhood">Bairro</Label>
-        {neighborhoods.length > 0 ? (
-          <Select
-            value={form.neighborhood}
-            onValueChange={(value) => setForm({ ...form, neighborhood: value })}
-          >
-            <SelectTrigger id="location-neighborhood">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              {neighborhoods.map((b) => (
-                <SelectItem key={b.name} value={b.name}>
-                  {b.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <Input
-            id="location-neighborhood"
-            data-testid="location-neighborhood"
-            placeholder="Digite o bairro"
-            value={form.neighborhood}
-            onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
-          />
-        )}
+        <Label htmlFor="location-neighborhood">Bairros</Label>
+        <MultiSelectNeighborhood
+          options={neighborhoods}
+          selected={form.neighborhood || []}
+          onChange={(value) => setForm({ ...form, neighborhood: value })}
+        />
       </div>
 
       <div className="space-y-2 hidden">

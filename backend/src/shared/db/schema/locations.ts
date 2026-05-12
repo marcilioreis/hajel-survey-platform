@@ -7,6 +7,7 @@ import {
   varchar,
   timestamp,
   primaryKey,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { surveys } from './surveys.js';
 import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
@@ -17,7 +18,7 @@ export const locationCatalog = pgTable('location_catalog', {
   notes: text('notes'),
   state: varchar('state', { length: 2 }),
   city: varchar('city', { length: 100 }),
-  neighborhood: varchar('neighborhood', { length: 100 }),
+  neighborhood: jsonb('neighborhood').$type<string[]>().default([]),
   cep: varchar('cep', { length: 10 }),
   address: text('address'),
   ibgeCode: varchar('ibge_code', { length: 7 }),

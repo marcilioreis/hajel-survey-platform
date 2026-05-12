@@ -137,7 +137,7 @@ export interface Location {
   name: string;
   state?: string;
   city?: string;
-  neighborhood?: string;
+  neighborhood?: string[];
   cep?: string;
   address?: string;
   ibgeCode?: string;
@@ -148,7 +148,7 @@ export interface LocationPayload {
   name: string;
   state: string;
   city: string;
-  neighborhood?: string;
+  neighborhood?: string[];
   cep?: string;
   address?: string;
   ibgeCode?: string;

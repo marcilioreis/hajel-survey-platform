@@ -17,7 +17,7 @@ export const createLocation = async (data: {
   notes?: string;
   state?: string;
   city?: string;
-  neighborhood?: string;
+  neighborhood?: string[];
   cep?: string;
   address?: string;
   ibgeCode?: string;
@@ -33,7 +33,7 @@ export const updateLocation = async (
     notes: string;
     state: string;
     city: string;
-    neighborhood: string;
+    neighborhood: string[];
     cep: string;
     address: string;
     ibgeCode: string;

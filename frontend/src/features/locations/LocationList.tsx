@@ -90,7 +90,11 @@ export default function LocationList() {
                 <TableCell>
                   {loc.city}/{loc.state}
                 </TableCell>
-                <TableCell>{loc.neighborhood || "-"}</TableCell>
+                <TableCell>
+                  {Array.isArray(loc.neighborhood)
+                    ? loc.neighborhood.join(", ") || "-"
+                    : loc.neighborhood || "-"}
+                </TableCell>
                 <TableCell className="max-w-50 truncate">
                   {loc.notes || "-"}
                 </TableCell>

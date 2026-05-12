@@ -320,7 +320,12 @@ export default function SurveyForm({
                         htmlFor={`survey-location-${loc.id}`}
                         className="flex-1 text-sm"
                       >
-                        {loc.name}
+                        {loc.name}{" "}
+                        {loc.neighborhood && loc.neighborhood.length > 0 && (
+                          <span className="text-muted-foreground text-xs">
+                            ({loc.neighborhood.join(", ")})
+                          </span>
+                        )}
                       </Label>
                       {selected && (
                         <Input

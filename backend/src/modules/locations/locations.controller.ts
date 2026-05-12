@@ -35,7 +35,7 @@ export const update = async (req: Request, res: Response) => {
       notes: string;
       state: string;
       city: string;
-      neighborhood: string;
+      neighborhood: string[];
       cep: string;
       address: string;
       ibgeCode: string;

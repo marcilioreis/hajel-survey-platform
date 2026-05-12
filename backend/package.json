@@ -15,8 +15,9 @@
     "lint:fix": "eslint src --ext .ts --fix --no-color",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "db:push": "ts-node drizzle.config.ts",
-    "migrate": "drizzle-kit push",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "migrate": "drizzle-kit migrate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
