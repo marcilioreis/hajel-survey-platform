@@ -20,8 +20,11 @@ async function run() {
 
   console.log('🚀 Starting database migrations...');
   
+  const migrationsFolder = new URL('../drizzle', import.meta.url).pathname;
+  console.log(`📂 Using migrations folder: ${migrationsFolder}`);
+  
   try {
-    await migrate(db, { migrationsFolder: 'drizzle' });
+    await migrate(db, { migrationsFolder });
     console.log('✅ Migrations completed successfully!');
   } catch (error) {
     console.error('❌ Migration failed!');
