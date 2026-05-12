@@ -1,0 +1,2 @@
+# Keep drizzle folder for migrations
+!drizzle/**

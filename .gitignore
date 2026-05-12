@@ -54,7 +54,7 @@ pnpm-lock.yaml
 # Backend
 backend/dist/
 backend/build/
-backend/drizzle/           # Exclui metadados do Drizzle, mas você pode versionar migrations
+# backend/drizzle/           # Exclui metadados do Drizzle, mas você pode versionar migrations
 # backend/drizzle/migrations/  # Descomente se quiser versionar migrações
 
 # Frontend (futuro)

@@ -1,0 +1,1 @@
+ALTER TABLE "respondents" ALTER COLUMN "gender" SET DATA TYPE varchar(50);
