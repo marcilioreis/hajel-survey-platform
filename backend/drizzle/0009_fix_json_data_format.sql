@@ -1,5 +1,5 @@
 -- 1. Fix user table (incase 0007 was synced but not run)
-DO $$;
+DO $$
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user' AND column_name = 'active') THEN
         ALTER TABLE "user" ADD COLUMN "active" boolean DEFAULT true;
@@ -7,7 +7,7 @@ BEGIN
 END $$;
 
 -- 2. Fix neighborhood column type and data
-DO $$;
+DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'location_catalog' AND column_name = 'neighborhood' AND data_type = 'character varying') THEN
         ALTER TABLE "location_catalog" ALTER COLUMN "neighborhood" SET DATA TYPE jsonb 
@@ -20,7 +20,7 @@ BEGIN
 END $$;
 
 -- 3. Fix city column type and data
-DO $$;
+DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'location_catalog' AND column_name = 'city' AND data_type = 'character varying') THEN
         ALTER TABLE "location_catalog" ALTER COLUMN "city" SET DATA TYPE jsonb 
