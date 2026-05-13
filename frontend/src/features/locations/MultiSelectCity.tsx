@@ -49,7 +49,7 @@ export function MultiSelectCity({
             >
               {s}
               <X
-                className="h-3.5 w-3.5 cursor-pointer hover:text-destructive transition-colors"
+                className="h-3.5 w-3.5 cursor-pointer hover:text-destructive transition-colors pointer-events-auto!"
                 onClick={() => toggleOption(s)}
               />
             </Badge>

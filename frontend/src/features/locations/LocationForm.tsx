@@ -60,12 +60,11 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     skip: !form.state,
   });
 
-  // Fetch neighborhoods for all selected cities
-  // Note: This is a bit complex because the current geographyApi might only support single city.
-  // We'll use the first one for now.
+  // Fetch neighborhoods only when EXACTLY one city is selected to avoid confusion,
+  // or use the first city as a reference for neighborhood suggestions.
   const { data: neighborhoodsData = [] } = useGetNeighborhoodsQuery(
     { city: form.city?.[0] || "", uf: form.state },
-    { skip: !form.city?.length || !form.state },
+    { skip: form.city?.length !== 1 || !form.state },
   );
 
   const allNeighborhoods = neighborhoodsData;
@@ -173,14 +172,16 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="location-neighborhood">Bairros</Label>
-        <MultiSelectNeighborhood
-          options={allNeighborhoods}
-          selected={form.neighborhood || []}
-          onChange={(value) => setForm({ ...form, neighborhood: value })}
-        />
-      </div>
+      {(!form.city || form.city.length <= 1) && (
+        <div className="space-y-2">
+          <Label htmlFor="location-neighborhood">Bairros</Label>
+          <MultiSelectNeighborhood
+            options={allNeighborhoods}
+            selected={form.neighborhood || []}
+            onChange={(value) => setForm({ ...form, neighborhood: value })}
+          />
+        </div>
+      )}
 
       <div className="space-y-2 hidden">
         <Label htmlFor="location-cep">CEP</Label>

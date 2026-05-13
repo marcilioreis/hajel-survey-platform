@@ -89,7 +89,7 @@ export default function LocationList() {
                 <TableCell className="font-medium min-w-36 whitespace-normal!">
                   {loc.name}
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-36 whitespace-normal!">
                   {Array.isArray(loc.city)
                     ? loc.city.join(", ") || "-"
                     : loc.city || "-"}
