@@ -1,22 +1,27 @@
 -- Fix neighborhood data to be strictly arrays
--- Ensure column is treated as jsonb to use jsonb_typeof
+-- We use a more defensive approach that doesn't fail on invalid JSON syntax
 UPDATE location_catalog
-SET neighborhood = 
-  CASE 
-    WHEN neighborhood IS NULL THEN '[]'::jsonb
-    WHEN jsonb_typeof(neighborhood::jsonb) = 'string' AND (neighborhood::jsonb #>> '{}') = '' THEN '[]'::jsonb
-    WHEN jsonb_typeof(neighborhood::jsonb) = 'string' THEN jsonb_build_array(neighborhood::jsonb #>> '{}')
-    ELSE neighborhood::jsonb
-  END
-WHERE neighborhood IS NULL OR jsonb_typeof(neighborhood::jsonb) != 'array';
+SET neighborhood = jsonb_build_array(neighborhood #>> '{}')
+WHERE neighborhood IS NOT NULL 
+  AND neighborhood::text != '[]' 
+  AND neighborhood::text NOT LIKE '[%';
 
--- Fix city data to be strictly arrays
+-- Ensure NULLs or empty strings become empty arrays
 UPDATE location_catalog
-SET city = 
-  CASE 
-    WHEN city IS NULL THEN '[]'::jsonb
-    WHEN jsonb_typeof(city::jsonb) = 'string' AND (city::jsonb #>> '{}') = '' THEN '[]'::jsonb
-    WHEN jsonb_typeof(city::jsonb) = 'string' THEN jsonb_build_array(city::jsonb #>> '{}')
-    ELSE city::jsonb
-  END
-WHERE city IS NULL OR jsonb_typeof(city::jsonb) != 'array';
+SET neighborhood = '[]'::jsonb
+WHERE neighborhood IS NULL 
+  OR neighborhood::text = '' 
+  OR neighborhood::text = '""';
+
+-- Same logic for city data
+UPDATE location_catalog
+SET city = jsonb_build_array(city #>> '{}')
+WHERE city IS NOT NULL 
+  AND city::text != '[]' 
+  AND city::text NOT LIKE '[%';
+
+UPDATE location_catalog
+SET city = '[]'::jsonb
+WHERE city IS NULL 
+  OR city::text = '' 
+  OR city::text = '""';
