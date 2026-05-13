@@ -17,7 +17,7 @@ export const locationCatalog = pgTable('location_catalog', {
   name: text('name').notNull().unique(),
   notes: text('notes'),
   state: varchar('state', { length: 2 }),
-  city: varchar('city', { length: 100 }),
+  city: jsonb('city').$type<string[]>().default([]),
   neighborhood: jsonb('neighborhood').$type<string[]>().default([]),
   cep: varchar('cep', { length: 10 }),
   address: text('address'),

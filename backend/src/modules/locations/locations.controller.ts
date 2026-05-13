@@ -34,7 +34,7 @@ export const update = async (req: Request, res: Response) => {
       name: string;
       notes: string;
       state: string;
-      city: string;
+      city: string[];
       neighborhood: string[];
       cep: string;
       address: string;

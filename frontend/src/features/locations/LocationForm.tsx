@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelectNeighborhood } from "./MultiSelectNeighborhood";
+import { MultiSelectCity } from "./MultiSelectCity";
 
 interface LocationFormProps {
   initialLocation?: Location;
@@ -42,7 +43,11 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
   const [form, setForm] = useState<LocationPayload>(() => ({
     name: initialLocation?.name ?? "",
     state: initialLocation?.state ?? "",
-    city: initialLocation?.city ?? "",
+    city: Array.isArray(initialLocation?.city)
+      ? initialLocation.city
+      : initialLocation?.city
+        ? [initialLocation.city]
+        : [],
     neighborhood: initialLocation?.neighborhood ?? [],
     cep: initialLocation?.cep ?? "",
     address: initialLocation?.address ?? "",
@@ -54,17 +59,24 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
   const { data: municipalities = [] } = useGetMunicipalitiesQuery(form.state, {
     skip: !form.state,
   });
-  const { data: neighborhoods = [] } = useGetNeighborhoodsQuery(
-    { city: form.city, uf: form.state },
-    { skip: !form.city || !form.state },
+
+  // Fetch neighborhoods for all selected cities
+  // Note: This is a bit complex because the current geographyApi might only support single city.
+  // We'll use the first one for now.
+  const { data: neighborhoodsData = [] } = useGetNeighborhoodsQuery(
+    { city: form.city?.[0] || "", uf: form.state },
+    { skip: !form.city?.length || !form.state },
   );
+
+  const allNeighborhoods = neighborhoodsData;
+
   const [isCepLoading, setIsCepLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.name.trim() || !form.state || !form.city) {
-      toast.error("Preencha nome, estado e cidade.");
+    if (!form.name.trim() || !form.state || !form.city?.length) {
+      toast.error("Preencha nome, estado e ao menos uma cidade.");
       return;
     }
 
@@ -98,7 +110,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
           ...prev,
           address: data.logradouro || "",
           neighborhood: data.bairro ? [data.bairro] : prev.neighborhood,
-          city: data.localidade || prev.city,
+          city: data.localidade ? [data.localidade] : prev.city,
           state: data.uf || prev.state,
           cep: data.cep || prev.cep,
         }));
@@ -133,7 +145,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
         <Select
           value={form.state}
           onValueChange={(value) =>
-            setForm({ ...form, state: value, city: "", neighborhood: [] })
+            setForm({ ...form, state: value, city: [], neighborhood: [] })
           }
         >
           <SelectTrigger id="location-state">
@@ -150,31 +162,21 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location-city">Município *</Label>
-        <Select
-          value={form.city}
-          onValueChange={(value) =>
+        <Label htmlFor="location-city">Municípios *</Label>
+        <MultiSelectCity
+          options={municipalities}
+          selected={form.city || []}
+          onChange={(value) =>
             setForm({ ...form, city: value, neighborhood: [] })
           }
           disabled={!form.state}
-        >
-          <SelectTrigger id="location-city">
-            <SelectValue placeholder="Selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            {municipalities.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="location-neighborhood">Bairros</Label>
         <MultiSelectNeighborhood
-          options={neighborhoods}
+          options={allNeighborhoods}
           selected={form.neighborhood || []}
           onChange={(value) => setForm({ ...form, neighborhood: value })}
         />

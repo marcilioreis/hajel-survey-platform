@@ -28,6 +28,7 @@ export const getNeighborhoods = async (city: string, uf?: string) => {
 
   return await db
     .selectDistinct({
+      id: neighborhoods.id,
       name: neighborhoods.neighborhood,
       type: neighborhoods.type,
     })

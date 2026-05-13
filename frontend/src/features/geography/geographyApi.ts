@@ -24,7 +24,7 @@ export const geographyApi = createApi({
       query: (uf) => `/geography/municipalities/${uf}`,
     }),
     getNeighborhoods: builder.query<
-      { name: string }[],
+      { id: number; name: string; type?: string }[],
       { city: string; uf: string }
     >({
       query: ({ city, uf }) => `/geography/neighborhoods/${city}?uf=${uf}`,

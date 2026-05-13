@@ -136,7 +136,7 @@ export interface Location {
   id: number;
   name: string;
   state?: string;
-  city?: string;
+  city?: string[];
   neighborhood?: string[];
   cep?: string;
   address?: string;
@@ -147,7 +147,7 @@ export interface Location {
 export interface LocationPayload {
   name: string;
   state: string;
-  city: string;
+  city: string[];
   neighborhood?: string[];
   cep?: string;
   address?: string;

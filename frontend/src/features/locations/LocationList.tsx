@@ -86,11 +86,16 @@ export default function LocationList() {
           <TableBody>
             {locations?.map((loc) => (
               <TableRow key={loc.id}>
-                <TableCell className="font-medium">{loc.name}</TableCell>
-                <TableCell>
-                  {loc.city}/{loc.state}
+                <TableCell className="font-medium min-w-36 whitespace-normal!">
+                  {loc.name}
                 </TableCell>
                 <TableCell>
+                  {Array.isArray(loc.city)
+                    ? loc.city.join(", ") || "-"
+                    : loc.city || "-"}
+                  /{loc.state}
+                </TableCell>
+                <TableCell className="min-w-36 whitespace-normal!">
                   {Array.isArray(loc.neighborhood)
                     ? loc.neighborhood.join(", ") || "-"
                     : loc.neighborhood || "-"}

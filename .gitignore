@@ -7,8 +7,6 @@ Thumbs.db
 *.swo
 *~
 .vscode/
-.windsurf/
-.gemini/
 .idea/
 *.iml
 

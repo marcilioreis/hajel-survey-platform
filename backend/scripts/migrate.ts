@@ -84,3 +84,6 @@ async function run() {
 }
 
 run();
+
+// Manual update for city conversion if needed locally
+// But since we use npm run migrate, it will use the sql file.

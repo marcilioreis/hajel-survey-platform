@@ -321,9 +321,14 @@ export default function SurveyForm({
                         className="flex-1 text-sm"
                       >
                         {loc.name}{" "}
+                        {loc.city && loc.city.length > 0 && (
+                          <span className="text-muted-foreground text-xs">
+                            ({loc.city.join(", ")})
+                          </span>
+                        )}
                         {loc.neighborhood && loc.neighborhood.length > 0 && (
                           <span className="text-muted-foreground text-xs">
-                            ({loc.neighborhood.join(", ")})
+                            - {loc.neighborhood.join(", ")}
                           </span>
                         )}
                       </Label>
