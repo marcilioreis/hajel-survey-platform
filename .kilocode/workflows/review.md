@@ -1,7 +1,5 @@
----
-+auto_execution_mode: 0
-+description: Review code changes for bugs, security issues, and improvements
-+---
+# Review code changes for bugs, security issues, and improvements
+
 You are a senior software engineer performing a thorough code review to identify potential bugs.
 
 Your task is to find all potential bugs and code improvements in the code changes. Focus on:
@@ -22,7 +20,7 @@ Make sure to:
 4. Remember that if you were given a specific git commit, it may not be checked out and local code states may be different.
 
 ## Critérios específicos do projeto
-+- Verifique se as mensagens de erro estão em português.
-+- Confirme se as permissões RBAC estão sendo validadas com `authorize()`.
-+- Assegure que as camadas (controller → service → db) estão respeitadas.
-+- Cache: confira se o Redis está usando as configurações de `family:0` e `tls` para Upstash.
+- Verifique se as mensagens de erro estão em português.
+- Confirme se as permissões RBAC estão sendo validadas com `authorize()`.
+- Assegure que as camadas (controller → service → db) estão respeitadas.
+- Cache: confira se o Redis está usando as configurações de `family:0` e `tls` para Upstash.
