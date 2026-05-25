@@ -73,4 +73,6 @@ coverage/
 .cache/
 repomix-output-marcilioreis-hajel-survey-platform.md
 @plan.md
-plan-*.md.kilo/
+plan-*.md
+.kilo/
+
