@@ -53,6 +53,7 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
     address: initialLocation?.address ?? "",
     ibgeCode: initialLocation?.ibgeCode ?? "",
     notes: initialLocation?.notes ?? "",
+    studiedUniverse: initialLocation?.studiedUniverse ?? "",
   }));
 
   const { data: states = [] } = useGetStatesQuery();
@@ -74,8 +75,13 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.name.trim() || !form.state || !form.city?.length) {
-      toast.error("Preencha nome, estado e ao menos uma cidade.");
+    if (
+      !form.name.trim() ||
+      !form.state ||
+      !form.city?.length ||
+      !form.studiedUniverse.trim()
+    ) {
+      toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
 
@@ -135,6 +141,20 @@ export default function LocationForm({ initialLocation }: LocationFormProps) {
           placeholder="Ex: Loja Centro"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="location-studied-universe">Universo Pesquisado *</Label>
+        <Input
+          id="location-studied-universe"
+          data-testid="location-studied-universe"
+          placeholder="Ex: População geral, Profissionais de saúde"
+          value={form.studiedUniverse}
+          onChange={(e) =>
+            setForm({ ...form, studiedUniverse: e.target.value })
+          }
           required
         />
       </div>

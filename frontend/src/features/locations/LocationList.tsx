@@ -79,6 +79,7 @@ export default function LocationList() {
               <TableHead>Nome</TableHead>
               <TableHead>Cidade/UF</TableHead>
               <TableHead>Bairro</TableHead>
+              <TableHead>Universo Pesquisado</TableHead>
               <TableHead>Notas</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -99,6 +100,9 @@ export default function LocationList() {
                   {Array.isArray(loc.neighborhood)
                     ? loc.neighborhood.join(", ") || "-"
                     : loc.neighborhood || "-"}
+                </TableCell>
+                <TableCell className="min-w-36 whitespace-normal!">
+                  {loc.studiedUniverse || "-"}
                 </TableCell>
                 <TableCell className="max-w-50 truncate">
                   {loc.notes || "-"}

@@ -39,6 +39,7 @@ export const update = async (req: Request, res: Response) => {
       cep: string;
       address: string;
       ibgeCode: string;
+      studiedUniverse: string;
     }> = {};
 
     if ('name' in req.body) updateData.name = req.body.name;
@@ -49,6 +50,7 @@ export const update = async (req: Request, res: Response) => {
     if ('cep' in req.body) updateData.cep = req.body.cep;
     if ('address' in req.body) updateData.address = req.body.address;
     if ('ibgeCode' in req.body) updateData.ibgeCode = req.body.ibgeCode;
+    if ('studiedUniverse' in req.body) updateData.studiedUniverse = req.body.studiedUniverse;
 
     const location = await locationsService.updateLocation(id, updateData);
     if (!location) return res.status(404).json({ error: 'Local não encontrado' });

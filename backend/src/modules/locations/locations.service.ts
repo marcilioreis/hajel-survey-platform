@@ -21,6 +21,7 @@ export const createLocation = async (data: {
   cep?: string;
   address?: string;
   ibgeCode?: string;
+  studiedUniverse?: string;
 }) => {
   const [loc] = await db.insert(locationCatalog).values(data).returning();
   return loc;
@@ -37,6 +38,7 @@ export const updateLocation = async (
     cep: string;
     address: string;
     ibgeCode: string;
+    studiedUniverse: string;
   }>
 ) => {
   if (Object.keys(data).length === 0) return null;

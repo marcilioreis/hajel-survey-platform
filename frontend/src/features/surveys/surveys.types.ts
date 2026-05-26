@@ -142,6 +142,7 @@ export interface Location {
   address?: string;
   ibgeCode?: string;
   notes?: string;
+  studiedUniverse?: string;
 }
 
 export interface LocationPayload {
@@ -153,6 +154,7 @@ export interface LocationPayload {
   address?: string;
   ibgeCode?: string;
   notes?: string;
+  studiedUniverse: string;
 }
 
 // ============ Relatórios ============

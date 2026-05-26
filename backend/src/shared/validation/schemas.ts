@@ -99,6 +99,7 @@ export const locationCatalogSchema = z.object({
   cep: z.string().max(10).optional(),
   address: z.string().optional(),
   ibgeCode: z.string().max(7).optional(),
+  studiedUniverse: z.string().min(1, 'Universo pesquisado é obrigatório'),
 });
 
 export const locationUpdateSchema = z.object({
@@ -110,6 +111,7 @@ export const locationUpdateSchema = z.object({
   cep: z.string().max(10).optional(),
   address: z.string().optional(),
   ibgeCode: z.string().max(7).optional(),
+  studiedUniverse: z.string().min(1).optional(),
 });
 
 // ================== RESPONSES ==================

@@ -22,6 +22,7 @@ export const locationCatalog = pgTable('location_catalog', {
   cep: varchar('cep', { length: 10 }),
   address: text('address'),
   ibgeCode: varchar('ibge_code', { length: 7 }),
+  studiedUniverse: text('studied_universe').notNull().default('Teste'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
