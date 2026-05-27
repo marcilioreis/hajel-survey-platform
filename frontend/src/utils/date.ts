@@ -13,3 +13,18 @@ export const parseBackendDate = (dateStr: string): Date => {
   // substitui espaço por 'T' para compatibilidade com ISO
   return new Date(dateStr.replace(" ", "T"));
 };
+
+export const parseISOToLocalDate = (isoString: string): Date | undefined => {
+  if (!isoString) return undefined;
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return undefined;
+
+  // Cria um objeto Date no fuso local utilizando o ano, mês, dia e horas representados em UTC
+  return new Date(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+  );
+};

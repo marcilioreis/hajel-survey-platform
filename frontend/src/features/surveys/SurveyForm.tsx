@@ -262,7 +262,7 @@ export default function SurveyForm({
         </div>
 
         <div className="flex gap-6">
-          <div className="flex items-center space-x-2">
+          <div className="items-center space-x-2 hidden">
             <Checkbox
               id="survey-public"
               data-testid="survey-public"
@@ -282,80 +282,76 @@ export default function SurveyForm({
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="flex-1">
-            <Label className="mb-2">Período da pesquisa *</Label>
-            <DateTimePicker
-              startValue={startDate}
-              endValue={endDate}
-              onStartChange={setStartDate}
-              onEndChange={setEndDate}
-              required
-              minDate={new Date()}
-            />
-          </div>
-          <div className="flex-1">
-            <Label className="mb-2">Locais de coleta *</Label>
-            {allLocations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nenhum local cadastrado.{" "}
-                <Link to="/locations/new" className="text-primary">
-                  Cadastrar agora
-                </Link>
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-                {allLocations.map((loc) => {
-                  const selected = selectedLocations.find(
-                    (l) => l.id === loc.id,
-                  );
-                  return (
-                    <div key={loc.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`survey-location-${loc.id}`}
-                        checked={!!selected}
-                        onCheckedChange={() => toggleLocation(loc.id)}
-                      />
-                      <Label
-                        htmlFor={`survey-location-${loc.id}`}
-                        className="flex-1 text-sm"
-                      >
-                        {loc.name}{" "}
-                        {loc.city && loc.city.length > 0 && (
-                          <span className="text-muted-foreground text-xs">
-                            ({loc.city.join(", ")})
-                          </span>
-                        )}
-                        {loc.neighborhood && loc.neighborhood.length > 0 && (
-                          <span className="text-muted-foreground text-xs">
-                            - {loc.neighborhood.join(", ")}
-                          </span>
-                        )}
-                      </Label>
-                      {selected && (
-                        <Input
-                          type="number"
-                          min="1"
-                          className="w-16"
-                          value={selected.order}
-                          onChange={(e) =>
-                            updateSelectedOrder(loc.id, Number(e.target.value))
-                          }
-                          placeholder="Ordem"
-                        />
+        <div className="flex flex-col">
+          <Label className="mb-2">Período da pesquisa *</Label>
+          <DateTimePicker
+            startValue={startDate}
+            endValue={endDate}
+            onStartChange={setStartDate}
+            onEndChange={setEndDate}
+            required
+            minDate={new Date()}
+          />
+        </div>
+        <div className="flex flex-col">
+          <Label className="mb-2">Locais de coleta *</Label>
+          {allLocations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhum local cadastrado.{" "}
+              <Link to="/locations/new" className="text-primary">
+                Cadastrar agora
+              </Link>
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+              {allLocations.map((loc) => {
+                const selected = selectedLocations.find((l) => l.id === loc.id);
+                return (
+                  <div key={loc.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`survey-location-${loc.id}`}
+                      checked={!!selected}
+                      onCheckedChange={() => toggleLocation(loc.id)}
+                    />
+                    <Label
+                      htmlFor={`survey-location-${loc.id}`}
+                      className="flex-1 text-sm text-left"
+                    >
+                      <span className="w-1/3">{loc.name}</span>{" "}
+                      {loc.city && loc.city.length > 0 && (
+                        <span className="w-1/3 text-muted-foreground text-xs">
+                          ({loc.city.join(", ")})
+                        </span>
                       )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <Link
-              to="/locations/new"
-              className="text-sm text-primary inline-block mt-2"
-            >
-              + Cadastrar novo local
-            </Link>
-          </div>
+                      {loc.neighborhood && loc.neighborhood.length > 0 && (
+                        <span className="w-1/3 text-muted-foreground text-xs">
+                          {loc.neighborhood.join(", ")}
+                        </span>
+                      )}
+                    </Label>
+                    {selected && (
+                      <Input
+                        type="number"
+                        min="1"
+                        className="w-16"
+                        value={selected.order}
+                        onChange={(e) =>
+                          updateSelectedOrder(loc.id, Number(e.target.value))
+                        }
+                        placeholder="Ordem"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <Link
+            to="/locations/new"
+            className="text-sm text-primary inline-block mt-2"
+          >
+            + Cadastrar novo local
+          </Link>
         </div>
       </div>
 

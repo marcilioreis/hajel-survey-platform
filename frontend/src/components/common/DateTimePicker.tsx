@@ -1,3 +1,4 @@
+import { parseISOToLocalDate } from "@/utils/date";
 import { DayPicker } from "react-day-picker";
 import { ptBR } from "react-day-picker/locale";
 
@@ -18,8 +19,8 @@ export default function DateTimePicker({
   required,
   minDate,
 }: DateTimeRangePickerProps) {
-  const fromDate = startValue ? new Date(startValue) : undefined;
-  const toDate = endValue ? new Date(endValue) : undefined;
+  const fromDate = parseISOToLocalDate(startValue);
+  const toDate = parseISOToLocalDate(endValue);
 
   const startTimeValue = startValue ? startValue.slice(11, 16) : "00:00";
   const endTimeValue = endValue ? endValue.slice(11, 16) : "23:59";

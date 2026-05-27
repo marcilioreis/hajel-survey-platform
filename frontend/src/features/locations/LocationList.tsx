@@ -79,7 +79,7 @@ export default function LocationList() {
               <TableHead>Nome</TableHead>
               <TableHead>Cidade/UF</TableHead>
               <TableHead>Bairro</TableHead>
-              <TableHead>Universo Pesquisado</TableHead>
+              <TableHead>Universo</TableHead>
               <TableHead>Notas</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
