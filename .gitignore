@@ -17,6 +17,7 @@ Thumbs.db
 .env.*
 !.env.example
 tests/.env.test
+.mcp.json
 
 # ================================
 # Logs e arquivos temporários

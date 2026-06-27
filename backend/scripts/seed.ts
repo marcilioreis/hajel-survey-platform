@@ -32,11 +32,11 @@ async function seed() {
   ];
 
   console.log('📌 Inserindo permissões...');
-  const insertedPermissions = await db
+  await db
     .insert(schema.permissions)
     .values(permissionData)
-    .onConflictDoNothing({ target: schema.permissions.code })
-    .returning();
+    .onConflictDoNothing({ target: schema.permissions.code });
+  const insertedPermissions = await db.select().from(schema.permissions);
 
   // 2. Papéis
   const roleData = [
@@ -46,11 +46,11 @@ async function seed() {
   ];
 
   console.log('📌 Inserindo papéis...');
-  const insertedRoles = await db
+  await db
     .insert(schema.roles)
     .values(roleData)
-    .onConflictDoNothing({ target: schema.roles.name })
-    .returning();
+    .onConflictDoNothing({ target: schema.roles.name });
+  const insertedRoles = await db.select().from(schema.roles);
 
   // 3. Mapear permissões para cada papel
   const getPermissionId = (code: string) =>
