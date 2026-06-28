@@ -5,6 +5,7 @@ import { storage } from '../../shared/storage/storage.js';
 import * as reportsService from '../../modules/surveys/reports.service.js';
 import type { ExportFilters } from '../../modules/surveys/reports.service.js';
 import * as resultsService from '../../modules/surveys/results.service.js';
+import * as surveyService from '../../modules/surveys/surveys.service.js';
 import { generatePdf, generateXlsx } from '../../modules/surveys/export-helpers.js';
 import { redis } from '../redis/index.js';
 
@@ -68,11 +69,31 @@ export const startExportWorker = () => {
             mimeType = 'application/json';
             extension = 'json';
             break;
-          case 'pdf':
-            fileContent = await generatePdf(data);
+          case 'pdf': {
+            // findById retorna o modelo Drizzle (camelCase, confiável);
+            // a contagem de respostas vem da view crua (snake_case).
+            const surveyRow = await surveyService.findById(surveyId);
+            const enrichedRaw = (await surveyService.findByIdEnriched(
+              surveyId
+            )) as unknown as Record<string, unknown> | null;
+            fileContent = await generatePdf(
+              data,
+              surveyRow
+                ? {
+                    sampleSize: surveyRow.sampleSize,
+                    marginOfError: surveyRow.marginOfError,
+                    populationSize: surveyRow.populationSize,
+                    confidenceLevel: surveyRow.confidenceLevel,
+                    expectedProportion: surveyRow.expectedProportion,
+                    responseRate: surveyRow.responseRate,
+                    responsesCount: enrichedRaw ? Number(enrichedRaw.responses_count) || 0 : 0,
+                  }
+                : undefined
+            );
             mimeType = 'application/pdf';
             extension = 'pdf';
             break;
+          }
           case 'xlsx':
             fileContent = await generateXlsx(data);
             mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';

@@ -62,6 +62,23 @@ export interface BackendSurvey {
   locations?: Location[];
   responses_count: number;
   status: string;
+  // Parâmetros de amostragem (frações: margin/confidence/proportion/rate)
+  sample_size?: number | null;
+  margin_of_error?: number | null;
+  population_size?: number | null;
+  confidence_level?: number | null;
+  expected_proportion?: number | null;
+  response_rate?: number | null;
+}
+
+// Valores da calculadora de margem de erro mantidos no estado do formulário.
+export interface SamplingValues {
+  sampleSize?: number;
+  marginOfError?: number;
+  populationSize?: number | null;
+  confidenceLevel: number;
+  expectedProportion: number;
+  responseRate?: number | null;
 }
 
 export interface Survey {
@@ -106,6 +123,13 @@ export interface SurveyPayload {
   endDate: string;
   customStyle?: Record<string, unknown> | null;
   locations?: { id: number; order: number }[];
+  // Parâmetros de amostragem (camelCase, como o backend espera no payload)
+  sampleSize?: number;
+  marginOfError?: number;
+  populationSize?: number | null;
+  confidenceLevel?: number;
+  expectedProportion?: number;
+  responseRate?: number | null;
 }
 
 // ============ Respostas ============

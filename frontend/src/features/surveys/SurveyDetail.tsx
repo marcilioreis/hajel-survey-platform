@@ -9,6 +9,7 @@ import { getOptionText } from "../../utils/text";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import SamplingInfoCard from "./SamplingInfoCard";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,8 @@ export default function SurveyDetail() {
           </div>
         </CardContent>
       </Card>
+
+      <SamplingInfoCard survey={survey} />
 
       <Card>
         <CardHeader>

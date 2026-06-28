@@ -11,8 +11,8 @@ export function normalizeQuestions(rawQuestions: RawQuestion[]): Question[] {
     text: q.text,
     type: mapBackendTypeToFrontend(q.type),
     required: q.required,
-    options: q.options.map(
-      (opt): QuestionOption => (typeof opt === "string" ? { text: opt } : opt),
+    options: q.options.map((opt): QuestionOption =>
+      typeof opt === "string" ? { text: opt } : opt,
     ),
     order: q.order,
     conditional_logic: q.conditional_logic ?? q.conditionalLogic ?? null,

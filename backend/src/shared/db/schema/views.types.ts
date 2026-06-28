@@ -10,6 +10,12 @@ export type SurveyEnriched = {
   endDate: Date;
   active: boolean;
   customStyle: unknown;
+  sampleSize: number | null;
+  marginOfError: number | null;
+  populationSize: number | null;
+  confidenceLevel: number | null;
+  expectedProportion: number | null;
+  responseRate: number | null;
   createdAt: Date;
   questions: Array<{
     id: number;
