@@ -4,10 +4,45 @@ import { hasPermission } from '../../shared/middleware/rbac.js';
 import * as locationsService from '../locations/locations.service.js';
 import { db } from '../../shared/db/index.js';
 import { auditLogs } from '../../shared/db/schema/audit.js';
+import {
+  calcMarginOfError,
+  calcSampleSize,
+  type CalculatorParams,
+} from '../../shared/statistics/survey-calculator.js';
 
 const getNumericId = (param: string | string[]): number => {
   const id = Array.isArray(param) ? param[0] : param;
   return parseInt(id, 10);
+};
+
+type SamplingInput = {
+  sampleSize?: number | null;
+  marginOfError?: number | null;
+  populationSize?: number | null;
+  confidenceLevel?: number | null;
+  expectedProportion?: number | null;
+  responseRate?: number | null;
+};
+
+// Recalcula o campo derivado (margem ↔ amostra) no servidor, garantindo consistência
+// independentemente do valor enviado pelo cliente.
+const applySamplingConsistency = <T extends SamplingInput>(data: T): T => {
+  const hasSample = data.sampleSize != null;
+  const hasMargin = data.marginOfError != null;
+  if (!hasSample && !hasMargin) return data;
+
+  const params: CalculatorParams = {
+    confidenceLevel: data.confidenceLevel ?? 0.95,
+    expectedProportion: data.expectedProportion ?? 0.5,
+    populationSize: data.populationSize ?? null,
+  };
+
+  if (hasSample) {
+    data.marginOfError = calcMarginOfError(data.sampleSize as number, params);
+  } else if (hasMargin) {
+    data.sampleSize = calcSampleSize(data.marginOfError as number, params);
+  }
+  return data;
 };
 
 export const createSurvey = async (req: Request, res: Response) => {
@@ -19,7 +54,7 @@ export const createSurvey = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'endDate é obrigatória' });
     }
 
-    const survey = await surveyService.create(surveyData, userId);
+    const survey = await surveyService.create(applySamplingConsistency(surveyData), userId);
 
     // Associação de locais
     let items = locationIds;
@@ -129,12 +164,26 @@ export const updateSurvey = async (req: Request, res: Response) => {
       active: boolean;
       startDate: Date;
       endDate: Date;
+      sampleSize: number | null;
+      marginOfError: number | null;
+      populationSize: number | null;
+      confidenceLevel: number | null;
+      expectedProportion: number | null;
+      responseRate: number | null;
     }> = {};
 
     if ('title' in surveyFields) updateData.title = surveyFields.title;
     if ('description' in surveyFields) updateData.description = surveyFields.description;
     if ('public' in surveyFields) updateData.public = surveyFields.public;
     if ('active' in surveyFields) updateData.active = surveyFields.active;
+    if ('sampleSize' in surveyFields) updateData.sampleSize = surveyFields.sampleSize;
+    if ('marginOfError' in surveyFields) updateData.marginOfError = surveyFields.marginOfError;
+    if ('populationSize' in surveyFields) updateData.populationSize = surveyFields.populationSize;
+    if ('confidenceLevel' in surveyFields)
+      updateData.confidenceLevel = surveyFields.confidenceLevel;
+    if ('expectedProportion' in surveyFields)
+      updateData.expectedProportion = surveyFields.expectedProportion;
+    if ('responseRate' in surveyFields) updateData.responseRate = surveyFields.responseRate;
     if ('startDate' in surveyFields) {
       const parsed = new Date(surveyFields.startDate);
       if (isNaN(parsed.getTime()))
@@ -158,6 +207,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
     const canEditOwn = hasPermission(req, 'survey:edit');
     if (!canEditAny && !canEditOwn) return res.status(403).json({ error: 'Acesso negado' });
 
+    applySamplingConsistency(updateData);
     const survey = await surveyService.update(surveyId, updateData, userId);
     if (!survey) return res.status(404).json({ error: 'Pesquisa não encontrada' });
 

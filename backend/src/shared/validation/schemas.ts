@@ -2,16 +2,38 @@
 import { z } from 'zod';
 
 // ================== SURVEYS ==================
+// Campos de amostragem (calculadora de margem de erro). Frações: confidence/proportion/margin/rate.
+const samplingFields = {
+  sampleSize: z.number().int().positive().optional(),
+  marginOfError: z.number().gt(0).lt(1).optional(),
+  populationSize: z.number().int().positive().optional().nullable(),
+  confidenceLevel: z
+    .number()
+    .refine((v) => [0.9, 0.95, 0.99].includes(v), {
+      message: 'Nível de confiança deve ser 0.90, 0.95 ou 0.99',
+    })
+    .optional(),
+  expectedProportion: z.number().gt(0).lt(1).optional(),
+  responseRate: z.number().gt(0).lte(1).optional().nullable(),
+};
+
+// Regra de negócio: amostra não pode exceder a população (quando ambas informadas).
+const sampleNotExceedsPopulation = (data: {
+  sampleSize?: number;
+  populationSize?: number | null;
+}) => !data.populationSize || !data.sampleSize || data.sampleSize <= data.populationSize;
+
 export const createSurveySchema = z
   .object({
     title: z.string().min(1),
-    description: z.string().optional(),
+    description: z.string().optional().nullable(),
     slug: z.string().optional(),
     public: z.boolean().optional().default(false),
     active: z.boolean().optional().default(false),
     startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
     endDate: z.iso.datetime({ message: 'Data de término inválida' }),
     customStyle: z.unknown().optional(),
+    ...samplingFields,
     locations: z
       .array(
         z.object({
@@ -24,6 +46,10 @@ export const createSurveySchema = z
   })
   .refine((data) => !(data.locations && data.locationIds), {
     message: 'Use apenas locations ou locationIds, não ambos',
+  })
+  .refine(sampleNotExceedsPopulation, {
+    message: 'O tamanho da amostra não pode ser maior que a população',
+    path: ['sampleSize'],
   });
 
 export const updateSurveySchema = z
@@ -34,6 +60,7 @@ export const updateSurveySchema = z
     active: z.boolean().optional(),
     startDate: z.iso.datetime({ message: 'Data de início inválida' }).optional(),
     endDate: z.iso.datetime({ message: 'Data de término inválida' }).optional(),
+    ...samplingFields,
     locations: z
       .array(
         z.object({
@@ -46,6 +73,10 @@ export const updateSurveySchema = z
   })
   .refine((data) => !(data.locations && data.locationIds), {
     message: 'Use apenas locations ou locationIds, não ambos',
+  })
+  .refine(sampleNotExceedsPopulation, {
+    message: 'O tamanho da amostra não pode ser maior que a população',
+    path: ['sampleSize'],
   });
 
 // ================== QUESTIONS ==================

@@ -14,10 +14,12 @@ import type {
   BackendSurvey,
   CreateQuestionPayload,
   Question,
+  SamplingValues,
   SurveyPayload,
 } from "./surveys.types";
 import DateTimePicker from "../../components/common/DateTimePicker";
 import { QuestionEditor } from "./QuestionEditor";
+import MarginOfErrorCalculator from "./MarginOfErrorCalculator";
 import { mapFrontendTypeToBackend } from "../../utils/mapping";
 import { normalizeQuestions } from "../../utils/normalizers";
 import { Button } from "@/components/ui/button";
@@ -78,6 +80,14 @@ export default function SurveyForm({
   const [questions, setQuestions] = useState<Question[]>(() =>
     initialSurvey ? normalizeQuestions(initialSurvey.questions) : [],
   );
+  const [sampling, setSampling] = useState<SamplingValues>(() => ({
+    sampleSize: initialSurvey?.sample_size ?? undefined,
+    marginOfError: initialSurvey?.margin_of_error ?? undefined,
+    populationSize: initialSurvey?.population_size ?? null,
+    confidenceLevel: initialSurvey?.confidence_level ?? 0.95,
+    expectedProportion: initialSurvey?.expected_proportion ?? 0.5,
+    responseRate: initialSurvey?.response_rate ?? null,
+  }));
 
   const toggleLocation = (locationId: number) => {
     setSelectedLocations((prev) => {
@@ -195,6 +205,14 @@ export default function SurveyForm({
       startDate: startDate ? `${startDate}` : undefined,
       endDate: `${endDate}`,
       locations: selectedLocations.map((l) => ({ id: l.id, order: l.order })),
+      ...(sampling.sampleSize != null && { sampleSize: sampling.sampleSize }),
+      ...(sampling.marginOfError != null && {
+        marginOfError: sampling.marginOfError,
+      }),
+      populationSize: sampling.populationSize ?? null,
+      confidenceLevel: sampling.confidenceLevel,
+      expectedProportion: sampling.expectedProportion,
+      responseRate: sampling.responseRate ?? null,
     };
 
     try {
@@ -212,7 +230,19 @@ export default function SurveyForm({
               id: l.id,
               order: idx + 1,
             })),
-          ) !== JSON.stringify(surveyPayload.locations);
+          ) !== JSON.stringify(surveyPayload.locations) ||
+          (initialSurvey!.sample_size ?? null) !==
+            (sampling.sampleSize ?? null) ||
+          (initialSurvey!.margin_of_error ?? null) !==
+            (sampling.marginOfError ?? null) ||
+          (initialSurvey!.population_size ?? null) !==
+            (sampling.populationSize ?? null) ||
+          (initialSurvey!.confidence_level ?? 0.95) !==
+            sampling.confidenceLevel ||
+          (initialSurvey!.expected_proportion ?? 0.5) !==
+            sampling.expectedProportion ||
+          (initialSurvey!.response_rate ?? null) !==
+            (sampling.responseRate ?? null);
 
         if (hasBasicChanges) {
           await updateSurvey({ id: surveyId!, body: surveyPayload }).unwrap();
@@ -354,6 +384,9 @@ export default function SurveyForm({
           </Link>
         </div>
       </div>
+
+      {/* Calculadora de margem de erro */}
+      <MarginOfErrorCalculator value={sampling} onChange={setSampling} />
 
       {/* Editor de perguntas */}
       <div className="space-y-4">

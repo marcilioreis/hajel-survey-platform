@@ -7,6 +7,7 @@ import {
   boolean,
   jsonb,
   timestamp,
+  doublePrecision,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth.js';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
@@ -24,6 +25,13 @@ export const surveys = pgTable('surveys', {
   endDate: timestamp('end_date').notNull(), // agora obrigatório
   active: boolean('active').default(false),
   customStyle: jsonb('custom_style'),
+  // ===== Parâmetros de amostragem (calculadora de margem de erro) =====
+  sampleSize: integer('sample_size'),
+  marginOfError: doublePrecision('margin_of_error'),
+  populationSize: integer('population_size'),
+  confidenceLevel: doublePrecision('confidence_level').default(0.95),
+  expectedProportion: doublePrecision('expected_proportion').default(0.5),
+  responseRate: doublePrecision('response_rate'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

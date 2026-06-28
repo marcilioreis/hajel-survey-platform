@@ -2,9 +2,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   useGetSurveyResultsQuery,
   useGetOpenResponsesQuery,
+  useGetSurveyByIdQuery,
 } from "../surveys/surveysApi";
 import ReportCharts from "./ReportCharts";
 import OpenResponsesList from "./OpenResponsesList";
+import SamplingInfoCard from "../surveys/SamplingInfoCard";
 import ExportButton from "./ExportButton";
 import Skeleton from "@/components/common/Skeleton";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ export default function SurveyReport() {
     isLoading: loadingOpen,
     error: errorOpen,
   } = useGetOpenResponsesQuery(surveyId!);
+  const { data: survey } = useGetSurveyByIdQuery(surveyId!);
 
   if (loadingResults || loadingOpen) {
     return (
@@ -61,6 +64,8 @@ export default function SurveyReport() {
         </Button>
         {surveyId && <ExportButton surveyId={surveyId} />}
       </div>
+
+      {survey && <SamplingInfoCard survey={survey} showCollected />}
 
       {results && results.length > 0 && <ReportCharts results={results} />}
       {openResponses && openResponses.length > 0 && (
