@@ -399,8 +399,8 @@ export default function MarginOfErrorCalculator({ value, onChange }: Props) {
                   width={40}
                 />
                 <Tooltip
-                  formatter={(v: number) => [`${v}%`, "Margem"]}
-                  labelFormatter={(l: number) => `n = ${l}`}
+                  formatter={(v) => [`${Number(v).toFixed(2)}%`, "Margem"]}
+                  labelFormatter={(l) => `n = ${l}`}
                 />
                 <Line
                   type="monotone"
