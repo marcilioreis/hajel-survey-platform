@@ -54,3 +54,11 @@ services:
     networks:
       - app-net
     command: ["node", "dist/server.js"]
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  app-net:
+    driver: bridge

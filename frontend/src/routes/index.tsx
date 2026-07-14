@@ -7,6 +7,11 @@ import AdminRoute from "../features/auth/AdminRoute";
 import { publicRoutes } from "./publicRoutes";
 
 // ──────────────────────────────────────────────
+// Guia do usuário (sem controle de acesso)
+// ──────────────────────────────────────────────
+const GuiaPage = lazyPage(() => import("../features/guide/GuiaPage"));
+
+// ──────────────────────────────────────────────
 // Rotas públicas (login, registro)
 // ──────────────────────────────────────────────
 const Login = lazyPage(() => import("../features/auth/Login"));
@@ -56,6 +61,7 @@ const Reports = () => <div>Relatórios (em definição)</div>;
 
 export const router = createBrowserRouter([
   ...publicRoutes,
+  { path: "/guia", element: GuiaPage },
   { path: "/login", element: Login },
   { path: "/register", element: Register },
   { path: "/forgot-password", element: ForgotPassword },
